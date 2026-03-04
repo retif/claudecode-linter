@@ -28,12 +28,25 @@ const KNOWN_SERVER_FIELDS = new Set([
   "type", "url", "command", "args", "env", "cwd",
 ]);
 
+function findKeyPosition(content: string, key: string): { line: number; column: number } | undefined {
+  const re = new RegExp(`"${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"\\s*:`);
+  const match = re.exec(content);
+  if (!match) return undefined;
+  const before = content.slice(0, match.index);
+  const line = before.split("\n").length;
+  const lastNl = before.lastIndexOf("\n");
+  const column = match.index - lastNl;
+  return { line, column };
+}
+
 function diag(
   config: LinterConfig,
   filePath: string,
   ruleId: string,
   defaultSeverity: Severity,
   message: string,
+  line?: number,
+  column?: number,
 ): LintDiagnostic | null {
   if (!isRuleEnabled(config, ruleId)) return null;
   return {
@@ -41,6 +54,8 @@ function diag(
     severity: getRuleSeverity(config, ruleId, defaultSeverity),
     message,
     file: filePath,
+    line,
+    column,
   };
 }
 
@@ -92,15 +107,16 @@ export const mcpJsonLinter: Linter = {
     }
 
     for (const [name, serverDef] of Object.entries(servers as Record<string, unknown>)) {
+      const sp = findKeyPosition(content, name);
       // server name convention
       if (!isKebabCase(name)) {
         push(diag(config, filePath, "mcp-json/server-name-kebab", "info",
-          `Server name "${name}" should be kebab-case`));
+          `Server name "${name}" should be kebab-case`, sp?.line, sp?.column));
       }
 
       if (typeof serverDef !== "object" || serverDef === null || Array.isArray(serverDef)) {
         push(diag(config, filePath, "mcp-json/server-object", "error",
-          `Server "${name}" must be an object`));
+          `Server "${name}" must be an object`, sp?.line, sp?.column));
         continue;
       }
 
@@ -112,7 +128,7 @@ export const mcpJsonLinter: Linter = {
 
       if (!hasUrl && !hasCommand) {
         push(diag(config, filePath, "mcp-json/server-transport", "error",
-          `Server "${name}" must have either "url" (http) or "command" (stdio)`));
+          `Server "${name}" must have either "url" (http) or "command" (stdio)`, sp?.line, sp?.column));
         continue;
       }
 
@@ -123,16 +139,16 @@ export const mcpJsonLinter: Linter = {
           const parsed = new URL(url);
           if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
             push(diag(config, filePath, "mcp-json/url-protocol", "warning",
-              `Server "${name}" URL uses "${parsed.protocol}" — expected http: or https:`));
+              `Server "${name}" URL uses "${parsed.protocol}" — expected http: or https:`, sp?.line, sp?.column));
           }
         } catch {
           push(diag(config, filePath, "mcp-json/url-valid", "error",
-            `Server "${name}" has invalid URL: "${url}"`));
+            `Server "${name}" has invalid URL: "${url}"`, sp?.line, sp?.column));
         }
 
         if ("type" in server && server.type !== "http") {
           push(diag(config, filePath, "mcp-json/type-matches-transport", "warning",
-            `Server "${name}" has URL but type is "${server.type}" (expected "http")`));
+            `Server "${name}" has URL but type is "${server.type}" (expected "http")`, sp?.line, sp?.column));
         }
       }
 
@@ -141,26 +157,26 @@ export const mcpJsonLinter: Linter = {
         const cmd = server.command as string;
         if (cmd.includes(" ") && !("args" in server)) {
           push(diag(config, filePath, "mcp-json/command-args-split", "info",
-            `Server "${name}" command contains spaces — consider splitting into "command" and "args"`));
+            `Server "${name}" command contains spaces — consider splitting into "command" and "args"`, sp?.line, sp?.column));
         }
       }
 
       // args must be array
       if ("args" in server && !Array.isArray(server.args)) {
         push(diag(config, filePath, "mcp-json/args-array", "error",
-          `Server "${name}" "args" must be an array`));
+          `Server "${name}" "args" must be an array`, sp?.line, sp?.column));
       }
 
       // env must be object of strings
       if ("env" in server) {
         if (typeof server.env !== "object" || server.env === null || Array.isArray(server.env)) {
           push(diag(config, filePath, "mcp-json/env-object", "error",
-            `Server "${name}" "env" must be an object`));
+            `Server "${name}" "env" must be an object`, sp?.line, sp?.column));
         } else {
           for (const [k, v] of Object.entries(server.env as Record<string, unknown>)) {
             if (typeof v !== "string") {
               push(diag(config, filePath, "mcp-json/env-string-values", "warning",
-                `Server "${name}" env.${k} should be a string`));
+                `Server "${name}" env.${k} should be a string`, sp?.line, sp?.column));
             }
           }
         }
@@ -170,7 +186,7 @@ export const mcpJsonLinter: Linter = {
       for (const key of Object.keys(server)) {
         if (!KNOWN_SERVER_FIELDS.has(key)) {
           push(diag(config, filePath, "mcp-json/no-unknown-server-fields", "info",
-            `Server "${name}" has unknown field "${key}"`));
+            `Server "${name}" has unknown field "${key}"`, sp?.line, sp?.column));
         }
       }
     }
@@ -178,8 +194,9 @@ export const mcpJsonLinter: Linter = {
     // unknown root fields
     for (const key of Object.keys(parsed)) {
       if (key !== "mcpServers") {
+        const p = findKeyPosition(content, key);
         push(diag(config, filePath, "mcp-json/no-unknown-root-fields", "info",
-          `Unknown root field "${key}" (expected only "mcpServers")`));
+          `Unknown root field "${key}" (expected only "mcpServers")`, p?.line, p?.column));
       }
     }
 

@@ -24,7 +24,7 @@ export function formatHuman(results: LintResult[], quiet: boolean): string {
     lines.push(chalk.underline(result.file));
 
     for (const d of filtered) {
-      const loc = d.line ? chalk.dim(`:${d.line}`) : "";
+      const loc = d.line ? chalk.dim(`:${d.line}${d.column ? `:${d.column}` : ""}`) : "";
       lines.push(`  ${SEVERITY_ICONS[d.severity]}  ${d.message}  ${chalk.dim(d.rule)}${loc}`);
 
       if (d.severity === "error") errorCount++;

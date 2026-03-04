@@ -29,6 +29,7 @@ function diag(
   defaultSeverity: Severity,
   message: string,
   line?: number,
+  column?: number,
 ): LintDiagnostic | null {
   if (!isRuleEnabled(config, ruleId)) return null;
   return {
@@ -37,6 +38,7 @@ function diag(
     message,
     file: filePath,
     line,
+    column,
   };
 }
 

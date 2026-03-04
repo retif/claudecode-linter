@@ -25,6 +25,17 @@ const PROMPT_EVENTS = new Set([
   "Stop", "SubagentStop", "UserPromptSubmit", "PreToolUse",
 ]);
 
+function findKeyPosition(content: string, key: string): { line: number; column: number } | undefined {
+  const re = new RegExp(`"${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"\\s*:`);
+  const match = re.exec(content);
+  if (!match) return undefined;
+  const before = content.slice(0, match.index);
+  const line = before.split("\n").length;
+  const lastNl = before.lastIndexOf("\n");
+  const column = match.index - lastNl;
+  return { line, column };
+}
+
 function diag(
   config: LinterConfig,
   filePath: string,
@@ -32,6 +43,7 @@ function diag(
   defaultSeverity: Severity,
   message: string,
   line?: number,
+  column?: number,
 ): LintDiagnostic | null {
   if (!isRuleEnabled(config, ruleId)) return null;
   return {
@@ -40,6 +52,7 @@ function diag(
     message,
     file: filePath,
     line,
+    column,
   };
 }
 
@@ -77,10 +90,11 @@ export const hooksJsonLinter: Linter = {
     const hooks = root.hooks as Record<string, unknown>;
 
     for (const [eventName, matchers] of Object.entries(hooks)) {
+      const ep = findKeyPosition(content, eventName);
       // valid event name
       if (!VALID_EVENTS.has(eventName)) {
         push(diag(config, filePath, "hooks-json/valid-event-names", "error",
-          `Invalid event name "${eventName}" (valid: ${[...VALID_EVENTS].join(", ")})`));
+          `Invalid event name "${eventName}" (valid: ${[...VALID_EVENTS].join(", ")})`, ep?.line, ep?.column));
         continue;
       }
 
@@ -99,28 +113,28 @@ export const hooksJsonLinter: Linter = {
           // type required
           if (!("type" in h) || (h.type !== "command" && h.type !== "prompt")) {
             push(diag(config, filePath, "hooks-json/hook-type-required", "error",
-              `Hook in ${eventName} must have "type" set to "command" or "prompt"`));
+              `Hook in ${eventName} must have "type" set to "command" or "prompt"`, ep?.line, ep?.column));
             continue;
           }
 
           if (h.type === "command") {
             if (!("command" in h) || typeof h.command !== "string") {
               push(diag(config, filePath, "hooks-json/command-has-command", "error",
-                `Command hook in ${eventName} must have a "command" field`));
+                `Command hook in ${eventName} must have a "command" field`, ep?.line, ep?.column));
             } else if (/^\//.test(h.command) && !h.command.includes("${CLAUDE_PLUGIN_ROOT}")) {
               push(diag(config, filePath, "hooks-json/no-hardcoded-paths", "warning",
-                `Hook command uses absolute path — use \${CLAUDE_PLUGIN_ROOT} instead`));
+                `Hook command uses absolute path — use \${CLAUDE_PLUGIN_ROOT} instead`, ep?.line, ep?.column));
             }
           }
 
           if (h.type === "prompt") {
             if (!("prompt" in h) || typeof h.prompt !== "string") {
               push(diag(config, filePath, "hooks-json/prompt-has-prompt", "error",
-                `Prompt hook in ${eventName} must have a "prompt" field`));
+                `Prompt hook in ${eventName} must have a "prompt" field`, ep?.line, ep?.column));
             }
             if (!PROMPT_EVENTS.has(eventName)) {
               push(diag(config, filePath, "hooks-json/prompt-event-support", "warning",
-                `Prompt hooks work best on ${[...PROMPT_EVENTS].join(", ")} (used on ${eventName})`));
+                `Prompt hooks work best on ${[...PROMPT_EVENTS].join(", ")} (used on ${eventName})`, ep?.line, ep?.column));
             }
           }
 
@@ -128,7 +142,7 @@ export const hooksJsonLinter: Linter = {
           if ("timeout" in h && typeof h.timeout === "number") {
             if (h.timeout < 5 || h.timeout > 600) {
               push(diag(config, filePath, "hooks-json/timeout-range", "warning",
-                `Hook timeout ${h.timeout}s is outside recommended range (5-600s)`));
+                `Hook timeout ${h.timeout}s is outside recommended range (5-600s)`, ep?.line, ep?.column));
             }
           }
         }

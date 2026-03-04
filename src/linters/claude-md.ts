@@ -23,6 +23,7 @@ function diag(
   defaultSeverity: Severity,
   message: string,
   line?: number,
+  column?: number,
 ): LintDiagnostic | null {
   if (!isRuleEnabled(config, ruleId)) return null;
   return {
@@ -31,6 +32,7 @@ function diag(
     message,
     file: filePath,
     line,
+    column,
   };
 }
 
@@ -81,10 +83,11 @@ export const claudeMdLinter: Linter = {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       // API keys, tokens, passwords in plain text
-      if (/(?:api[_-]?key|token|password|secret)\s*[:=]\s*["']?[A-Za-z0-9_\-/.]{20,}/i.test(line)) {
+      const secretMatch = /(?:api[_-]?key|token|password|secret)\s*[:=]\s*["']?[A-Za-z0-9_\-/.]{20,}/i.exec(line);
+      if (secretMatch) {
         push(diag(config, filePath, "claude-md/no-secrets", "error",
           "Possible secret or token detected — do not store credentials in CLAUDE.md",
-          i + 1));
+          i + 1, secretMatch.index + 1));
       }
     }
 
@@ -108,17 +111,18 @@ export const claudeMdLinter: Linter = {
         if (target.startsWith("/")) {
           push(diag(config, filePath, "claude-md/no-absolute-paths", "info",
             `Link uses absolute path "${target}" — prefer relative paths`,
-            i + 1));
+            i + 1, match.index + 1));
         }
       }
     }
 
     // check for TODO/FIXME markers left in instructions
     for (let i = 0; i < lines.length; i++) {
-      if (/\b(TODO|FIXME|HACK|XXX)\b/.test(lines[i])) {
+      const todoMatch = /\b(TODO|FIXME|HACK|XXX)\b/.exec(lines[i]);
+      if (todoMatch) {
         push(diag(config, filePath, "claude-md/no-todo-markers", "info",
-          `Found ${lines[i].match(/\b(TODO|FIXME|HACK|XXX)\b/)![0]} marker — resolve before finalizing`,
-          i + 1));
+          `Found ${todoMatch[0]} marker — resolve before finalizing`,
+          i + 1, todoMatch.index + 1));
       }
     }
 

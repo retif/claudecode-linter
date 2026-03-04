@@ -41,12 +41,25 @@ const KNOWN_TOOLS = new Set([
   "TeamCreate", "TeamDelete", "NotebookRead",
 ]);
 
+function findKeyPosition(content: string, key: string): { line: number; column: number } | undefined {
+  const re = new RegExp(`"${key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"\\s*:`);
+  const match = re.exec(content);
+  if (!match) return undefined;
+  const before = content.slice(0, match.index);
+  const line = before.split("\n").length;
+  const lastNl = before.lastIndexOf("\n");
+  const column = match.index - lastNl;
+  return { line, column };
+}
+
 function diag(
   config: LinterConfig,
   filePath: string,
   ruleId: string,
   defaultSeverity: Severity,
   message: string,
+  line?: number,
+  column?: number,
 ): LintDiagnostic | null {
   if (!isRuleEnabled(config, ruleId)) return null;
   return {
@@ -54,6 +67,8 @@ function diag(
     severity: getRuleSeverity(config, ruleId, defaultSeverity),
     message,
     file: filePath,
+    line,
+    column,
   };
 }
 
@@ -93,12 +108,13 @@ export const settingsJsonLinter: Linter = {
     // unknown/misplaced top-level fields
     for (const key of Object.keys(parsed)) {
       if (!knownFields.has(key)) {
+        const p = findKeyPosition(content, key);
         if (USER_FIELDS.has(key) && scope && scope !== "user") {
           push(diag(config, filePath, "settings-json/scope-field", "warning",
-            `"${key}" is a user-level field — it has no effect in project-level settings.local.json`));
+            `"${key}" is a user-level field — it has no effect in project-level settings.local.json`, p?.line, p?.column));
         } else if (!USER_FIELDS.has(key)) {
           push(diag(config, filePath, "settings-json/no-unknown-fields", "warning",
-            `Unknown top-level field "${key}"`));
+            `Unknown top-level field "${key}"`, p?.line, p?.column));
         }
       }
     }
@@ -106,22 +122,24 @@ export const settingsJsonLinter: Linter = {
     // permissions
     if ("permissions" in parsed) {
       const perms = parsed.permissions;
+      const pp = findKeyPosition(content, "permissions");
       if (typeof perms !== "object" || perms === null || Array.isArray(perms)) {
         push(diag(config, filePath, "settings-json/permissions-object", "error",
-          "\"permissions\" must be an object"));
+          "\"permissions\" must be an object", pp?.line, pp?.column));
       } else {
         const p = perms as Record<string, unknown>;
 
         // allow list
         if ("allow" in p) {
+          const ap = findKeyPosition(content, "allow");
           if (!Array.isArray(p.allow)) {
             push(diag(config, filePath, "settings-json/allow-array", "error",
-              "\"permissions.allow\" must be an array of strings"));
+              "\"permissions.allow\" must be an array of strings", ap?.line, ap?.column));
           } else {
             for (const entry of p.allow) {
               if (typeof entry !== "string") {
                 push(diag(config, filePath, "settings-json/allow-array", "error",
-                  `"permissions.allow" entries must be strings (got ${typeof entry})`));
+                  `"permissions.allow" entries must be strings (got ${typeof entry})`, ap?.line, ap?.column));
                 continue;
               }
               // Extract base tool name from scoped pattern like "Bash(cmd:*)"
@@ -132,7 +150,7 @@ export const settingsJsonLinter: Linter = {
                   // Allow MCP tool patterns (mcp__*)
                   if (!entry.startsWith("mcp__")) {
                     push(diag(config, filePath, "settings-json/allow-known-tools", "warning",
-                      `Unknown tool "${toolName}" in permissions.allow`));
+                      `Unknown tool "${toolName}" in permissions.allow`, ap?.line, ap?.column));
                   }
                 }
               }
@@ -142,9 +160,10 @@ export const settingsJsonLinter: Linter = {
 
         // deny list
         if ("deny" in p) {
+          const dp = findKeyPosition(content, "deny");
           if (!Array.isArray(p.deny)) {
             push(diag(config, filePath, "settings-json/deny-array", "error",
-              "\"permissions.deny\" must be an array of strings"));
+              "\"permissions.deny\" must be an array of strings", dp?.line, dp?.column));
           }
         }
       }
@@ -153,14 +172,16 @@ export const settingsJsonLinter: Linter = {
     // env — user-level only
     if ("env" in parsed) {
       const env = parsed.env;
+      const envp = findKeyPosition(content, "env");
       if (typeof env !== "object" || env === null || Array.isArray(env)) {
         push(diag(config, filePath, "settings-json/env-object", "error",
-          "\"env\" must be an object of string key-value pairs"));
+          "\"env\" must be an object of string key-value pairs", envp?.line, envp?.column));
       } else {
         for (const [key, val] of Object.entries(env as Record<string, unknown>)) {
           if (typeof val !== "string") {
+            const kp = findKeyPosition(content, key);
             push(diag(config, filePath, "settings-json/env-string-values", "warning",
-              `"env.${key}" should be a string (got ${typeof val})`));
+              `"env.${key}" should be a string (got ${typeof val})`, kp?.line, kp?.column));
           }
         }
       }
@@ -169,18 +190,20 @@ export const settingsJsonLinter: Linter = {
     // enabledPlugins — user-level only
     if ("enabledPlugins" in parsed) {
       const plugins = parsed.enabledPlugins;
+      const plp = findKeyPosition(content, "enabledPlugins");
       if (typeof plugins !== "object" || plugins === null || Array.isArray(plugins)) {
         push(diag(config, filePath, "settings-json/plugins-object", "error",
-          "\"enabledPlugins\" must be an object"));
+          "\"enabledPlugins\" must be an object", plp?.line, plp?.column));
       } else {
         for (const [key, val] of Object.entries(plugins as Record<string, unknown>)) {
+          const kp = findKeyPosition(content, key);
           if (typeof val !== "boolean") {
             push(diag(config, filePath, "settings-json/plugins-boolean", "warning",
-              `"enabledPlugins.${key}" should be a boolean (got ${typeof val})`));
+              `"enabledPlugins.${key}" should be a boolean (got ${typeof val})`, kp?.line, kp?.column));
           }
           if (!key.includes("@")) {
             push(diag(config, filePath, "settings-json/plugins-format", "warning",
-              `Plugin key "${key}" should be in "name@marketplace" format`));
+              `Plugin key "${key}" should be in "name@marketplace" format`, kp?.line, kp?.column));
           }
         }
       }
@@ -189,8 +212,9 @@ export const settingsJsonLinter: Linter = {
     // skipDangerousModePermissionPrompt — user-level only
     if ("skipDangerousModePermissionPrompt" in parsed) {
       if (typeof parsed.skipDangerousModePermissionPrompt !== "boolean") {
+        const sp = findKeyPosition(content, "skipDangerousModePermissionPrompt");
         push(diag(config, filePath, "settings-json/skip-prompt-boolean", "error",
-          "\"skipDangerousModePermissionPrompt\" must be a boolean"));
+          "\"skipDangerousModePermissionPrompt\" must be a boolean", sp?.line, sp?.column));
       }
     }
 
