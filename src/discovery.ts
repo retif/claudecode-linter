@@ -1,7 +1,8 @@
-import { statSync, existsSync } from "node:fs";
-import { basename, dirname, resolve, join } from "node:path";
+import { statSync, existsSync, readFileSync } from "node:fs";
+import { basename, dirname, resolve, join, relative } from "node:path";
 import { homedir } from "node:os";
 import { globSync } from "glob";
+import { minimatch } from "minimatch";
 import type { ArtifactType, ConfigScope, DiscoveredArtifact } from "./types.js";
 
 const CLAUDE_USER_DIR = join(homedir(), ".claude");
@@ -9,11 +10,41 @@ const CLAUDE_USER_DIR = join(homedir(), ".claude");
 export interface DiscoverOptions {
   /** Filter artifacts by scope, or override detected scope */
   scope?: ConfigScope;
+  /** Glob patterns to ignore (in addition to .claude-lint-ignore) */
+  ignore?: string[];
+}
+
+function loadIgnoreFile(dir: string): string[] {
+  const ignoreFile = join(dir, ".claude-lint-ignore");
+  if (!existsSync(ignoreFile)) return [];
+  return readFileSync(ignoreFile, "utf-8")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith("#"));
+}
+
+function isIgnored(filePath: string, patterns: string[]): boolean {
+  if (patterns.length === 0) return false;
+  const abs = resolve(filePath);
+  for (const pattern of patterns) {
+    // Match against absolute path
+    if (minimatch(abs, pattern, { matchBase: true, dot: true })) return true;
+    // Also match against the basename alone (for simple patterns like "*.md")
+    if (minimatch(basename(abs), pattern, { dot: true })) return true;
+  }
+  return false;
 }
 
 export function discoverArtifacts(targetPath: string, options?: DiscoverOptions): DiscoveredArtifact[] {
   const resolved = resolve(targetPath);
   const stat = statSync(resolved);
+
+  // Combine .claude-lint-ignore patterns with CLI --ignore patterns
+  const ignoreDir = stat.isDirectory() ? resolved : dirname(resolved);
+  const ignorePatterns = [
+    ...loadIgnoreFile(ignoreDir),
+    ...(options?.ignore ?? []),
+  ];
 
   let artifacts: DiscoveredArtifact[];
 
@@ -37,6 +68,11 @@ export function discoverArtifacts(targetPath: string, options?: DiscoverOptions)
         if (!seen.has(a.filePath)) artifacts.push(a);
       }
     }
+  }
+
+  // Apply ignore patterns
+  if (ignorePatterns.length > 0) {
+    artifacts = artifacts.filter((a) => !isIgnored(a.filePath, ignorePatterns));
   }
 
   // Apply scope filter/override
@@ -196,7 +232,7 @@ function classifyFile(filePath: string): ArtifactType | null {
 
   // Claude config files
   if (name === "settings.json" || name === "settings.local.json") return "settings-json";
-  if (name === ".mcp.json" || (name === "mcp.json" && parent === ".claude")) return "mcp-json";
+  if (name === ".mcp.json" || name === "mcp.json") return "mcp-json";
   if (name === "CLAUDE.md") return "claude-md";
 
   return null;

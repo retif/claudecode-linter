@@ -1,6 +1,20 @@
 import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 
+interface RuleDef { id: string; defaultSeverity: Severity; }
+
+const RULES: RuleDef[] = [
+  { id: "hooks-json/valid-json", defaultSeverity: "error" },
+  { id: "hooks-json/root-hooks-key", defaultSeverity: "error" },
+  { id: "hooks-json/valid-event-names", defaultSeverity: "error" },
+  { id: "hooks-json/hook-type-required", defaultSeverity: "error" },
+  { id: "hooks-json/command-has-command", defaultSeverity: "error" },
+  { id: "hooks-json/no-hardcoded-paths", defaultSeverity: "warning" },
+  { id: "hooks-json/prompt-has-prompt", defaultSeverity: "error" },
+  { id: "hooks-json/prompt-event-support", defaultSeverity: "warning" },
+  { id: "hooks-json/timeout-range", defaultSeverity: "warning" },
+];
+
 const VALID_EVENTS = new Set([
   "PreToolUse", "PostToolUse", "UserPromptSubmit",
   "Stop", "SubagentStop", "SessionStart", "SessionEnd",
@@ -124,3 +138,5 @@ export const hooksJsonLinter: Linter = {
     return diagnostics;
   },
 };
+
+export { RULES as HOOKS_JSON_RULES };

@@ -45,11 +45,6 @@ export const frontmatterFixer: Fixer = {
       data.name = toKebabCase(data.name);
     }
 
-    // Quote description if it contains colons (YAML parsing hazard)
-    if (typeof data.description === "string" && data.description.includes(":") && !data.description.includes("\n")) {
-      // stringifyYaml handles quoting automatically
-    }
-
     // Re-serialize frontmatter
     const newFm = stringifyYaml(data, { lineWidth: 0, defaultStringType: "PLAIN" }).trimEnd();
 

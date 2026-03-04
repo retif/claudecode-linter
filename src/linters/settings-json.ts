@@ -2,6 +2,25 @@ import { basename } from "node:path";
 import type { Linter, LintDiagnostic, LinterConfig, Severity, ConfigScope } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 
+interface RuleDef { id: string; defaultSeverity: Severity; }
+
+const RULES: RuleDef[] = [
+  { id: "settings-json/valid-json", defaultSeverity: "error" },
+  { id: "settings-json/scope-file-name", defaultSeverity: "error" },
+  { id: "settings-json/scope-field", defaultSeverity: "warning" },
+  { id: "settings-json/no-unknown-fields", defaultSeverity: "warning" },
+  { id: "settings-json/permissions-object", defaultSeverity: "error" },
+  { id: "settings-json/allow-array", defaultSeverity: "error" },
+  { id: "settings-json/allow-known-tools", defaultSeverity: "warning" },
+  { id: "settings-json/deny-array", defaultSeverity: "error" },
+  { id: "settings-json/env-object", defaultSeverity: "error" },
+  { id: "settings-json/env-string-values", defaultSeverity: "warning" },
+  { id: "settings-json/plugins-object", defaultSeverity: "error" },
+  { id: "settings-json/plugins-boolean", defaultSeverity: "warning" },
+  { id: "settings-json/plugins-format", defaultSeverity: "warning" },
+  { id: "settings-json/skip-prompt-boolean", defaultSeverity: "error" },
+];
+
 // Fields valid at user level (settings.json)
 const USER_FIELDS = new Set([
   "env", "permissions", "enabledPlugins",
@@ -178,3 +197,5 @@ export const settingsJsonLinter: Linter = {
     return diagnostics;
   },
 };
+
+export { RULES as SETTINGS_JSON_RULES };

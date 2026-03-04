@@ -2,6 +2,23 @@ import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
 
+interface RuleDef { id: string; defaultSeverity: Severity; }
+
+const RULES: RuleDef[] = [
+  { id: "agent-md/valid-frontmatter", defaultSeverity: "error" },
+  { id: "agent-md/name-required", defaultSeverity: "error" },
+  { id: "agent-md/name-format", defaultSeverity: "error" },
+  { id: "agent-md/description-required", defaultSeverity: "error" },
+  { id: "agent-md/description-examples", defaultSeverity: "warning" },
+  { id: "agent-md/model-required", defaultSeverity: "error" },
+  { id: "agent-md/model-valid", defaultSeverity: "warning" },
+  { id: "agent-md/color-required", defaultSeverity: "error" },
+  { id: "agent-md/color-valid", defaultSeverity: "warning" },
+  { id: "agent-md/system-prompt-present", defaultSeverity: "error" },
+  { id: "agent-md/system-prompt-length", defaultSeverity: "warning" },
+  { id: "agent-md/system-prompt-second-person", defaultSeverity: "info" },
+];
+
 const VALID_MODELS = new Set(["inherit", "sonnet", "opus", "haiku"]);
 const VALID_COLORS = new Set(["blue", "cyan", "green", "yellow", "magenta", "red"]);
 
@@ -100,3 +117,5 @@ export const agentMdLinter: Linter = {
     return diagnostics;
   },
 };
+
+export { RULES as AGENT_MD_RULES };

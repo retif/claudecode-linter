@@ -2,6 +2,15 @@ import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
 
+interface RuleDef { id: string; defaultSeverity: Severity; }
+
+const RULES: RuleDef[] = [
+  { id: "command-md/valid-frontmatter", defaultSeverity: "error" },
+  { id: "command-md/description-required", defaultSeverity: "error" },
+  { id: "command-md/allowed-tools-valid", defaultSeverity: "warning" },
+  { id: "command-md/body-present", defaultSeverity: "warning" },
+];
+
 const KNOWN_TOOLS = new Set([
   "Read", "Write", "Edit", "Bash", "Glob", "Grep",
   "WebFetch", "WebSearch", "Agent", "AskUserQuestion",
@@ -70,3 +79,5 @@ export const commandMdLinter: Linter = {
     return diagnostics;
   },
 };
+
+export { RULES as COMMAND_MD_RULES };

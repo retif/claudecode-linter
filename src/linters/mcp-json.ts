@@ -3,6 +3,27 @@ import type { Linter, LintDiagnostic, LinterConfig, Severity, ConfigScope } from
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { isKebabCase } from "../utils/kebab-case.js";
 
+interface RuleDef { id: string; defaultSeverity: Severity; }
+
+const RULES: RuleDef[] = [
+  { id: "mcp-json/scope-file-name", defaultSeverity: "warning" },
+  { id: "mcp-json/valid-json", defaultSeverity: "error" },
+  { id: "mcp-json/servers-required", defaultSeverity: "error" },
+  { id: "mcp-json/servers-object", defaultSeverity: "error" },
+  { id: "mcp-json/server-name-kebab", defaultSeverity: "info" },
+  { id: "mcp-json/server-object", defaultSeverity: "error" },
+  { id: "mcp-json/server-transport", defaultSeverity: "error" },
+  { id: "mcp-json/url-protocol", defaultSeverity: "warning" },
+  { id: "mcp-json/url-valid", defaultSeverity: "error" },
+  { id: "mcp-json/type-matches-transport", defaultSeverity: "warning" },
+  { id: "mcp-json/command-args-split", defaultSeverity: "info" },
+  { id: "mcp-json/args-array", defaultSeverity: "error" },
+  { id: "mcp-json/env-object", defaultSeverity: "error" },
+  { id: "mcp-json/env-string-values", defaultSeverity: "warning" },
+  { id: "mcp-json/no-unknown-server-fields", defaultSeverity: "info" },
+  { id: "mcp-json/no-unknown-root-fields", defaultSeverity: "info" },
+];
+
 const KNOWN_SERVER_FIELDS = new Set([
   "type", "url", "command", "args", "env", "cwd",
 ]);
@@ -165,3 +186,5 @@ export const mcpJsonLinter: Linter = {
     return diagnostics;
   },
 };
+
+export { RULES as MCP_JSON_RULES };

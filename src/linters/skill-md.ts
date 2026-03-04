@@ -3,6 +3,22 @@ import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
 import { isKebabCase } from "../utils/kebab-case.js";
 
+interface RuleDef { id: string; defaultSeverity: Severity; }
+
+const RULES: RuleDef[] = [
+  { id: "skill-md/valid-frontmatter", defaultSeverity: "error" },
+  { id: "skill-md/name-required", defaultSeverity: "error" },
+  { id: "skill-md/name-kebab-case", defaultSeverity: "error" },
+  { id: "skill-md/name-max-length", defaultSeverity: "error" },
+  { id: "skill-md/description-required", defaultSeverity: "error" },
+  { id: "skill-md/description-max-length", defaultSeverity: "error" },
+  { id: "skill-md/description-no-angle-brackets", defaultSeverity: "error" },
+  { id: "skill-md/description-trigger-phrases", defaultSeverity: "warning" },
+  { id: "skill-md/no-unknown-frontmatter", defaultSeverity: "warning" },
+  { id: "skill-md/body-word-count", defaultSeverity: "warning" },
+  { id: "skill-md/body-has-headers", defaultSeverity: "info" },
+];
+
 const KNOWN_FRONTMATTER = new Set([
   "name", "description", "version", "license",
   "allowed-tools", "metadata", "compatibility",
@@ -106,3 +122,5 @@ export const skillMdLinter: Linter = {
     return diagnostics;
   },
 };
+
+export { RULES as SKILL_MD_RULES };

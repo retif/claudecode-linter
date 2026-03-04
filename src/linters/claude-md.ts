@@ -1,6 +1,21 @@
 import type { Linter, LintDiagnostic, LinterConfig, Severity, ConfigScope } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 
+interface RuleDef { id: string; defaultSeverity: Severity; }
+
+const RULES: RuleDef[] = [
+  { id: "claude-md/not-empty", defaultSeverity: "warning" },
+  { id: "claude-md/starts-with-heading", defaultSeverity: "info" },
+  { id: "claude-md/has-sections", defaultSeverity: "warning" },
+  { id: "claude-md/user-level-concise", defaultSeverity: "info" },
+  { id: "claude-md/project-has-overview", defaultSeverity: "info" },
+  { id: "claude-md/no-secrets", defaultSeverity: "error" },
+  { id: "claude-md/file-length", defaultSeverity: "warning" },
+  { id: "claude-md/no-absolute-paths", defaultSeverity: "info" },
+  { id: "claude-md/no-todo-markers", defaultSeverity: "info" },
+  { id: "claude-md/no-trailing-whitespace", defaultSeverity: "info" },
+];
+
 function diag(
   config: LinterConfig,
   filePath: string,
@@ -122,3 +137,5 @@ export const claudeMdLinter: Linter = {
     return diagnostics;
   },
 };
+
+export { RULES as CLAUDE_MD_RULES };
