@@ -1,0 +1,112 @@
+# claude-lint default configuration
+# Copy this file to .claude-lint.yaml in your project root to customize.
+# Set a rule to `false` to disable it, or override its severity.
+#
+# Examples:
+#   plugin-json/no-unknown-fields: false
+#   claude-md/file-length: { enabled: true, severity: error }
+
+rules:
+  # ── plugin.json ──────────────────────────────────────────
+  plugin-json/valid-json: error
+  plugin-json/name-required: error
+  plugin-json/name-kebab-case: error
+  plugin-json/name-length: error
+  plugin-json/description-required: warning
+  plugin-json/version-semver: warning
+  plugin-json/author-object: info
+  plugin-json/repository-url: warning
+  plugin-json/keywords-array: warning
+  plugin-json/keywords-no-duplicates: warning
+  plugin-json/no-unknown-fields: info
+  plugin-json/license-spdx: info
+
+  # ── SKILL.md ─────────────────────────────────────────────
+  skill-md/valid-frontmatter: error
+  skill-md/name-required: error
+  skill-md/name-kebab-case: error
+  skill-md/name-max-length: error
+  skill-md/description-required: error
+  skill-md/description-max-length: error
+  skill-md/description-no-angle-brackets: error
+  skill-md/description-trigger-phrases: warning
+  skill-md/no-unknown-frontmatter: warning
+  skill-md/body-word-count: warning
+  skill-md/body-has-headers: info
+
+  # ── Agent .md ────────────────────────────────────────────
+  agent-md/valid-frontmatter: error
+  agent-md/name-required: error
+  agent-md/name-format: error
+  agent-md/description-required: error
+  agent-md/description-examples: warning
+  agent-md/model-required: error
+  agent-md/model-valid: warning
+  agent-md/color-required: error
+  agent-md/color-valid: warning
+  agent-md/system-prompt-present: error
+  agent-md/system-prompt-length: warning
+  agent-md/system-prompt-second-person: info
+
+  # ── Command .md ──────────────────────────────────────────
+  command-md/valid-frontmatter: error
+  command-md/description-required: error
+  command-md/allowed-tools-valid: warning
+  command-md/body-present: warning
+
+  # ── hooks.json ───────────────────────────────────────────
+  hooks-json/valid-json: error
+  hooks-json/root-hooks-key: error
+  hooks-json/valid-event-names: error
+  hooks-json/hook-type-required: error
+  hooks-json/command-has-command: error
+  hooks-json/no-hardcoded-paths: warning
+  hooks-json/prompt-has-prompt: error
+  hooks-json/prompt-event-support: warning
+  hooks-json/timeout-range: warning
+
+  # ── settings.json ────────────────────────────────────────
+  settings-json/valid-json: error
+  settings-json/scope-file-name: error
+  settings-json/scope-field: warning
+  settings-json/no-unknown-fields: warning
+  settings-json/permissions-object: error
+  settings-json/allow-array: error
+  settings-json/allow-known-tools: warning
+  settings-json/deny-array: error
+  settings-json/env-object: error
+  settings-json/env-string-values: warning
+  settings-json/plugins-object: error
+  settings-json/plugins-boolean: warning
+  settings-json/plugins-format: warning
+  settings-json/skip-prompt-boolean: error
+
+  # ── mcp.json ─────────────────────────────────────────────
+  mcp-json/scope-file-name: warning
+  mcp-json/valid-json: error
+  mcp-json/servers-required: error
+  mcp-json/servers-object: error
+  mcp-json/server-name-kebab: info
+  mcp-json/server-object: error
+  mcp-json/server-transport: error
+  mcp-json/url-protocol: warning
+  mcp-json/url-valid: error
+  mcp-json/type-matches-transport: warning
+  mcp-json/command-args-split: info
+  mcp-json/args-array: error
+  mcp-json/env-object: error
+  mcp-json/env-string-values: warning
+  mcp-json/no-unknown-server-fields: info
+  mcp-json/no-unknown-root-fields: info
+
+  # ── CLAUDE.md ────────────────────────────────────────────
+  claude-md/not-empty: warning
+  claude-md/starts-with-heading: info
+  claude-md/has-sections: warning
+  claude-md/user-level-concise: info
+  claude-md/project-has-overview: info
+  claude-md/no-secrets: error
+  claude-md/file-length: warning
+  claude-md/no-absolute-paths: info
+  claude-md/no-todo-markers: info
+  claude-md/no-trailing-whitespace: info
