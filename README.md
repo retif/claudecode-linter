@@ -115,6 +115,19 @@ No issues found.
 
 ## Configuration
 
+Generate a config file with all rules and their default severities:
+
+```bash
+# Create .claude-lint.yaml in current directory
+claude-lint --init
+
+# Create in a specific directory
+claude-lint --init ~/projects/my-plugin/
+
+# Create in home directory (applies globally)
+claude-lint --init ~
+```
+
 claude-lint looks for config in this order:
 
 1. `.claude-lint.yaml` or `.claude-lint.yml` in the current directory

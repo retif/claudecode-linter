@@ -1,5 +1,5 @@
 {
-  "name": "claude-lint",
+  "name": "@retif/claude-lint",
   "version": "0.1.0",
   "description": "Standalone linter for Claude Code plugin artifacts",
   "type": "module",

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync } from "node:fs";
-import { relative } from "node:path";
+import { readFileSync, writeFileSync, copyFileSync, existsSync } from "node:fs";
+import { resolve, relative, dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { loadConfig, mergeCliRules } from "./config.js";
 import { discoverArtifacts } from "./discovery.js";
@@ -116,8 +117,24 @@ program
   .option("--rule <rule>", "Run only this single rule ID")
   .option("--list-rules", "Print all rules with their default severity and exit")
   .option("--fix-dry-run", "Run fixers but print diff instead of writing")
+  .option("--init [path]", "Copy default config to path (default: current directory)")
   .action(async (paths: string[], opts) => {
     try {
+      if (opts.init !== undefined) {
+        const __filename = fileURLToPath(import.meta.url);
+        const pkgDir = dirname(dirname(__filename));
+        const defaultsFile = join(pkgDir, ".claude-lint.defaults.yaml");
+        const targetDir = typeof opts.init === "string" ? resolve(opts.init) : process.cwd();
+        const targetFile = join(targetDir, ".claude-lint.yaml");
+        if (existsSync(targetFile)) {
+          process.stderr.write(`${targetFile} already exists\n`);
+          process.exit(1);
+        }
+        copyFileSync(defaultsFile, targetFile);
+        process.stdout.write(`Created ${targetFile}\n`);
+        process.exit(0);
+      }
+
       if (opts.listRules) {
         for (const rule of ALL_RULES) {
           process.stdout.write(`${rule.id}\t${rule.defaultSeverity}\n`);
