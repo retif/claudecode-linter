@@ -33,6 +33,7 @@ steps:
   build:
     image: node:20
     commands:
+      - echo "=== .claude-code-version ===" && cat .claude-code-version && echo "==="
       - npx tsx scripts/extract-contracts.ts --changelog
       - npx tsx scripts/generate-contracts.ts
       - npm run build
@@ -75,6 +76,8 @@ steps:
     commands:
       - |
         set -e
+        echo "=== .claude-code-version ===" && cat .claude-code-version && echo "==="
+        echo "=== ls -la ===" && ls -la .claude-code-version
         VERSION=$(cat .claude-code-version)
         echo "VERSION=${VERSION}"
         echo "TOKEN_LEN=${#GITEA_TOKEN}"
