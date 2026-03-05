@@ -1,7 +1,7 @@
 {
   "name": "claude-lint",
   "version": "0.1.0",
-  "description": "Standalone linter and formatter for Claude Code plugin artifacts",
+  "description": "Standalone linter for Claude Code plugin artifacts",
   "type": "module",
   "bin": {
     "claude-lint": "./dist/index.js"
@@ -23,7 +23,7 @@
     "claude-code",
     "plugin",
     "linter",
-    "formatter",
+    "fixer",
     "cli"
   ],
   "license": "MIT",

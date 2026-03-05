@@ -100,10 +100,10 @@ const program = new Command();
 
 program
   .name("claude-lint")
-  .description("Linter and formatter for Claude Code plugin artifacts")
+  .description("Linter for Claude Code plugin artifacts")
   .version("0.1.0")
   .argument("[paths...]", "Plugin directories or individual files", ["."])
-  .option("-f, --format", "Auto-fix fixable issues")
+  .option("--fix", "Auto-fix fixable issues")
   .option("--output <type>", "Output format: human | json", "human")
   .option("--config <path>", "Config file path")
   .option("--scope <scope>", "Filter by scope: user | project | subdirectory")
@@ -146,21 +146,17 @@ program
         }
 
         for (const artifact of artifacts) {
-          const content = readFileSync(artifact.filePath, "utf-8");
+          let content = readFileSync(artifact.filePath, "utf-8");
           const linter = LINTERS[artifact.artifactType];
-          let diagnostics = linter.lint(artifact.filePath, content, config, artifact.scope);
-
-          if (opts.rule) {
-            diagnostics = diagnostics.filter((d) => d.rule === (opts.rule as string));
-          }
 
           let fixed = 0;
-          if (opts.format) {
+          if (opts.fix) {
             const fixer = FIXERS[artifact.artifactType];
             if (fixer) {
               const fixedContent = fixer.fix(artifact.filePath, content, config);
               if (fixedContent !== content) {
                 writeFileSync(artifact.filePath, fixedContent);
+                content = fixedContent;
                 fixed = 1;
               }
             }
@@ -175,11 +171,17 @@ program
             }
           }
 
+          let diagnostics = linter.lint(artifact.filePath, content, config, artifact.scope);
+
+          if (opts.rule) {
+            diagnostics = diagnostics.filter((d) => d.rule === (opts.rule as string));
+          }
+
           results.push({
             file: relative(process.cwd(), artifact.filePath),
             artifact: artifact.artifactType,
             diagnostics,
-            fixed: opts.format ? fixed : undefined,
+            fixed: opts.fix ? fixed : undefined,
           });
         }
       }

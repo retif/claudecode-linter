@@ -72,7 +72,7 @@ export const claudeMdLinter: Linter = {
     }
     if (scope === "project") {
       // Project CLAUDE.md should have a project description
-      const hasProjectOverview = lines.some((l) => /^#+ .*(overview|project|about|description)/i.test(l));
+      const hasProjectOverview = lines.some((l) => /^#+ .*(overview|project|about|description|what this is|introduction|summary)/i.test(l));
       if (!hasProjectOverview && h2Count > 0) {
         push(diag(config, filePath, "claude-md/project-has-overview", "info",
           "Project CLAUDE.md should include a project overview section"));

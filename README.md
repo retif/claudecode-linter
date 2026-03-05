@@ -1,6 +1,6 @@
 # claude-lint
 
-Standalone linter and formatter for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin artifacts.
+Standalone linter for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin artifacts.
 
 Validates `plugin.json`, `SKILL.md`, agent/command markdown, `hooks.json`, `mcp.json`, `settings.json`, and `CLAUDE.md` files with 88 rules across 8 artifact types.
 
@@ -45,13 +45,13 @@ claude-lint --enable skill-md/word-count --disable claude-md/no-todos path/to/pl
 claude-lint --list-rules
 ```
 
-### Format
+### Fix
 
 Auto-fix issues in place. Fixers run first, then the linter validates the result — so the output shows only issues that remain after fixing:
 
 ```bash
 # Fix issues in place
-claude-lint -f path/to/plugin/
+claude-lint --fix path/to/plugin/
 
 # Preview fixes without writing (shows diff)
 claude-lint --fix-dry-run path/to/plugin/
@@ -124,7 +124,7 @@ rules:
 
 ## Fixers
 
-The `--format` flag applies auto-fixes:
+The `--fix` flag applies auto-fixes:
 
 - **plugin-json**: Sorts keys, normalizes indent
 - **skill-md / agent-md / command-md**: Normalizes frontmatter name to kebab-case, fixes trailing whitespace, quotes invalid YAML values (pre-parse fixer)
