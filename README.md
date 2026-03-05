@@ -136,12 +136,16 @@ rules:
 
 Both `--format` and `--fix` run the same fixers. The difference: `--format` only formats and reports changes, `--fix` also lints the result afterwards.
 
-- **plugin-json**: Sorts keys, normalizes indent
-- **skill-md / agent-md / command-md**: Normalizes frontmatter name to kebab-case, fixes trailing whitespace, quotes invalid YAML values (pre-parse fixer)
-- **hooks-json**: Sorts keys, normalizes indent
-- **mcp-json**: Sorts servers alphabetically, orders fields canonically
-- **settings-json**: Sorts keys in canonical order, sorts permission arrays
-- **claude-md**: Strips trailing whitespace, ensures trailing newline, blank lines before headings
+Formatting is powered by [prettier](https://prettier.io/) for consistent JSON and markdown output. Custom logic handles domain-specific transformations that prettier can't (key sorting, YAML fixes, kebab-case normalization).
+
+| Artifact | Prettier | Custom logic |
+|----------|----------|--------------|
+| plugin-json | Tab-indented JSON | Canonical key ordering |
+| hooks-json | 2-space JSON | Alphabetical key sorting |
+| mcp-json | 2-space JSON | Server name sorting, canonical field ordering |
+| settings-json | 2-space JSON | Canonical key ordering, permission array sorting |
+| skill-md / agent-md / command-md | Markdown body | Frontmatter YAML normalization, kebab-case names, pre-parse quoting |
+| claude-md | Markdown | Blank line before headings |
 
 ## Exit Codes
 
