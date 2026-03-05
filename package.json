@@ -16,7 +16,7 @@
   },
   "files": [
     "dist/",
-    "defaults.yaml",
+    ".claude-lint.defaults.yaml",
     "README.md"
   ],
   "keywords": [

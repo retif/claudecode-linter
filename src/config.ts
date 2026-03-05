@@ -1,6 +1,11 @@
 import { readFileSync, existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { homedir } from "node:os";
 import { parse as parseYaml } from "yaml";
 import type { LinterConfig, RuleConfig } from "./types.js";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const DEFAULT_CONFIG: LinterConfig = {
   rules: {},
@@ -34,10 +39,23 @@ export function loadConfig(configPath?: string): LinterConfig {
 }
 
 function findConfigFile(): string | undefined {
-  const candidates = [".claude-lint.yaml", ".claude-lint.yml"];
-  for (const name of candidates) {
+  // 1. Check cwd
+  const cwdCandidates = [".claude-lint.yaml", ".claude-lint.yml"];
+  for (const name of cwdCandidates) {
     if (existsSync(name)) return name;
   }
+
+  // 2. Check home directory
+  const home = homedir();
+  for (const name of cwdCandidates) {
+    const homePath = join(home, name);
+    if (existsSync(homePath)) return homePath;
+  }
+
+  // 3. Fall back to bundled defaults
+  const bundled = join(__dirname, "..", ".claude-lint.defaults.yaml");
+  if (existsSync(bundled)) return bundled;
+
   return undefined;
 }
 
