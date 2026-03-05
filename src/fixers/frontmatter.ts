@@ -88,6 +88,6 @@ export const frontmatterFixer: Fixer = {
     // Re-serialize frontmatter
     const newFm = stringifyYaml(data, { lineWidth: 0, defaultStringType: "PLAIN" }).trimEnd();
 
-    return `---\n${newFm}\n---${body}`;
+    return `---\n${newFm}\n---\n${body}`;
   },
 };

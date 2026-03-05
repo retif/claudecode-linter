@@ -103,7 +103,8 @@ program
   .description("Linter for Claude Code plugin artifacts")
   .version("0.1.0")
   .argument("[paths...]", "Plugin directories or individual files", ["."])
-  .option("--fix", "Auto-fix fixable issues")
+  .option("--fix", "Auto-fix lint violations, then report remaining issues")
+  .option("--format", "Format all artifacts for consistent style (no lint output)")
   .option("--output <type>", "Output format: human | json", "human")
   .option("--config <path>", "Config file path")
   .option("--scope <scope>", "Filter by scope: user | project | subdirectory")
@@ -132,6 +133,7 @@ program
 
       const config = mergeCliRules(loadConfig(opts.config), enableList, disableList);
       const results: LintResult[] = [];
+      const formatted: string[] = [];
       const scopeFilter = opts.scope as ConfigScope | undefined;
       const ignorePatterns: string[] = opts.ignore
         ? opts.ignore.split(",").map((p: string) => p.trim()).filter(Boolean)
@@ -147,6 +149,20 @@ program
 
         for (const artifact of artifacts) {
           let content = readFileSync(artifact.filePath, "utf-8");
+          const relPath = relative(process.cwd(), artifact.filePath);
+
+          if (opts.format) {
+            const fixer = FIXERS[artifact.artifactType];
+            if (fixer) {
+              const fixedContent = fixer.fix(artifact.filePath, content, config);
+              if (fixedContent !== content) {
+                writeFileSync(artifact.filePath, fixedContent);
+                formatted.push(relPath);
+              }
+            }
+            continue;
+          }
+
           const linter = LINTERS[artifact.artifactType];
 
           let fixed = 0;
@@ -178,12 +194,24 @@ program
           }
 
           results.push({
-            file: relative(process.cwd(), artifact.filePath),
+            file: relPath,
             artifact: artifact.artifactType,
             diagnostics,
             fixed: opts.fix ? fixed : undefined,
           });
         }
+      }
+
+      if (opts.format) {
+        if (formatted.length === 0) {
+          process.stdout.write("All files already formatted.\n");
+        } else {
+          for (const f of formatted) {
+            process.stdout.write(`formatted ${f}\n`);
+          }
+          process.stdout.write(`\n${formatted.length} file${formatted.length === 1 ? "" : "s"} formatted.\n`);
+        }
+        process.exit(0);
       }
 
       if (!opts.fixDryRun) {

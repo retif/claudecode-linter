@@ -45,9 +45,18 @@ claude-lint --enable skill-md/word-count --disable claude-md/no-todos path/to/pl
 claude-lint --list-rules
 ```
 
+### Format
+
+Reformat all artifacts for consistent style (sorted keys, normalized indentation, trailing whitespace, kebab-case names, quoted YAML values). No lint output — just formats and reports what changed:
+
+```bash
+# Format all artifacts in place
+claude-lint --format path/to/plugin/
+```
+
 ### Fix
 
-Auto-fix issues in place. Fixers run first, then the linter validates the result — so the output shows only issues that remain after fixing:
+Fix lint violations in place, then lint the result — output shows only issues that remain after fixing:
 
 ```bash
 # Fix issues in place
@@ -124,7 +133,7 @@ rules:
 
 ## Fixers
 
-The `--fix` flag applies auto-fixes:
+Both `--format` and `--fix` run the same fixers. The difference: `--format` only formats and reports changes, `--fix` also lints the result afterwards.
 
 - **plugin-json**: Sorts keys, normalizes indent
 - **skill-md / agent-md / command-md**: Normalizes frontmatter name to kebab-case, fixes trailing whitespace, quotes invalid YAML values (pre-parse fixer)
