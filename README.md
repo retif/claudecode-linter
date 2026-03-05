@@ -18,18 +18,16 @@ npx claude-lint ~/projects/my-plugin/
 
 ## Usage
 
+### Lint
+
+Check plugin artifacts for errors without modifying files:
+
 ```bash
 # Lint a plugin directory
 claude-lint path/to/plugin/
 
 # Lint multiple paths
 claude-lint plugin-a/ plugin-b/
-
-# Auto-fix fixable issues
-claude-lint -f path/to/plugin/
-
-# Preview fixes without writing
-claude-lint --fix-dry-run path/to/plugin/
 
 # JSON output
 claude-lint --output json path/to/plugin/
@@ -45,6 +43,18 @@ claude-lint --enable skill-md/word-count --disable claude-md/no-todos path/to/pl
 
 # List all available rules
 claude-lint --list-rules
+```
+
+### Format
+
+Auto-fix issues in place. Fixers run first, then the linter validates the result — so the output shows only issues that remain after fixing:
+
+```bash
+# Fix issues in place
+claude-lint -f path/to/plugin/
+
+# Preview fixes without writing (shows diff)
+claude-lint --fix-dry-run path/to/plugin/
 ```
 
 ### Example Output
