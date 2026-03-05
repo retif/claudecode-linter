@@ -103,6 +103,7 @@ program
   .description("Linter for Claude Code plugin artifacts")
   .version("0.1.0")
   .argument("[paths...]", "Plugin directories or individual files", ["."])
+  .option("--lint", "Lint artifacts and report issues (default)")
   .option("--fix", "Auto-fix lint violations, then report remaining issues")
   .option("--format", "Format all artifacts for consistent style (no lint output)")
   .option("--output <type>", "Output format: human | json", "human")

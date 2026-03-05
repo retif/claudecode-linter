@@ -20,11 +20,12 @@ npx claude-lint ~/projects/my-plugin/
 
 ### Lint
 
-Check plugin artifacts for errors without modifying files:
+Check plugin artifacts for errors without modifying files. This is the default mode — `--lint` is optional:
 
 ```bash
 # Lint a plugin directory
-claude-lint path/to/plugin/
+claude-lint --lint path/to/plugin/
+claude-lint path/to/plugin/  # same thing
 
 # Lint multiple paths
 claude-lint plugin-a/ plugin-b/
