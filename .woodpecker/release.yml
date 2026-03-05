@@ -75,7 +75,9 @@ steps:
   # ----------------------------------------------------------------
   commit-and-tag:
     image: node:20
-    secrets: [gitea_token]
+    environment:
+      GITEA_TOKEN:
+        from_secret: gitea_token
     commands:
       - VERSION=$(cat .claude-code-version)
       - git config user.name "Woodpecker CI"
@@ -105,7 +107,9 @@ steps:
   # ----------------------------------------------------------------
   release:
     image: node:20
-    secrets: [gitea_token]
+    environment:
+      GITEA_TOKEN:
+        from_secret: gitea_token
     commands:
       - VERSION=$(cat .claude-code-version)
       - npm pack
