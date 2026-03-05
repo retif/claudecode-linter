@@ -44,15 +44,16 @@ steps:
   prepare-release:
     image: node:20
     commands:
+      - VERSION=$(cat .claude-code-version)
       - |
-        VERSION=$(cat .claude-code-version)
         node -e "
           const fs = require('fs');
           const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
           pkg.version = process.argv[1];
           fs.writeFileSync('package.json', JSON.stringify(pkg, null, '\t') + '\n');
         " "$VERSION"
-        npm install --package-lock-only
+      - npm install --package-lock-only
+      - |
         if [ -f CHANGELOG.md ]; then
           tail -n +2 CHANGELOG.md > CHANGELOG_OLD.md
           echo "# Changelog" > CHANGELOG.md
@@ -65,8 +66,8 @@ steps:
           echo "" >> CHANGELOG.md
           cat CHANGELOG_ENTRY.md >> CHANGELOG.md
         fi
-        echo "=== CHANGELOG.md ==="
-        head -40 CHANGELOG.md
+      - echo "=== CHANGELOG.md ==="
+      - head -40 CHANGELOG.md
 
   # ----------------------------------------------------------------
   # 4. Commit, tag, push
@@ -77,19 +78,14 @@ steps:
       GITEA_TOKEN:
         from_secret: gitea_token
     commands:
+      - VERSION=$(cat .claude-code-version)
+      - echo "VERSION=$VERSION GITEA_TOKEN_LEN=${#GITEA_TOKEN}"
+      - git config user.name "Woodpecker CI"
+      - git config user.email "ci@woodpecker"
+      - git add -A
+      - 'git commit -m "release: sync with Claude Code v${VERSION}"'
+      - 'git tag -a "v${VERSION}" -m "v${VERSION}"'
       - |
-        set -ex
-        echo "=== Debug ==="
-        ls -la .claude-code-version
-        cat .claude-code-version
-        echo "GITEA_TOKEN length: ${#GITEA_TOKEN}"
-        VERSION=$(cat .claude-code-version)
-        echo "VERSION=$VERSION"
-        git config user.name "Woodpecker CI"
-        git config user.email "ci@woodpecker"
-        git add -A
-        git commit -m "release: sync with Claude Code v${VERSION}"
-        git tag -a "v${VERSION}" -m "v${VERSION}"
         PUSH_URL=$(echo "$CI_REPO_CLONE_URL" | sed "s|://|://${GITEA_TOKEN}@|")
         git push "$PUSH_URL" HEAD:${CI_COMMIT_BRANCH} --tags
 
@@ -113,10 +109,10 @@ steps:
       GITEA_TOKEN:
         from_secret: gitea_token
     commands:
+      - VERSION=$(cat .claude-code-version)
+      - npm pack
+      - TARBALL=$(ls *.tgz)
       - |
-        VERSION=$(cat .claude-code-version)
-        npm pack
-        TARBALL=$(ls *.tgz)
         GITEA_API=$(echo "$CI_REPO_CLONE_URL" | sed 's|/[^/]*/[^/]*\.git$||')/api/v1
         REPO_PATH="${CI_REPO_OWNER}/${CI_REPO_NAME}"
         echo "API: $GITEA_API/repos/$REPO_PATH"
@@ -139,5 +135,5 @@ steps:
           -H "Authorization: token ${GITEA_TOKEN}" \
           "$GITEA_API/repos/$REPO_PATH/releases/${RELEASE_ID}/assets?name=${TARBALL}" \
           -F "attachment=@${TARBALL}"
-        rm -f CHANGELOG_ENTRY.md .claude-code-version
-        echo "Released v${VERSION}"
+      - rm -f CHANGELOG_ENTRY.md .claude-code-version
+      - echo "Released v${VERSION}"
