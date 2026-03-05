@@ -45,13 +45,7 @@ steps:
     image: node:20
     commands:
       - VERSION=$(cat .claude-code-version)
-      - |
-        node -e "
-          const fs = require('fs');
-          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          pkg.version = process.argv[1];
-          fs.writeFileSync('package.json', JSON.stringify(pkg, null, '\t') + '\n');
-        " "$VERSION"
+      - 'node -e "const fs=require(\"fs\");const p=JSON.parse(fs.readFileSync(\"package.json\",\"utf8\"));p.version=process.argv[1];fs.writeFileSync(\"package.json\",JSON.stringify(p,null,\"\t\")+String.fromCharCode(10));" "$VERSION"'
       - npm install --package-lock-only
       - |
         if [ -f CHANGELOG.md ]; then
