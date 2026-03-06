@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync, copyFileSync, existsSync } from "node:fs";
 import { resolve, relative, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Command } from "commander";
+import pc from "picocolors";
 import { loadConfig, mergeCliRules } from "./config.js";
 import { discoverArtifacts } from "./discovery.js";
 import { formatHuman } from "./formatters/human.js";
@@ -80,8 +81,8 @@ function simpleDiff(
 	const oldLines = oldContent.split("\n");
 	const newLines = newContent.split("\n");
 	const lines: string[] = [];
-	lines.push(`--- ${filePath}`);
-	lines.push(`+++ ${filePath} (fixed)`);
+	lines.push(pc.bold(`--- ${filePath}`));
+	lines.push(pc.bold(`+++ ${filePath} (fixed)`));
 	let i = 0;
 	let j = 0;
 	while (i < oldLines.length || j < newLines.length) {
@@ -92,15 +93,15 @@ function simpleDiff(
 			i++;
 			j++;
 		} else if (oldLine !== undefined && newLine !== undefined) {
-			lines.push(`-${oldLine}`);
-			lines.push(`+${newLine}`);
+			lines.push(pc.red(`-${oldLine}`));
+			lines.push(pc.green(`+${newLine}`));
 			i++;
 			j++;
 		} else if (oldLine !== undefined) {
-			lines.push(`-${oldLine}`);
+			lines.push(pc.red(`-${oldLine}`));
 			i++;
 		} else {
-			lines.push(`+${newLine}`);
+			lines.push(pc.green(`+${newLine}`));
 			j++;
 		}
 	}
@@ -154,17 +155,19 @@ program
 					typeof opts.init === "string" ? resolve(opts.init) : process.cwd();
 				const targetFile = join(targetDir, ".claudecode-lint.yaml");
 				if (existsSync(targetFile)) {
-					process.stderr.write(`${targetFile} already exists\n`);
+					process.stderr.write(pc.red(`${targetFile} already exists\n`));
 					process.exit(1);
 				}
 				copyFileSync(defaultsFile, targetFile);
-				process.stdout.write(`Created ${targetFile}\n`);
+				process.stdout.write(pc.green(`Created ${targetFile}\n`));
 				process.exit(0);
 			}
 
 			if (opts.listRules) {
+				const sevColor = { error: pc.red, warning: pc.yellow, info: pc.blue };
 				for (const rule of ALL_RULES) {
-					process.stdout.write(`${rule.id}\t${rule.defaultSeverity}\n`);
+					const color = sevColor[rule.defaultSeverity];
+					process.stdout.write(`${rule.id}\t${color(rule.defaultSeverity)}\n`);
 				}
 				process.exit(0);
 			}
@@ -204,7 +207,7 @@ program
 				});
 
 				if (artifacts.length === 0) {
-					process.stderr.write(`No plugin artifacts found in ${targetPath}\n`);
+					process.stderr.write(pc.yellow(`No plugin artifacts found in ${targetPath}\n`));
 					continue;
 				}
 
@@ -288,13 +291,13 @@ program
 
 			if (opts.format) {
 				if (formatted.length === 0) {
-					process.stdout.write("All files already formatted.\n");
+					process.stdout.write(pc.green("All files already formatted.\n"));
 				} else {
 					for (const f of formatted) {
-						process.stdout.write(`formatted ${f}\n`);
+						process.stdout.write(`${pc.green("formatted")} ${f}\n`);
 					}
 					process.stdout.write(
-						`\n${formatted.length} file${formatted.length === 1 ? "" : "s"} formatted.\n`,
+						`\n${pc.green(`${formatted.length} file${formatted.length === 1 ? "" : "s"} formatted.`)}\n`,
 					);
 				}
 				process.exit(0);
@@ -314,7 +317,7 @@ program
 			);
 			process.exit(hasErrors ? 1 : 0);
 		} catch (err) {
-			process.stderr.write(`Fatal error: ${(err as Error).message}\n`);
+			process.stderr.write(pc.red(`Fatal error: ${(err as Error).message}\n`));
 			process.exit(2);
 		}
 	});
