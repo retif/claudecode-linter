@@ -4,3 +4,4 @@ dist/
 .claude/
 !tests/fixtures/**/.claude/
 CHANGELOG_ENTRY.md
+.claude-code-version
