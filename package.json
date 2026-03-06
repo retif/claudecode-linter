@@ -36,6 +36,10 @@
 		"type": "git",
 		"url": "git+https://github.com/retif/claudecode-linter.git"
 	},
+	"homepage": "https://github.com/retif/claudecode-linter#readme",
+	"bugs": {
+		"url": "https://github.com/retif/claudecode-linter/issues"
+	},
 	"license": "MIT",
 	"engines": {
 		"node": ">=18"
