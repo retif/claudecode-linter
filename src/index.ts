@@ -112,7 +112,11 @@ const program = new Command();
 program
 	.name("claudecode-linter")
 	.description("Linter for Claude Code plugin artifacts")
-	.version("0.1.0")
+	.version(
+		JSON.parse(
+			readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "package.json"), "utf8"),
+		).version,
+	)
 	.argument("[paths...]", "Plugin directories or individual files", ["."])
 	.option("--lint", "Lint artifacts and report issues (default)")
 	.option("--fix", "Auto-fix lint violations, then report remaining issues")
