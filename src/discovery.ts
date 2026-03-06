@@ -1,7 +1,7 @@
 import { statSync, existsSync, readFileSync } from "node:fs";
 import { basename, dirname, resolve, join, relative } from "node:path";
 import { homedir } from "node:os";
-import { globSync } from "glob";
+import { globSync } from "tinyglobby";
 import { minimatch } from "minimatch";
 import type { ArtifactType, ConfigScope, DiscoveredArtifact } from "./types.js";
 

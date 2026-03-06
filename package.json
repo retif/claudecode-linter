@@ -16,6 +16,7 @@
 		"deps:check": "ncu",
 		"deps:update": "ncu -u",
 		"knip": "knip --exclude types",
+		"check-deps": "tsx scripts/check-deps.ts",
 		"extract-contracts": "tsx scripts/extract-contracts.ts",
 		"generate-contracts": "tsx scripts/generate-contracts.ts"
 	},
@@ -40,12 +41,12 @@
 		"node": ">=18"
 	},
 	"dependencies": {
-		"chalk": "^5.6.2",
 		"commander": "^14.0.3",
-		"glob": "^13.0.6",
 		"minimatch": "^10.2.4",
+		"picocolors": "^1.1.1",
 		"prettier": "^3.8.1",
 		"semver": "^7.7.4",
+		"tinyglobby": "^0.2.15",
 		"yaml": "^2.8.2"
 	},
 	"devDependencies": {
@@ -53,6 +54,7 @@
 		"@types/semver": "^7.7.1",
 		"acorn": "^8.16.0",
 		"acorn-walk": "^8.3.5",
+		"chalk": "^5.6.2",
 		"knip": "^5.85.0",
 		"npm-check-updates": "^19.6.3",
 		"tsx": "^4.21.0",

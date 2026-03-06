@@ -26,3 +26,6 @@ jobs:
 
       - name: Self-lint
         run: node dist/index.js tests/fixtures/valid-plugin/ || true
+
+      - name: Check replaceable dependencies
+        run: npx tsx scripts/check-deps.ts
