@@ -115,7 +115,11 @@ steps:
 
         # Publish to Gitea npm registry (--ignore-scripts: build already ran)
         echo "Publishing to $NPM_REGISTRY..."
+        echo "HOME=$HOME"
+        echo "token_len=${#GITEA_TOKEN}"
         echo "//$GITEA_HOST/api/packages/$CI_REPO_OWNER/npm/:_authToken=$GITEA_TOKEN" > "$HOME/.npmrc"
+        cat "$HOME/.npmrc" | sed 's/\(_authToken=\).*/\1***/'
+        npm whoami --registry "$NPM_REGISTRY" 2>&1 || true
         npm publish --registry "$NPM_REGISTRY" --ignore-scripts
 
         # Create npm tarball for release attachment
