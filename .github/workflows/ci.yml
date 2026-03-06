@@ -30,5 +30,8 @@ jobs:
       - name: Check replaceable dependencies
         run: npx tsx scripts/check-deps.ts
 
+      - name: Find unused code
+        run: npm run knip
+
       - name: Validate package publishing
         run: npx publint
