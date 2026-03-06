@@ -66,6 +66,20 @@ describe("skill-md linter", () => {
     expect(diags.some((d) => d.rule === "skill-md/body-has-headers")).toBe(true);
   });
 
+  it("reports description with angle brackets", () => {
+    const diags = lint(
+      "---\nname: test\ndescription: Use <html> tags for output.\n---\n\n# Test",
+    );
+    expect(diags.some((d) => d.rule === "skill-md/description-no-angle-brackets")).toBe(true);
+  });
+
+  it("does not report description without angle brackets", () => {
+    const diags = lint(
+      "---\nname: test\ndescription: This skill should be used when testing output.\n---\n\n# Test",
+    );
+    expect(diags.some((d) => d.rule === "skill-md/description-no-angle-brackets")).toBe(false);
+  });
+
   it("respects disabled rules", () => {
     const config: LinterConfig = { rules: { "skill-md/description-trigger-phrases": false } };
     const diags = skillMdLinter.lint("test.md",

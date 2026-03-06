@@ -8,6 +8,8 @@ Standalone linter for [Claude Code](https://docs.anthropic.com/en/docs/claude-co
 
 Validates `plugin.json`, `SKILL.md`, agent/command markdown, `hooks.json`, `mcp.json`, `settings.json`, and `CLAUDE.md` files with 88 rules across 8 artifact types.
 
+![demo](assets/demo.gif)
+
 ## Install
 
 ```bash

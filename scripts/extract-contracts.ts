@@ -14,7 +14,8 @@
 import { execSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import * as acorn from "acorn";
 import * as walk from "acorn-walk";
 import chalk from "chalk";
@@ -206,7 +207,7 @@ function extractBalancedBlock(
  * Extract top-level object keys from a Zod schema block like `{name:I.string(), author:cBA()}`.
  * Properly skips over string literals and nested braces/parens/brackets.
  */
-function extractTopLevelKeys(schema: string): string[] {
+export function extractTopLevelKeys(schema: string): string[] {
 	const keys: string[] = [];
 	let depth = 0;
 	let pos = 1; // skip opening {
@@ -740,4 +741,7 @@ function generateChangelog(
 	return lines.join("\n");
 }
 
-main();
+// Only run main() when executed directly, not when imported for testing
+if (resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[1])) {
+	main();
+}
