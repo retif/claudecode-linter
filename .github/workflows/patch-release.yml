@@ -97,4 +97,4 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > ~/.npmrc
-          npm publish --ignore-scripts --access public --tag patch
+          npm publish --ignore-scripts --access public
