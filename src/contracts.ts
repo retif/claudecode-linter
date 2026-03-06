@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.68 — extracted 2026-03-05T20:45:29.682Z
+// Claude Code v2.1.69 — extracted 2026-03-06T14:09:38.264Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set([
@@ -37,6 +37,7 @@ export const HOOK_EVENTS = new Set([
   "ConfigChange",
   "Elicitation",
   "ElicitationResult",
+  "InstructionsLoaded",
   "Notification",
   "PermissionRequest",
   "PostToolUse",
@@ -184,6 +185,7 @@ export const SETTINGS_USER_FIELDS = new Set([
   "hooks",
   "httpHookAllowedEnvVars",
   "includeCoAuthoredBy",
+  "includeGitInstructions",
   "language",
   "minimumVersion",
   "model",
@@ -192,11 +194,13 @@ export const SETTINGS_USER_FIELDS = new Set([
   "permissions",
   "plansDirectory",
   "pluginConfigs",
+  "pluginTrustMessage",
   "prefersReducedMotion",
   "promptSuggestionEnabled",
   "remote",
   "respectGitignore",
   "sandbox",
+  "showThinkingSummaries",
   "skipDangerousModePermissionPrompt",
   "skipWebFetchPreflight",
   "spinnerTipsEnabled",

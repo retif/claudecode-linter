@@ -1,6 +1,6 @@
 {
-  "version": "2.1.68",
-  "extractedAt": "2026-03-05T20:45:29.682Z",
+  "version": "2.1.69",
+  "extractedAt": "2026-03-06T14:09:38.264Z",
   "contracts": {
     "tools": [
       "Agent",
@@ -36,6 +36,7 @@
       "ConfigChange",
       "Elicitation",
       "ElicitationResult",
+      "InstructionsLoaded",
       "Notification",
       "PermissionRequest",
       "PostToolUse",
@@ -173,6 +174,7 @@
       "hooks",
       "httpHookAllowedEnvVars",
       "includeCoAuthoredBy",
+      "includeGitInstructions",
       "language",
       "minimumVersion",
       "model",
@@ -181,11 +183,13 @@
       "permissions",
       "plansDirectory",
       "pluginConfigs",
+      "pluginTrustMessage",
       "prefersReducedMotion",
       "promptSuggestionEnabled",
       "remote",
       "respectGitignore",
       "sandbox",
+      "showThinkingSummaries",
       "skipDangerousModePermissionPrompt",
       "skipWebFetchPreflight",
       "spinnerTipsEnabled",
