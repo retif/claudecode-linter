@@ -110,20 +110,44 @@ steps:
         GITEA_API=$(echo "$CI_REPO_CLONE_URL" | sed 's|/[^/]*/[^/]*\.git$||')/api/v1
         REPO_PATH="$CI_REPO_OWNER/$CI_REPO_NAME"
 
-        echo "Creating npm tarball..."
+        GITEA_HOST=$(echo "$CI_REPO_CLONE_URL" | sed 's|https://||;s|/.*||')
+        NPM_REGISTRY="https://$GITEA_HOST/api/packages/$CI_REPO_OWNER/npm"
+
+        # Publish to Gitea npm registry
+        echo "Publishing to $NPM_REGISTRY..."
+        echo "//$GITEA_HOST/api/packages/$CI_REPO_OWNER/npm/:_authToken=$GITEA_TOKEN" >> ~/.npmrc
+        npm publish --registry "$NPM_REGISTRY"
+        sed -i "/$GITEA_HOST/d" ~/.npmrc
+
+        # Create npm tarball for release attachment
         npm pack
         TARBALL=$(ls *.tgz)
+
+        # Build release body with install instructions
+        RELEASE_BODY=$(node -e "
+          const changelog = require('fs').readFileSync('CHANGELOG_ENTRY.md', 'utf8');
+          const install = [
+            '### Install',
+            '',
+            '\`\`\`bash',
+            '# Install from Gitea registry',
+            'npm install claudecode-linter@$VERSION --registry https://$GITEA_HOST/api/packages/$CI_REPO_OWNER/npm/',
+            '',
+            '# Or configure registry permanently (one-time)',
+            'npm config set //git.oleks.space/api/packages/oleks/npm/:_authToken YOUR_TOKEN',
+            'npm install claudecode-linter@$VERSION --registry https://$GITEA_HOST/api/packages/$CI_REPO_OWNER/npm/',
+            '\`\`\`',
+            '',
+          ].join('\n');
+          console.log(JSON.stringify(install + changelog));
+        ")
 
         echo "Creating release v$VERSION at $GITEA_API/repos/$REPO_PATH..."
         curl -sf -X POST \
           -H "Authorization: token $GITEA_TOKEN" \
           -H "Content-Type: application/json" \
           "$GITEA_API/repos/$REPO_PATH/releases" \
-          -d "$(node -e "console.log(JSON.stringify({
-            tag_name: 'v' + process.argv[1],
-            name: 'v' + process.argv[1],
-            body: require('fs').readFileSync('CHANGELOG_ENTRY.md','utf8')
-          }))" "$VERSION")"
+          -d "{\"tag_name\":\"v$VERSION\",\"name\":\"v$VERSION\",\"body\":$RELEASE_BODY}"
 
         echo "Fetching release ID..."
         RELEASE_ID=$(curl -sf \
