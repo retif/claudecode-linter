@@ -18,7 +18,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as acorn from "acorn";
 import * as walk from "acorn-walk";
-import chalk from "chalk";
+import pc from "picocolors";
 
 // ---------------------------------------------------------------------------
 // 1. Download and extract cli.js
@@ -477,11 +477,11 @@ function main() {
 		versionIdx !== -1 ? process.argv[versionIdx + 1] : undefined;
 
 	const label = requestedVersion ? `v${requestedVersion}` : "latest";
-	console.log(chalk.cyan(`▸ Fetching @anthropic-ai/claude-code (${label})...`));
+	console.log(pc.cyan(`▸ Fetching @anthropic-ai/claude-code (${label})...`));
 	const { source, version } = fetchCliSource(requestedVersion);
 	console.log(
-		chalk.cyan("▸ Parsing AST"),
-		chalk.dim(`(v${version}, ${(source.length / 1e6).toFixed(1)}MB)`),
+		pc.cyan("▸ Parsing AST"),
+		pc.dim(`(v${version}, ${(source.length / 1e6).toFixed(1)}MB)`),
 	);
 
 	const ast = acorn.parse(source, {
@@ -491,8 +491,8 @@ function main() {
 
 	const sets = collectStringSets(ast);
 	console.log(
-		chalk.cyan("▸ Extracting contracts..."),
-		chalk.dim(`(${sets.length} string sets)`),
+		pc.cyan("▸ Extracting contracts..."),
+		pc.dim(`(${sets.length} string sets)`),
 	);
 
 	const classified = classifySets(sets);
@@ -562,11 +562,11 @@ function main() {
 		const md = generateChangelog(version, entries, contracts);
 		const changelogPath = join(rootDir, "CHANGELOG_ENTRY.md");
 		writeFileSync(changelogPath, md);
-		console.log(chalk.cyan(`  Changelog entry written to ${changelogPath}`));
+		console.log(pc.cyan(`  Changelog entry written to ${changelogPath}`));
 	}
 
 	// Summary table
-	console.log(chalk.bold(`  Claude Code v${version} — Extracted Contracts`));
+	console.log(pc.bold(`  Claude Code v${version} — Extracted Contracts`));
 	console.log();
 
 	const maxKeyLen = Math.max(...Object.keys(contracts).map((k) => k.length));
@@ -575,12 +575,12 @@ function main() {
 		const arr = Array.isArray(val) ? val : [];
 		const padded = key.padEnd(maxKeyLen);
 		console.log(
-			`  ${chalk.white(padded)}  ${chalk.bold.white(String(arr.length).padStart(3))} values  ${chalk.dim(arr.join(", "))}`,
+			`  ${pc.white(padded)}  ${pc.bold(pc.white(String(arr.length).padStart(3)))} values  ${pc.dim(arr.join(", "))}`,
 		);
 	}
 
 	console.log();
-	console.log(chalk.dim(`  Written to ${outPath}`));
+	console.log(pc.dim(`  Written to ${outPath}`));
 }
 
 // ---------------------------------------------------------------------------
@@ -652,7 +652,7 @@ function computeDrift(
 
 function printDrift(entries: DriftEntry[]) {
 	console.log();
-	console.log(chalk.bold("  Drift Report — New vs Previous Contracts"));
+	console.log(pc.bold("  Drift Report — New vs Previous Contracts"));
 	console.log();
 
 	const maxLabelLen = Math.max(...entries.map((e) => e.label.length));
@@ -664,20 +664,20 @@ function printDrift(entries: DriftEntry[]) {
 
 		if (added.length === 0 && removed.length === 0) {
 			okCount++;
-			console.log(`  ${chalk.green("✓")} ${padded}  ${chalk.dim("unchanged")}`);
+			console.log(`  ${pc.green("✓")} ${padded}  ${pc.dim("unchanged")}`);
 		} else {
 			driftCount++;
 			console.log(
-				`  ${chalk.yellow("⚠")} ${chalk.yellow(padded)}  ${chalk.yellow("changed")}`,
+				`  ${pc.yellow("⚠")} ${pc.yellow(padded)}  ${pc.yellow("changed")}`,
 			);
 			if (added.length) {
 				console.log(
-					`    ${chalk.green("+")} ${chalk.green(added.join(chalk.dim(", ")))}`,
+					`    ${pc.green("+")} ${pc.green(added.join(pc.dim(", ")))}`,
 				);
 			}
 			if (removed.length) {
 				console.log(
-					`    ${chalk.red("−")} ${chalk.red(removed.join(chalk.dim(", ")))}`,
+					`    ${pc.red("−")} ${pc.red(removed.join(pc.dim(", ")))}`,
 				);
 			}
 		}
@@ -685,10 +685,10 @@ function printDrift(entries: DriftEntry[]) {
 
 	console.log();
 	if (driftCount === 0) {
-		console.log(chalk.green.bold("  No changes from previous extraction."));
+		console.log(pc.green(pc.bold("  No changes from previous extraction.")));
 	} else {
 		console.log(
-			`  ${chalk.green.bold(`${okCount} unchanged`)}, ${chalk.yellow.bold(`${driftCount} changed`)} — run ${chalk.cyan("npm run generate-contracts")} to update linter constants.`,
+			`  ${pc.green(pc.bold(`${okCount} unchanged`))}, ${pc.yellow(pc.bold(`${driftCount} changed`))} — run ${pc.cyan("npm run generate-contracts")} to update linter constants.`,
 		);
 	}
 	console.log();
