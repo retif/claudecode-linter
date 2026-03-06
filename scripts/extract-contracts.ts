@@ -676,9 +676,7 @@ function printDrift(entries: DriftEntry[]) {
 				);
 			}
 			if (removed.length) {
-				console.log(
-					`    ${pc.red("−")} ${pc.red(removed.join(pc.dim(", ")))}`,
-				);
+				console.log(`    ${pc.red("−")} ${pc.red(removed.join(pc.dim(", ")))}`);
 			}
 		}
 	}

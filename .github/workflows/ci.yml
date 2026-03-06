@@ -29,3 +29,6 @@ jobs:
 
       - name: Check replaceable dependencies
         run: npx tsx scripts/check-deps.ts
+
+      - name: Validate package publishing
+        run: npx publint

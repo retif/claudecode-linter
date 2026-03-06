@@ -6,7 +6,7 @@
 	"bin": {
 		"claudecode-linter": "dist/index.js"
 	},
-	"main": "./dist/index.js",
+	"exports": "./dist/index.js",
 	"scripts": {
 		"build": "tsc",
 		"dev": "tsc --watch",
@@ -34,7 +34,7 @@
 	],
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/retif/claudecode-linter.git"
+		"url": "git+https://github.com/retif/claudecode-linter.git"
 	},
 	"license": "MIT",
 	"engines": {
