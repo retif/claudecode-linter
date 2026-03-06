@@ -1,6 +1,6 @@
 {
 	"name": "claudecode-linter",
-	"version": "2.1.70-patch.2",
+	"version": "2.1.70-patch.4",
 	"description": "Standalone linter for Claude Code plugin artifacts",
 	"type": "module",
 	"bin": {
