@@ -2,7 +2,7 @@
 #
 # Trigger: manual (will be cron in the future).
 # Secrets required:
-#   GITEA_TOKEN      — git push + release creation
+#   GITEA_TOKEN      — git push + npm publish + release creation
 
 when:
   event: manual
@@ -44,9 +44,10 @@ steps:
         npm test
 
   # ----------------------------------------------------------------
-  # 3. Bump version, update changelog, commit, tag, push
+  # 3. Bump, commit, tag, push, publish, release
+  #    (single step — Woodpecker only injects secrets into one step)
   # ----------------------------------------------------------------
-  commit-and-tag:
+  release:
     image: node:20
     environment:
       GITEA_TOKEN:
@@ -55,7 +56,12 @@ steps:
       - |
         set -e
         VERSION=$(cat .claude-code-version)
-        echo "Preparing release v$VERSION..."
+        GITEA_HOST=$(echo "$CI_REPO_CLONE_URL" | sed 's|https://||;s|/.*||')
+        GITEA_API="https://$GITEA_HOST/api/v1"
+        REPO_PATH="$CI_REPO_OWNER/$CI_REPO_NAME"
+        NPM_REGISTRY="https://$GITEA_HOST/api/packages/$CI_REPO_OWNER/npm"
+
+        echo "==> Preparing release v$VERSION"
 
         # Bump package.json version
         node -e "
@@ -92,34 +98,12 @@ steps:
 
         # Push
         PUSH_URL=$(echo "$CI_REPO_CLONE_URL" | sed "s|://|://$GITEA_TOKEN@|")
-        echo "Pushing v$VERSION..."
+        echo "==> Pushing v$VERSION..."
         git push "$PUSH_URL" HEAD:$CI_COMMIT_BRANCH --tags
 
-  # ----------------------------------------------------------------
-  # 4. Create Gitea release with tarball
-  # ----------------------------------------------------------------
-  release:
-    image: node:20
-    environment:
-      GITEA_TOKEN:
-        from_secret: gitea_token
-    commands:
-      - |
-        set -e
-        VERSION=$(cat .claude-code-version)
-        GITEA_API=$(echo "$CI_REPO_CLONE_URL" | sed 's|/[^/]*/[^/]*\.git$||')/api/v1
-        REPO_PATH="$CI_REPO_OWNER/$CI_REPO_NAME"
-
-        GITEA_HOST=$(echo "$CI_REPO_CLONE_URL" | sed 's|https://||;s|/.*||')
-        NPM_REGISTRY="https://$GITEA_HOST/api/packages/$CI_REPO_OWNER/npm"
-
         # Publish to Gitea npm registry (--ignore-scripts: build already ran)
-        echo "Publishing to $NPM_REGISTRY..."
-        echo "HOME=$HOME"
-        echo "token_len=${#GITEA_TOKEN}"
+        echo "==> Publishing to $NPM_REGISTRY..."
         echo "//$GITEA_HOST/api/packages/$CI_REPO_OWNER/npm/:_authToken=$GITEA_TOKEN" > "$HOME/.npmrc"
-        cat "$HOME/.npmrc" | sed 's/\(_authToken=\).*/\1***/'
-        npm whoami --registry "$NPM_REGISTRY" 2>&1 || true
         npm publish --registry "$NPM_REGISTRY" --ignore-scripts
 
         # Create npm tarball for release attachment
@@ -134,37 +118,35 @@ steps:
             '',
             '\`\`\`bash',
             '# Install from Gitea registry',
-            'npm install claudecode-linter@$VERSION --registry https://$GITEA_HOST/api/packages/$CI_REPO_OWNER/npm/',
+            'npm install claudecode-linter@$VERSION --registry $NPM_REGISTRY',
             '',
             '# Or configure registry permanently (one-time)',
-            'npm config set //git.oleks.space/api/packages/oleks/npm/:_authToken YOUR_TOKEN',
-            'npm install claudecode-linter@$VERSION --registry https://$GITEA_HOST/api/packages/$CI_REPO_OWNER/npm/',
+            'npm config set //$GITEA_HOST/api/packages/$CI_REPO_OWNER/npm/:_authToken YOUR_TOKEN',
+            'npm install claudecode-linter@$VERSION --registry $NPM_REGISTRY',
             '\`\`\`',
             '',
           ].join('\n');
           console.log(JSON.stringify(install + changelog));
         ")
 
-        echo "Creating release v$VERSION at $GITEA_API/repos/$REPO_PATH..."
+        echo "==> Creating Gitea release v$VERSION..."
         curl -sf -X POST \
           -H "Authorization: token $GITEA_TOKEN" \
           -H "Content-Type: application/json" \
           "$GITEA_API/repos/$REPO_PATH/releases" \
           -d "{\"tag_name\":\"v$VERSION\",\"name\":\"v$VERSION\",\"body\":$RELEASE_BODY}"
 
-        echo "Fetching release ID..."
         RELEASE_ID=$(curl -sf \
           -H "Authorization: token $GITEA_TOKEN" \
           "$GITEA_API/repos/$REPO_PATH/releases/tags/v$VERSION" \
           | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).id))")
-        echo "Release ID: $RELEASE_ID"
 
-        echo "Attaching $TARBALL..."
+        echo "==> Attaching $TARBALL (release $RELEASE_ID)..."
         curl -sf -X POST \
           -H "Authorization: token $GITEA_TOKEN" \
           -F "attachment=@$(pwd)/$TARBALL;type=application/gzip" \
           "$GITEA_API/repos/$REPO_PATH/releases/$RELEASE_ID/assets?name=$TARBALL"
 
         # Cleanup CI-only files
-        rm -f CHANGELOG_ENTRY.md .claude-code-version *.tgz
-        echo "Released v$VERSION"
+        rm -f CHANGELOG_ENTRY.md .claude-code-version *.tgz "$HOME/.npmrc"
+        echo "==> Released v$VERSION"
