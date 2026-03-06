@@ -6,9 +6,9 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/retif/claudecode-linter/badge.svg)](https://snyk.io/test/github/retif/claudecode-linter)
 [![Socket Badge](https://socket.dev/api/badge/npm/package/claudecode-linter)](https://socket.dev/npm/package/claudecode-linter)
 
-Standalone linter for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin artifacts.
+Standalone linter for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugins and configuration files.
 
-Validates `plugin.json`, `SKILL.md`, agent/command markdown, `hooks.json`, `mcp.json`, `settings.json`, and `CLAUDE.md` files with 88 rules across 8 artifact types.
+Validates `plugin.json`, `SKILL.md`, agent/command markdown, `hooks.json`, `mcp.json`, `settings.json`, and `CLAUDE.md` files with 90 rules across 8 artifact types.
 
 ![demo](assets/demo.gif)
 
@@ -114,12 +114,12 @@ No issues found.
 |------|-------|-------|
 | plugin-json | `.claude-plugin/plugin.json` | 12 |
 | skill-md | `skills/*/SKILL.md` | 11 |
-| agent-md | `agents/*.md` | 12 |
-| command-md | `commands/*.md` | 4 |
+| agent-md | `agents/*.md` | 13 |
+| command-md | `commands/*.md` | 5 |
 | hooks-json | `hooks/hooks.json` | 9 |
-| settings-json | `.claude-plugin/settings.json` | 8 |
-| mcp-json | `.claude-plugin/mcp.json` | 10 |
-| claude-md | `CLAUDE.md` | 22 |
+| settings-json | `.claude-plugin/settings.json` | 14 |
+| mcp-json | `.claude-plugin/mcp.json` | 16 |
+| claude-md | `CLAUDE.md` | 10 |
 
 ## Configuration
 
@@ -219,7 +219,7 @@ Use `--changelog` to also write a `CHANGELOG_ENTRY.md` file with a markdown drif
 npm run extract-contracts -- --changelog
 ```
 
-This is automated in CI via `.woodpecker/release.yml`.
+This is automated in CI via `.github/workflows/release.yml`.
 
 ## License
 

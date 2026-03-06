@@ -2,16 +2,18 @@
 
 ## Project Overview
 
-`claudecode-linter` is a standalone TypeScript CLI that lints and auto-fixes Claude Code plugin artifacts and configuration files. It validates 8 artifact types with scope-aware rules, configurable severity, and human/JSON output.
+`claudecode-linter` is a standalone TypeScript CLI that lints and auto-fixes Claude Code plugins and configuration files. It validates 8 artifact types with scope-aware rules, configurable severity, and human/JSON output.
 
 ## Build & Test
 
 ```bash
 npm run build               # tsc → dist/
-npm test                    # vitest run (136 tests)
+npm test                    # vitest run (165 tests)
 npm run dev                 # tsc --watch
 npm run extract-contracts   # pull contracts from latest Claude Code
 npm run generate-contracts  # regenerate src/contracts.ts from JSON
+npm run knip                # find unused exports/dependencies
+npm run check-deps          # check for replaceable dependencies
 ```
 
 ## Usage
@@ -35,7 +37,7 @@ src/
   discovery.ts      Find artifacts by convention, detect scope (user/project/subdirectory)
   linters/          One file per artifact type, each exports a Linter
   fixers/           Auto-fix implementations (plugin-json key sorting, frontmatter normalization)
-  formatters/       Output formatting (human with chalk, JSON)
+  formatters/       Output formatting (human with picocolors, JSON)
   utils/            Shared helpers (YAML frontmatter parser, kebab-case validation)
 contracts/
   claude-code-contracts.json  Extracted contracts from Claude Code (source of truth)
@@ -94,7 +96,7 @@ Next Claude Code release (e.g., `2.1.70`) supersedes all patches.
 CI pipelines automate releases:
 
 - **Full release** (`.github/workflows/release.yml`): Cron every 6h + manual. Checks npm for new Claude Code version → extract → generate → build → test → bump → changelog → tag → publish to npmjs → GitHub Release.
-- **Patch release** (`.github/workflows/patch-release.yml`): Manual `workflow_dispatch` with reason. Auto-increments `-patch.N` suffix from existing tags → build → test → bump → tag → publish to npmjs (`--tag patch`) → GitHub prerelease.
+- **Patch release** (`.github/workflows/patch-release.yml`): Manual `workflow_dispatch` with reason. Auto-increments `-patch.N` suffix from existing tags → build → test → bump → tag → publish to npmjs → GitHub Release.
 - **Gitea release** (`.woodpecker/release.yml`): Manual trigger. Same full-release flow but publishes to Gitea npm registry and creates Gitea release.
 
 ## Conventions

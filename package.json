@@ -1,7 +1,7 @@
 {
 	"name": "claudecode-linter",
 	"version": "2.1.70-patch.4",
-	"description": "Standalone linter for Claude Code plugin artifacts",
+	"description": "Standalone linter for Claude Code plugins and configuration files",
 	"type": "module",
 	"bin": {
 		"claudecode-linter": "dist/index.js"
