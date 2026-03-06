@@ -14,8 +14,9 @@ steps:
   check-version:
     image: node:20
     commands:
-      - npm ci
       - |
+        set -e
+        npm ci
         CURRENT=$(node -e "const d = require('./contracts/claude-code-contracts.json'); console.log(d.version)")
         LATEST=$(npm view @anthropic-ai/claude-code version)
         echo "Current: $CURRENT"
@@ -25,6 +26,7 @@ steps:
           exit 78
         fi
         echo "$LATEST" > .claude-code-version
+        echo "Will update to v$LATEST"
 
   # ----------------------------------------------------------------
   # 2. Extract contracts + generate + build + test
@@ -32,22 +34,39 @@ steps:
   build:
     image: node:20
     commands:
-      - npx tsx scripts/extract-contracts.ts --changelog
-      - npx tsx scripts/generate-contracts.ts
-      - npm run build
-      - npm test
+      - |
+        set -e
+        VERSION=$(cat .claude-code-version)
+        echo "Extracting contracts for Claude Code v$VERSION..."
+        npx tsx scripts/extract-contracts.ts --changelog
+        npx tsx scripts/generate-contracts.ts
+        npm run build
+        npm test
 
   # ----------------------------------------------------------------
-  # 3. Bump version + update changelog
+  # 3. Bump version, update changelog, commit, tag, push
   # ----------------------------------------------------------------
-  prepare-release:
+  commit-and-tag:
     image: node:20
+    environment:
+      GITEA_TOKEN:
+        from_secret: gitea_token
     commands:
       - |
+        set -e
         VERSION=$(cat .claude-code-version)
-        node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version=process.argv[1];fs.writeFileSync('package.json',JSON.stringify(p,null,'\t')+String.fromCharCode(10));" "$VERSION"
-      - npm install --package-lock-only
-      - |
+        echo "Preparing release v$VERSION..."
+
+        # Bump package.json version
+        node -e "
+          const fs = require('fs');
+          const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          p.version = process.argv[1];
+          fs.writeFileSync('package.json', JSON.stringify(p, null, '\t') + '\n');
+        " "$VERSION"
+        npm install --package-lock-only
+
+        # Prepend changelog entry
         if [ -f CHANGELOG.md ]; then
           tail -n +2 CHANGELOG.md > CHANGELOG_OLD.md
           echo "# Changelog" > CHANGELOG.md
@@ -60,47 +79,24 @@ steps:
           echo "" >> CHANGELOG.md
           cat CHANGELOG_ENTRY.md >> CHANGELOG.md
         fi
-      - head -40 CHANGELOG.md
 
-  # ----------------------------------------------------------------
-  # 4. Commit, tag, push
-  # ----------------------------------------------------------------
-  commit-and-tag:
-    image: node:20
-    environment:
-      GITEA_TOKEN:
-        from_secret: gitea_token
-    commands:
-      - echo "token_len=${#GITEA_TOKEN}"
-      - cat .claude-code-version
-      - VERSION=$(cat .claude-code-version)
-      - echo "version=$VERSION"
-      - git config user.name "Woodpecker CI"
-      - git config user.email "ci@woodpecker"
-      - git add -A
-      - 'git commit -m "release: sync with Claude Code v$(cat .claude-code-version)"'
-      - 'git tag -a "v$(cat .claude-code-version)" -m "v$(cat .claude-code-version)"'
-      - |
-        VERSION=$(cat .claude-code-version)
+        echo "--- CHANGELOG preview ---"
+        head -40 CHANGELOG.md
+
+        # Commit and tag
+        git config user.name "Woodpecker CI"
+        git config user.email "ci@woodpecker"
+        git add -A
+        git commit -m "release: sync with Claude Code v$VERSION"
+        git tag -a "v$VERSION" -m "v$VERSION"
+
+        # Push
         PUSH_URL=$(echo "$CI_REPO_CLONE_URL" | sed "s|://|://$GITEA_TOKEN@|")
         echo "Pushing v$VERSION..."
         git push "$PUSH_URL" HEAD:$CI_COMMIT_BRANCH --tags
 
   # ----------------------------------------------------------------
-  # 5. npm publish (disabled — uncomment when ready)
-  # ----------------------------------------------------------------
-  # publish:
-  #   image: node:20
-  #   environment:
-  #     NPM_TOKEN:
-  #       from_secret: npm_token
-  #   commands:
-  #     - echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
-  #     - npm publish --access public
-  #     - rm -f .npmrc
-
-  # ----------------------------------------------------------------
-  # 6. Create Gitea release with tarball
+  # 4. Create Gitea release with tarball
   # ----------------------------------------------------------------
   release:
     image: node:20
@@ -108,14 +104,17 @@ steps:
       GITEA_TOKEN:
         from_secret: gitea_token
     commands:
-      - VERSION=$(cat .claude-code-version)
-      - npm pack
-      - TARBALL=$(ls *.tgz)
       - |
+        set -e
+        VERSION=$(cat .claude-code-version)
         GITEA_API=$(echo "$CI_REPO_CLONE_URL" | sed 's|/[^/]*/[^/]*\.git$||')/api/v1
         REPO_PATH="$CI_REPO_OWNER/$CI_REPO_NAME"
-        echo "API: $GITEA_API/repos/$REPO_PATH"
-        echo "Creating release v$VERSION..."
+
+        echo "Creating npm tarball..."
+        npm pack
+        TARBALL=$(ls *.tgz)
+
+        echo "Creating release v$VERSION at $GITEA_API/repos/$REPO_PATH..."
         curl -sf -X POST \
           -H "Authorization: token $GITEA_TOKEN" \
           -H "Content-Type: application/json" \
@@ -125,14 +124,20 @@ steps:
             name: 'v' + process.argv[1],
             body: require('fs').readFileSync('CHANGELOG_ENTRY.md','utf8')
           }))" "$VERSION")"
-        echo "Attaching tarball $TARBALL..."
+
+        echo "Fetching release ID..."
         RELEASE_ID=$(curl -sf \
           -H "Authorization: token $GITEA_TOKEN" \
           "$GITEA_API/repos/$REPO_PATH/releases/tags/v$VERSION" \
           | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).id))")
+        echo "Release ID: $RELEASE_ID"
+
+        echo "Attaching $TARBALL..."
         curl -sf -X POST \
           -H "Authorization: token $GITEA_TOKEN" \
-          "$GITEA_API/repos/$REPO_PATH/releases/${RELEASE_ID}/assets?name=${TARBALL}" \
-          -F "attachment=@${TARBALL}"
-      - rm -f CHANGELOG_ENTRY.md .claude-code-version
-      - 'echo "Released v$(cat .claude-code-version 2>/dev/null || echo done)"'
+          -F "attachment=@$(pwd)/$TARBALL;type=application/gzip" \
+          "$GITEA_API/repos/$REPO_PATH/releases/$RELEASE_ID/assets?name=$TARBALL"
+
+        # Cleanup CI-only files
+        rm -f CHANGELOG_ENTRY.md .claude-code-version *.tgz
+        echo "Released v$VERSION"
