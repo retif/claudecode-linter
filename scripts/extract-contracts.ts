@@ -194,9 +194,17 @@ function extractTopLevelKeys(schema: string): string[] {
       continue;
     }
 
+    // Handle spread objects: ...{key: value} — enter without incrementing depth
+    if (depth === 0 && ch === "." && schema.slice(pos, pos + 4).match(/^\.\.\.\{/)) {
+      pos += 4; // skip ...{
+      continue;
+    }
+
     if (ch === "{" || ch === "(" || ch === "[") depth++;
-    else if (ch === "}" || ch === ")" || ch === "]") depth--;
-    else if (depth === 0) {
+    else if (ch === "}" || ch === ")" || ch === "]") {
+      if (depth > 0) depth--;
+      // depth 0 closing } from a spread — just skip it
+    } else if (depth === 0) {
       const keyMatch = schema.slice(pos).match(/^(\$?\w+):/);
       if (keyMatch) {
         keys.push(keyMatch[1]);
