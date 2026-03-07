@@ -83,9 +83,9 @@ export const agentMdLinter: Linter = {
     if (!("model" in fm.data) || typeof fm.data.model !== "string") {
       push(diag(config, filePath, "agent-md/model-required", "error",
         "\"model\" is required in frontmatter"));
-    } else if (!AGENT_MODELS.has(fm.data.model)) {
+    } else if (!AGENT_MODELS.has(fm.data.model) && !fm.data.model.startsWith("claude-")) {
       push(diag(config, filePath, "agent-md/model-valid", "warning",
-        `"model" must be one of: ${[...AGENT_MODELS].join(", ")} (got "${fm.data.model}")`));
+        `"model" must be one of: ${[...AGENT_MODELS].join(", ")} or a versioned claude-* model ID (got "${fm.data.model}")`));
     }
 
     // color

@@ -31,6 +31,12 @@ describe("agent-md linter", () => {
     expect(diags.some((d) => d.rule === "agent-md/model-valid")).toBe(true);
   });
 
+  it("accepts versioned claude-* model IDs", () => {
+    const content = "---\nname: versioned-model\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: claude-sonnet-4-6-20250514\ncolor: blue\n---\n\nYou are a test agent.";
+    const diags = agentMdLinter.lint("test.md", content, CONFIG);
+    expect(diags.some((d) => d.rule === "agent-md/model-valid")).toBe(false);
+  });
+
   it("reports missing examples in description", () => {
     const diags = lintFile(resolve(FIXTURES, "invalid/agent-md/no-examples.md"));
     expect(diags.some((d) => d.rule === "agent-md/description-examples")).toBe(true);
