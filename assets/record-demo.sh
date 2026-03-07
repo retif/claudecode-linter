@@ -8,14 +8,14 @@ export FORCE_COLOR=1
 
 # Helper to simulate typing with prompt
 run_cmd() {
-  local cmd="$1"
-  printf '$ '
-  for (( i=0; i<${#cmd}; i++ )); do
-    printf '%s' "${cmd:$i:1}"
-    sleep 0.04
-  done
-  echo
-  sleep 0.3
+	local cmd="$1"
+	printf '$ '
+	for ((i = 0; i < ${#cmd}; i++)); do
+		printf '%s' "${cmd:$i:1}"
+		sleep 0.04
+	done
+	echo
+	sleep 0.3
 }
 
 clear

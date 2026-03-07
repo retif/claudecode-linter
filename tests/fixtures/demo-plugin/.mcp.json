@@ -1,12 +1,12 @@
 {
-  "mcpServers": {
-    "my server": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["server.js"],
-      "env": {
-        "API_KEY": "sk-1234567890abcdef"
-      }
-    }
-  }
+	"mcpServers": {
+		"my server": {
+			"type": "stdio",
+			"command": "node",
+			"args": ["server.js"],
+			"env": {
+				"API_KEY": "sk-1234567890abcdef"
+			}
+		}
+	}
 }

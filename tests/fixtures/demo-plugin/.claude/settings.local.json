@@ -1,9 +1,9 @@
 {
-  "permissions": {
-    "allow": ["Bash(npm test)", "Read"],
-    "deny": ["Write"]
-  },
-  "model": "opus",
-  "unknownField": true,
-  "includeCoAuthoredBy": false
+	"permissions": {
+		"allow": ["Bash(npm test)", "Read"],
+		"deny": ["Write"]
+	},
+	"model": "opus",
+	"unknownField": true,
+	"includeCoAuthoredBy": false
 }

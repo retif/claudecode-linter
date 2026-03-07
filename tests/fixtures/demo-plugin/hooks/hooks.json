@@ -1,26 +1,26 @@
 {
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "Check if this command is safe"
-          }
-        ]
-      }
-    ],
-    "InvalidEvent": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "echo bad"
-          }
-        ]
-      }
-    ]
-  }
+	"hooks": {
+		"PreToolUse": [
+			{
+				"matcher": "Bash",
+				"hooks": [
+					{
+						"type": "prompt",
+						"prompt": "Check if this command is safe"
+					}
+				]
+			}
+		],
+		"InvalidEvent": [
+			{
+				"matcher": "*",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "echo bad"
+					}
+				]
+			}
+		]
+	}
 }
