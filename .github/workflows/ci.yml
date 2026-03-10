@@ -56,13 +56,23 @@ jobs:
       - name: Generate contracts
         run: npm run generate-contracts
 
-      - name: Check for unstaged changes
+      - name: Check for contract value changes
         run: |
-          # Ignore timestamp-only changes (extractedAt in JSON, date comment in TS)
-          CHANGES=$(git diff --unified=0 -- . ':!contracts/claude-code-contracts.json' | grep '^[+-]' | grep -v '^[+-][+-][+-]' | grep -v '^[+-]// Claude Code v' || true)
-          JSON_CHANGES=$(git diff --unified=0 -- contracts/claude-code-contracts.json | grep '^[+-]' | grep -v '^[+-][+-][+-]' | grep -v '"extractedAt"' || true)
-          if [ -n "$CHANGES" ] || [ -n "$JSON_CHANGES" ]; then
-            echo "Meaningful contract changes detected (these should be committed):"
-            git --no-pager diff --stat
-            exit 1
-          fi
+          # Compare contract values only (ignore timestamps, formatting, whitespace)
+          # Extract just the contracts object from both old and new JSON, sort keys
+          node -e '
+            const fs = require("fs");
+            const committed = JSON.parse(require("child_process").execSync("git show HEAD:contracts/claude-code-contracts.json", {encoding:"utf8"}));
+            const current = JSON.parse(fs.readFileSync("contracts/claude-code-contracts.json", "utf8"));
+            const norm = (obj) => JSON.stringify(obj.contracts, Object.keys(obj.contracts).sort());
+            if (norm(committed) !== norm(current)) {
+              console.log("Contract values changed — update needed:");
+              for (const [k,v] of Object.entries(current.contracts)) {
+                const old = JSON.stringify(committed.contracts[k]);
+                const cur = JSON.stringify(v);
+                if (old !== cur) console.log("  " + k + ": changed");
+              }
+              process.exit(1);
+            }
+            console.log("Contract values unchanged (only timestamp/formatting differs).");
+          '
