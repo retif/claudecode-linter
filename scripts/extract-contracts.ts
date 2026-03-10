@@ -526,7 +526,10 @@ function main() {
 
 	// Merge extracted values with previous: always keep previous values, add new ones.
 	// This prevents data loss when the extractor can't find values in new bundle versions.
-	const mergeWithPrevious = (extracted: string[] | undefined, field: string): string[] | undefined => {
+	const mergeWithPrevious = (
+		extracted: string[] | undefined,
+		field: string,
+	): string[] | undefined => {
 		const previous = prev[field] ?? [];
 		const current = extracted ?? [];
 		const merged = new Set([...previous, ...current]);
@@ -552,7 +555,8 @@ function main() {
 		agentModels:
 			agentModelEnum.length > 0
 				? agentModelEnum.sort()
-				: mergeWithPrevious(undefined, "agentModels") ?? longestArray(classified.agentColors).sort(),
+				: (mergeWithPrevious(undefined, "agentModels") ??
+					longestArray(classified.agentColors).sort()),
 		pluginJsonFields: mergeWithPrevious(pluginFields, "pluginJsonFields"),
 		agentFrontmatter: mergeWithPrevious(agentFields, "agentFrontmatter"),
 		commandFrontmatter: mergeWithPrevious(commandFields, "commandFrontmatter"),
@@ -563,7 +567,9 @@ function main() {
 			"settingsUserFields",
 		),
 		settingsProjectFields: mergeWithPrevious(
-			settingsFields.project.length > 0 ? settingsFields.project.sort() : undefined,
+			settingsFields.project.length > 0
+				? settingsFields.project.sort()
+				: undefined,
 			"settingsProjectFields",
 		),
 	};
