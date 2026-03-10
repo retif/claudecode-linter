@@ -512,14 +512,35 @@ function main() {
 	const skillFields = extractSkillFrontmatter(source);
 	const allTools = extractAllToolNames(source);
 
+	const rootDir = join(import.meta.dirname!, "..");
+	const outPath = join(rootDir, "contracts", "claude-code-contracts.json");
+
+	// Load previous contracts to use as fallback when extraction fails
+	let prev: Record<string, string[]> = {};
+	try {
+		const existing = JSON.parse(readFileSync(outPath, "utf8"));
+		prev = existing.contracts ?? {};
+	} catch {
+		// First run — no previous file
+	}
+
+	// Merge extracted values with previous: always keep previous values, add new ones.
+	// This prevents data loss when the extractor can't find values in new bundle versions.
+	const mergeWithPrevious = (extracted: string[] | undefined, field: string): string[] | undefined => {
+		const previous = prev[field] ?? [];
+		const current = extracted ?? [];
+		const merged = new Set([...previous, ...current]);
+		return merged.size > 0 ? [...merged] : undefined;
+	};
+
 	const contracts = {
 		tools:
 			allTools.length > mergeArrays(classified.tools).length
 				? allTools
 				: mergeArrays(classified.tools),
 		hookEvents: longestArray(classified.hookEvents).sort(),
-		hookTypes: hookTypes.sort(),
-		promptEvents: promptEvents.sort(),
+		hookTypes: mergeWithPrevious(hookTypes.sort(), "hookTypes") ?? [],
+		promptEvents: mergeWithPrevious(promptEvents.sort(), "promptEvents") ?? [],
 		agentColors: (() => {
 			const colors = longestArray(classified.agentColors);
 			if (colors.includes("purple") && !colors.includes("magenta"))
@@ -531,18 +552,20 @@ function main() {
 		agentModels:
 			agentModelEnum.length > 0
 				? agentModelEnum.sort()
-				: longestArray(classified.agentColors).sort(),
-		pluginJsonFields: pluginFields.length > 0 ? pluginFields : undefined,
-		agentFrontmatter: agentFields.length > 0 ? agentFields : undefined,
-		commandFrontmatter: commandFields.length > 0 ? commandFields : undefined,
-		mcpServerFields: mcpFields.length > 0 ? mcpFields : undefined,
-		skillFrontmatter: skillFields.length > 0 ? skillFields : undefined,
-		settingsUserFields:
+				: mergeWithPrevious(undefined, "agentModels") ?? longestArray(classified.agentColors).sort(),
+		pluginJsonFields: mergeWithPrevious(pluginFields, "pluginJsonFields"),
+		agentFrontmatter: mergeWithPrevious(agentFields, "agentFrontmatter"),
+		commandFrontmatter: mergeWithPrevious(commandFields, "commandFrontmatter"),
+		mcpServerFields: mergeWithPrevious(mcpFields, "mcpServerFields"),
+		skillFrontmatter: mergeWithPrevious(skillFields, "skillFrontmatter"),
+		settingsUserFields: mergeWithPrevious(
 			settingsFields.user.length > 0 ? settingsFields.user.sort() : undefined,
-		settingsProjectFields:
-			settingsFields.project.length > 0
-				? settingsFields.project.sort()
-				: undefined,
+			"settingsUserFields",
+		),
+		settingsProjectFields: mergeWithPrevious(
+			settingsFields.project.length > 0 ? settingsFields.project.sort() : undefined,
+			"settingsProjectFields",
+		),
 	};
 
 	const output = {
@@ -550,9 +573,6 @@ function main() {
 		extractedAt: new Date().toISOString(),
 		contracts,
 	};
-
-	const rootDir = join(import.meta.dirname!, "..");
-	const outPath = join(rootDir, "contracts", "claude-code-contracts.json");
 
 	// Compute drift BEFORE writing (compares against previous file)
 	const { entries } = computeDrift(contracts, outPath);
