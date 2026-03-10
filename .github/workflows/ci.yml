@@ -58,8 +58,11 @@ jobs:
 
       - name: Check for unstaged changes
         run: |
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "Files were changed by generate-contracts (these should be committed in the PR)";
-            git --no-pager status --porcelain;
-            exit 1;
+          # Ignore timestamp-only changes (extractedAt in JSON, date comment in TS)
+          CHANGES=$(git diff --unified=0 -- . ':!contracts/claude-code-contracts.json' | grep '^[+-]' | grep -v '^[+-][+-][+-]' | grep -v '^[+-]// Claude Code v' || true)
+          JSON_CHANGES=$(git diff --unified=0 -- contracts/claude-code-contracts.json | grep '^[+-]' | grep -v '^[+-][+-][+-]' | grep -v '"extractedAt"' || true)
+          if [ -n "$CHANGES" ] || [ -n "$JSON_CHANGES" ]; then
+            echo "Meaningful contract changes detected (these should be committed):"
+            git --no-pager diff --stat
+            exit 1
           fi
