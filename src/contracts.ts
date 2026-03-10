@@ -2,7 +2,7 @@
 // Claude Code v2.1.71 — extracted 2026-03-07T00:40:50.509Z
 // Do not edit manually. Run: npm run generate-contracts
 
-export const TOOLS = new Set([
+export const TOOLS = new Set<string>([
   "Agent",
   "AskUserQuestion",
   "Bash",
@@ -33,7 +33,7 @@ export const TOOLS = new Set([
   "Write",
 ]);
 
-export const HOOK_EVENTS = new Set([
+export const HOOK_EVENTS = new Set<string>([
   "ConfigChange",
   "Elicitation",
   "ElicitationResult",
@@ -57,14 +57,14 @@ export const HOOK_EVENTS = new Set([
   "WorktreeRemove",
 ]);
 
-export const HOOK_TYPES = new Set([
+export const HOOK_TYPES = new Set<string>([
   "agent",
   "command",
   "http",
   "prompt",
 ]);
 
-export const PROMPT_EVENTS = new Set([
+export const PROMPT_EVENTS = new Set<string>([
   "Notification",
   "PostToolUse",
   "PostToolUseFailure",
@@ -75,7 +75,7 @@ export const PROMPT_EVENTS = new Set([
   "UserPromptSubmit",
 ]);
 
-export const AGENT_COLORS = new Set([
+export const AGENT_COLORS = new Set<string>([
   "blue",
   "cyan",
   "green",
@@ -87,14 +87,14 @@ export const AGENT_COLORS = new Set([
   "yellow",
 ]);
 
-export const AGENT_MODELS = new Set([
+export const AGENT_MODELS = new Set<string>([
   "haiku",
   "inherit",
   "opus",
   "sonnet",
 ]);
 
-export const PLUGIN_JSON_FIELDS = new Set([
+export const PLUGIN_JSON_FIELDS = new Set<string>([
   "name",
   "version",
   "description",
@@ -105,7 +105,7 @@ export const PLUGIN_JSON_FIELDS = new Set([
   "keywords",
 ]);
 
-export const AGENT_FRONTMATTER = new Set([
+export const AGENT_FRONTMATTER = new Set<string>([
   "description",
   "tools",
   "disallowedTools",
@@ -117,7 +117,7 @@ export const AGENT_FRONTMATTER = new Set([
   "maxTurns",
 ]);
 
-export const COMMAND_FRONTMATTER = new Set([
+export const COMMAND_FRONTMATTER = new Set<string>([
   "source",
   "content",
   "description",
@@ -126,7 +126,7 @@ export const COMMAND_FRONTMATTER = new Set([
   "allowedTools",
 ]);
 
-export const MCP_SERVER_FIELDS = new Set([
+export const MCP_SERVER_FIELDS = new Set<string>([
   "type",
   "command",
   "args",
@@ -138,7 +138,7 @@ export const MCP_SERVER_FIELDS = new Set([
   "cwd",
 ]);
 
-export const SKILL_FRONTMATTER = new Set([
+export const SKILL_FRONTMATTER = new Set<string>([
   "allowed-tools",
   "argument-hint",
   "description",
@@ -150,7 +150,7 @@ export const SKILL_FRONTMATTER = new Set([
   "when_to_use",
 ]);
 
-export const SETTINGS_USER_FIELDS = new Set([
+export const SETTINGS_USER_FIELDS = new Set<string>([
   "agent",
   "allowManagedHooksOnly",
   "allowManagedMcpServersOnly",
@@ -217,6 +217,6 @@ export const SETTINGS_USER_FIELDS = new Set([
   "worktree",
 ]);
 
-export const SETTINGS_PROJECT_FIELDS = new Set([
+export const SETTINGS_PROJECT_FIELDS = new Set<string>([
   "permissions",
 ]);

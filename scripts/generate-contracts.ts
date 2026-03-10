@@ -17,7 +17,7 @@ const c = data.contracts;
 
 function setLiteral(name: string, values: string[] | undefined): string {
 	const items = (values ?? []).map((v) => `  ${JSON.stringify(v)},`).join("\n");
-	return `export const ${name} = new Set([\n${items}\n]);`;
+	return `export const ${name} = new Set<string>([\n${items}\n]);`;
 }
 
 const lines = [
