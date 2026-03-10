@@ -217,6 +217,4 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"worktree",
 ]);
 
-export const SETTINGS_PROJECT_FIELDS = new Set<string>([
-	"permissions",
-]);
+export const SETTINGS_PROJECT_FIELDS = new Set<string>(["permissions"]);
