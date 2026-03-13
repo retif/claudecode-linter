@@ -49,9 +49,10 @@ describe("hooks-json linter", () => {
     expect(diags.some((d) => d.rule === "hooks-json/timeout-range")).toBe(true);
   });
 
-  it("reports prompt hook on unsupported event", () => {
+  it("does not report prompt-event-support for SessionEnd (now a valid prompt event)", () => {
+    // SessionEnd gained prompt support in Claude Code — all hook events now support prompts
     const diags = lintFile(resolve(FIXTURES, "invalid/hooks-json/prompt-wrong-event.json"));
-    expect(diags.some((d) => d.rule === "hooks-json/prompt-event-support")).toBe(true);
+    expect(diags.some((d) => d.rule === "hooks-json/prompt-event-support")).toBe(false);
   });
 
   it("reports missing command field on command hook", () => {

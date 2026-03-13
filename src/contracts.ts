@@ -1,23 +1,30 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.74 — extracted 2026-03-12T18:24:48.702Z
+// Claude Code v2.1.74 — extracted 2026-03-13T01:23:24.937Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
 	"Agent",
 	"AskUserQuestion",
 	"Bash",
+	"Config",
 	"Edit",
 	"EnterPlanMode",
 	"EnterWorktree",
 	"ExitPlanMode",
+	"ExitWorktree",
 	"Glob",
 	"Grep",
 	"LSP",
+	"ListMcpResources",
+	"Mcp",
 	"NotebookEdit",
 	"NotebookRead",
 	"Read",
+	"ReadMcpResource",
 	"SendMessage",
 	"Skill",
+	"SubscribeMcpResource",
+	"SubscribePolling",
 	"TaskCreate",
 	"TaskGet",
 	"TaskList",
@@ -28,6 +35,8 @@ export const TOOLS = new Set<string>([
 	"TeamDelete",
 	"TodoWrite",
 	"ToolSearch",
+	"UnsubscribeMcpResource",
+	"UnsubscribePolling",
 	"WebFetch",
 	"WebSearch",
 	"Write",
@@ -65,14 +74,27 @@ export const HOOK_TYPES = new Set<string>([
 ]);
 
 export const PROMPT_EVENTS = new Set<string>([
+	"ConfigChange",
+	"Elicitation",
+	"ElicitationResult",
+	"InstructionsLoaded",
 	"Notification",
+	"PermissionRequest",
 	"PostToolUse",
 	"PostToolUseFailure",
+	"PreCompact",
 	"PreToolUse",
+	"SessionEnd",
 	"SessionStart",
 	"Setup",
+	"Stop",
 	"SubagentStart",
+	"SubagentStop",
+	"TaskCompleted",
+	"TeammateIdle",
 	"UserPromptSubmit",
+	"WorktreeCreate",
+	"WorktreeRemove",
 ]);
 
 export const AGENT_COLORS = new Set<string>([
@@ -95,62 +117,70 @@ export const AGENT_MODELS = new Set<string>([
 ]);
 
 export const PLUGIN_JSON_FIELDS = new Set<string>([
-	"name",
-	"version",
-	"description",
 	"author",
+	"dependencies",
+	"description",
 	"homepage",
-	"repository",
-	"license",
 	"keywords",
+	"license",
+	"name",
+	"repository",
+	"version",
 ]);
 
 export const AGENT_FRONTMATTER = new Set<string>([
-	"description",
-	"tools",
-	"disallowedTools",
-	"prompt",
-	"model",
-	"mcpServers",
 	"criticalSystemReminder_EXPERIMENTAL",
-	"skills",
+	"description",
+	"disallowedTools",
 	"maxTurns",
+	"mcpServers",
+	"model",
+	"prompt",
+	"skills",
+	"tools",
 ]);
 
 export const COMMAND_FRONTMATTER = new Set<string>([
-	"source",
+	"allowedTools",
+	"argumentHint",
 	"content",
 	"description",
-	"argumentHint",
 	"model",
-	"allowedTools",
+	"source",
 ]);
 
 export const MCP_SERVER_FIELDS = new Set<string>([
-	"type",
-	"command",
 	"args",
+	"command",
+	"cwd",
 	"env",
-	"url",
 	"headers",
 	"headersHelper",
 	"oauth",
-	"cwd",
+	"type",
+	"url",
 ]);
 
 export const SKILL_FRONTMATTER = new Set<string>([
 	"allowed-tools",
 	"argument-hint",
+	"author",
+	"dependencies",
 	"description",
 	"disable-model-invocation",
+	"homepage",
+	"keywords",
+	"license",
 	"model",
 	"name",
+	"repository",
 	"user-invocable",
 	"version",
 	"when_to_use",
 ]);
 
 export const SETTINGS_USER_FIELDS = new Set<string>([
+	"$schema",
 	"agent",
 	"allowManagedHooksOnly",
 	"allowManagedMcpServersOnly",
@@ -160,6 +190,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"alwaysThinkingEnabled",
 	"apiKeyHelper",
 	"attribution",
+	"autoMemoryDirectory",
 	"autoMemoryEnabled",
 	"autoMode",
 	"autoUpdatesChannel",
@@ -172,7 +203,9 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"companyAnnouncements",
 	"deniedMcpServers",
 	"disableAllHooks",
+	"disableAutoMode",
 	"disabledMcpjsonServers",
+	"effortLevel",
 	"enableAllProjectMcpServers",
 	"enabledMcpjsonServers",
 	"enabledPlugins",
@@ -183,6 +216,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"fileSuggestion",
 	"forceLoginMethod",
 	"forceLoginOrgUUID",
+	"gcpAuthRefresh",
 	"hooks",
 	"httpHookAllowedEnvVars",
 	"includeCoAuthoredBy",
@@ -190,6 +224,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"language",
 	"minimumVersion",
 	"model",
+	"modelOverrides",
 	"otelHeadersHelper",
 	"outputStyle",
 	"permissions",

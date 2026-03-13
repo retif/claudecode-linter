@@ -627,14 +627,10 @@ function main() {
 		...classifyByOverlap(objectKeySets, prev["agentModels"] ?? []),
 		...extractAgentModelEnum(source),
 	])];
-	const hookTypes = [...new Set([
-		...classifyByOverlap(objectKeySets, prev["hookTypes"] ?? []),
-		...extractHookTypes(source),
-	])];
-	const promptEvents = [...new Set([
-		...classifyByOverlap(objectKeySets, prev["promptEvents"] ?? []),
-		...extractPromptEvents(source),
-	])];
+	// hookTypes and promptEvents: small/subset categories where census matches
+	// the same object as hookEvents. Use dedicated extractors only.
+	const hookTypes = extractHookTypes(source);
+	const promptEvents = extractPromptEvents(source);
 
 	// settingsProjectFields: single-value category, keep anchor fallback
 	const settingsProjectFields = extractSettingsProjectFields(source);
