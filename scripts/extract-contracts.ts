@@ -418,69 +418,12 @@ export function parseToolsDts(content: string): string[] {
 // 5. Specific extractors
 // ---------------------------------------------------------------------------
 
-function extractPluginJsonFields(source: string): string[] {
-	return extractZodObjectKeys(
-		source,
-		'.describe("Unique identifier for the plugin',
-	);
-}
-
-function extractAgentFrontmatterFields(source: string): string[] {
-	return extractZodObjectKeys(source, '.describe("Model to use for this agent');
-}
-
 function extractAgentModelEnum(source: string): string[] {
 	const pattern =
 		/I\.enum\(\[([^\]]+)\]\)\.optional\(\)\.describe\("Model to use for this agent/;
 	const match = pattern.exec(source);
 	if (!match) return [];
 	return [...match[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
-}
-
-function extractCommandFrontmatterFields(source: string): string[] {
-	return extractZodObjectKeys(
-		source,
-		'.describe("Path to command markdown file',
-	);
-}
-
-function extractMcpServerFields(source: string): string[] {
-	const fields = new Set<string>();
-
-	// Extract from each transport type schema, skipping hook schemas
-	const transports = ["stdio", "sse", "http"];
-
-	for (const transport of transports) {
-		const literal = `type:I.literal("${transport}")`;
-		let searchIdx = 0;
-
-		while (true) {
-			const idx = source.indexOf(literal, searchIdx);
-			if (idx === -1) break;
-			searchIdx = idx + 1;
-
-			const objStart = source.lastIndexOf("I.object({", idx);
-			if (objStart === -1) continue;
-			const braceStart = objStart + "I.object(".length;
-
-			const block = extractBalancedBlock(source, braceStart);
-			if (!block) continue;
-
-			// Skip hook schemas (they contain "hook type" in their describes)
-			if (block.includes("hook type")) continue;
-
-			for (const k of extractTopLevelKeys(block)) fields.add(k);
-			break; // use first non-hook match
-		}
-	}
-
-	// `cwd` is not in the Zod schema but Claude Code passes it through to child_process.spawn.
-	// Detect it from the runtime pass-through pattern: cwd:VAR.cwd
-	if (/cwd:\w+\.cwd/.test(source)) {
-		fields.add("cwd");
-	}
-
-	return [...fields];
 }
 
 function extractAllToolNames(source: string): string[] {
@@ -512,88 +455,12 @@ function extractPromptEvents(source: string): string[] {
 	return [...events];
 }
 
-function extractSettingsFields(source: string): {
-	user: string[];
-	project: string[];
-} {
-	// User settings: the top-level schema starts with $schema and is anchored by a unique describe.
-	// Use a nearby anchor that's at the START of the object to avoid matching nested sub-objects.
-	const userFields = extractZodObjectKeys(
-		source,
-		'.describe("JSON Schema reference for Claude Code settings")',
-	);
-
-	// Filter out $schema itself — it's a meta-field, not a user-configurable setting
-	const filteredUser = userFields.filter((f) => f !== "$schema");
-
-	// Project settings: look for allowedTools anchor in a separate schema
-	const projectFields = extractZodObjectKeys(
-		source,
-		'.describe("List of tools the project is allowed to use")',
-	);
-
-	// Fallback: if Zod extraction fails, use string search
-	if (filteredUser.length === 0) {
-		const fallback: string[] = [];
-		if (/permissions:I\./.test(source)) fallback.push("permissions");
-		if (/env:I\.record/.test(source)) fallback.push("env");
-		if (/enabledPlugins:I\./.test(source)) fallback.push("enabledPlugins");
-		if (source.includes("skipDangerousModePermissionPrompt"))
-			fallback.push("skipDangerousModePermissionPrompt");
-		if (source.includes("voiceEnabled")) fallback.push("voiceEnabled");
-		return {
-			user: fallback,
-			project: projectFields.length > 0 ? projectFields : ["permissions"],
-		};
-	}
-
-	return {
-		user: filteredUser,
-		project: projectFields.length > 0 ? projectFields : ["permissions"],
-	};
-}
-
 function extractSettingsProjectFields(source: string): string[] {
 	const fields = extractZodObjectKeys(
 		source,
 		'.describe("List of tools the project is allowed to use")',
 	);
 	return fields.length > 0 ? fields : ["permissions"];
-}
-
-function extractSkillFrontmatter(source: string): string[] {
-	// Skill frontmatter fields are accessed via property access patterns like:
-	// H.name, H.description, H.version, H.model, H.when_to_use
-	// H["allowed-tools"], H["argument-hint"], H["disable-model-invocation"], H["user-invocable"]
-	const fields = new Set<string>();
-
-	// Match both dot access and bracket access patterns near skill-related code.
-	// Look for a cluster of known skill fields to anchor the search.
-	const dotPattern = /\b\w+\.(name|description|version|model|when_to_use)\b/g;
-	const bracketPattern =
-		/\w+\["(allowed-tools|argument-hint|disable-model-invocation|user-invocable)"\]/g;
-
-	// Find regions containing multiple skill-related property accesses
-	// by checking for "allowed-tools" (unique to skills) in the vicinity
-	const skillRegions: number[] = [];
-	const skillAnchor = /\["allowed-tools"\]/g;
-	for (const m of source.matchAll(skillAnchor)) {
-		skillRegions.push(m.index!);
-	}
-
-	if (skillRegions.length === 0) return [];
-
-	// Search within 2000 chars around each skill anchor
-	for (const regionStart of skillRegions) {
-		const start = Math.max(0, regionStart - 2000);
-		const end = Math.min(source.length, regionStart + 2000);
-		const region = source.slice(start, end);
-
-		for (const m of region.matchAll(dotPattern)) fields.add(m[1]);
-		for (const m of region.matchAll(bracketPattern)) fields.add(m[1]);
-	}
-
-	return [...fields].sort();
 }
 
 // ---------------------------------------------------------------------------
