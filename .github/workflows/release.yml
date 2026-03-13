@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "0 */6 * * *"
   workflow_dispatch:
+    inputs:
+      force_contracts:
+        description: "Bypass contract gate (set to true when extraction legitimately changed)"
+        required: false
+        default: "false"
+        type: boolean
 
 permissions:
   contents: write
@@ -42,6 +48,8 @@ jobs:
 
       - name: Extract contracts
         if: steps.check.outputs.skip == 'false'
+        env:
+          FORCE_CONTRACTS: ${{ inputs.force_contracts && '1' || '0' }}
         run: |
           npx tsx scripts/extract-contracts.ts --changelog
           npx tsx scripts/generate-contracts.ts
