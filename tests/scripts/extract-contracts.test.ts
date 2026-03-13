@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractTopLevelKeys, collectObjectKeySets, classifyByOverlap, parseToolsDts } from "../../scripts/extract-contracts.js";
+import { extractTopLevelKeys, collectObjectKeySets, classifyByOverlap, parseToolsDts, validateContracts } from "../../scripts/extract-contracts.js";
 import * as acorn from "acorn";
 
 function parseCode(code: string) {
@@ -179,5 +179,66 @@ export interface FileWriteInput { path: string; }
 		const dts = `export interface AgentOutput { result: string; }`;
 		const tools = parseToolsDts(dts);
 		expect(tools).not.toContain("Agent");
+	});
+});
+
+describe("validateContracts", () => {
+	const previous = {
+		tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebFetch", "WebSearch", "Agent", "AskUserQuestion"],
+		hookEvents: ["PreToolUse", "PostToolUse", "Stop", "SessionStart", "UserPromptSubmit"],
+		pluginJsonFields: ["name", "version", "description", "author"],
+	};
+
+	it("passes when no values are lost", () => {
+		const raw = { ...previous };
+		const result = validateContracts(raw, previous);
+		expect(result.failed).toBe(false);
+		expect(result.errors).toEqual([]);
+	});
+
+	it("passes with warnings when 1-30% values lost", () => {
+		const raw = {
+			...previous,
+			tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebFetch", "WebSearch"],
+		};
+		const result = validateContracts(raw, previous);
+		expect(result.failed).toBe(false);
+		expect(result.warnings.length).toBeGreaterThan(0);
+	});
+
+	it("fails when >30% values lost in a category", () => {
+		const raw = {
+			...previous,
+			tools: ["Read", "Write", "Edit"],
+		};
+		const result = validateContracts(raw, previous);
+		expect(result.failed).toBe(true);
+		expect(result.errors.length).toBeGreaterThan(0);
+		expect(result.errors[0]).toContain("tools");
+	});
+
+	it("skips categories not in previous (new categories)", () => {
+		const raw = {
+			...previous,
+			newCategory: ["a", "b", "c"],
+		};
+		const result = validateContracts(raw, previous);
+		expect(result.failed).toBe(false);
+	});
+
+	it("skips categories with empty previous (nothing to compare)", () => {
+		const prev = { ...previous, hookTypes: [] as string[] };
+		const raw = { ...previous, hookTypes: [] as string[] };
+		const result = validateContracts(raw, prev);
+		expect(result.failed).toBe(false);
+	});
+
+	it("passes when extraction grows", () => {
+		const raw = {
+			...previous,
+			tools: [...previous.tools, "NewTool1", "NewTool2"],
+		};
+		const result = validateContracts(raw, previous);
+		expect(result.failed).toBe(false);
 	});
 });

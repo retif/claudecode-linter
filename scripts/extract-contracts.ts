@@ -352,6 +352,40 @@ function extractZodObjectKeys(source: string, anchor: string): string[] {
 	return extractTopLevelKeys(block);
 }
 
+interface ValidationResult {
+	failed: boolean;
+	errors: string[];
+	warnings: string[];
+}
+
+export function validateContracts(
+	rawExtracted: Record<string, string[] | undefined>,
+	previousContracts: Record<string, string[]>,
+): ValidationResult {
+	const errors: string[] = [];
+	const warnings: string[] = [];
+
+	for (const [field, prevValues] of Object.entries(previousContracts)) {
+		if (!prevValues || prevValues.length === 0) continue;
+
+		const extractedSet = new Set(rawExtracted[field] ?? []);
+		const lost = prevValues.filter(v => !extractedSet.has(v));
+		const dropRate = lost.length / prevValues.length;
+
+		if (dropRate > 0.3) {
+			errors.push(
+				`${field}: lost ${lost.length}/${prevValues.length} values (${(dropRate * 100).toFixed(0)}%): ${lost.join(", ")}`,
+			);
+		} else if (lost.length > 0) {
+			warnings.push(
+				`${field}: lost ${lost.length}/${prevValues.length} values (${(dropRate * 100).toFixed(0)}%): ${lost.join(", ")}`,
+			);
+		}
+	}
+
+	return { failed: errors.length > 0, errors, warnings };
+}
+
 const DTS_NAME_MAP: Record<string, string> = {
 	FileRead: "Read",
 	FileEdit: "Edit",
