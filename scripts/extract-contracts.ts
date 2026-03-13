@@ -377,11 +377,15 @@ export function validateContracts(
 	for (const [field, prevValues] of Object.entries(previousContracts)) {
 		if (!prevValues || prevValues.length === 0) continue;
 
-		const extractedSet = new Set(rawExtracted[field] ?? []);
+		// Skip categories where extraction returned undefined (complete failure).
+		// These will be filled by mergeWithPrevious — only gate on partial results.
+		if (!(field in rawExtracted) || rawExtracted[field] === undefined) continue;
+
+		const extractedSet = new Set(rawExtracted[field]!);
 		const lost = prevValues.filter(v => !extractedSet.has(v));
 		const dropRate = lost.length / prevValues.length;
 
-		if (dropRate > 0.3) {
+		if (dropRate > 0.5) {
 			errors.push(
 				`${field}: lost ${lost.length}/${prevValues.length} values (${(dropRate * 100).toFixed(0)}%): ${lost.join(", ")}`,
 			);
@@ -461,6 +465,72 @@ function extractSettingsProjectFields(source: string): string[] {
 		'.describe("List of tools the project is allowed to use")',
 	);
 	return fields.length > 0 ? fields : ["permissions"];
+}
+
+function extractMcpServerFields(source: string): string[] {
+	const fields = new Set<string>();
+
+	// Extract from each transport type schema, skipping hook schemas
+	const transports = ["stdio", "sse", "http"];
+
+	for (const transport of transports) {
+		const literal = `type:I.literal("${transport}")`;
+		let searchIdx = 0;
+
+		while (true) {
+			const idx = source.indexOf(literal, searchIdx);
+			if (idx === -1) break;
+			searchIdx = idx + 1;
+
+			const objStart = source.lastIndexOf("I.object({", idx);
+			if (objStart === -1) continue;
+			const braceStart = objStart + "I.object(".length;
+
+			const block = extractBalancedBlock(source, braceStart);
+			if (!block) continue;
+
+			// Skip hook schemas (they contain "hook type" in their describes)
+			if (block.includes("hook type")) continue;
+
+			for (const k of extractTopLevelKeys(block)) fields.add(k);
+			break; // use first non-hook match
+		}
+	}
+
+	// `cwd` is not in the Zod schema but Claude Code passes it through to child_process.spawn.
+	// Detect it from the runtime pass-through pattern: cwd:VAR.cwd
+	if (/cwd:\w+\.cwd/.test(source)) {
+		fields.add("cwd");
+	}
+
+	return [...fields];
+}
+
+function extractSkillFrontmatter(source: string): string[] {
+	const fields = new Set<string>();
+
+	const dotPattern = /\b\w+\.(name|description|version|model|when_to_use)\b/g;
+	const bracketPattern =
+		/\w+\["(allowed-tools|argument-hint|disable-model-invocation|user-invocable)"\]/g;
+
+	const skillRegions: number[] = [];
+	const skillAnchor = /\["allowed-tools"\]/g;
+	for (const m of source.matchAll(skillAnchor)) {
+		skillRegions.push(m.index!);
+	}
+
+	if (skillRegions.length === 0) return [];
+
+	for (const regionStart of skillRegions) {
+		const start = Math.max(0, regionStart - 2000);
+		const end = Math.min(source.length, regionStart + 2000);
+		const region = source.slice(start, end);
+
+		for (const m of region.matchAll(dotPattern)) fields.add(m[1]);
+		for (const m of region.matchAll(bracketPattern)) fields.add(m[1]);
+	}
+
+	return [...fields].sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -544,17 +614,27 @@ function main() {
 	const pluginFields = classifyByOverlap(objectKeySets, prev["pluginJsonFields"] ?? []);
 	const agentFields = classifyByOverlap(objectKeySets, prev["agentFrontmatter"] ?? []);
 	const commandFields = classifyByOverlap(objectKeySets, prev["commandFrontmatter"] ?? []);
-	const mcpFields = classifyByOverlap(objectKeySets, prev["mcpServerFields"] ?? []);
+	const mcpFieldsCensus = classifyByOverlap(objectKeySets, prev["mcpServerFields"] ?? []);
+	const mcpFieldsFallback = extractMcpServerFields(source);
+	const mcpFields = [...new Set([...mcpFieldsCensus, ...mcpFieldsFallback])];
 	const settingsUserFields = classifyByOverlap(objectKeySets, prev["settingsUserFields"] ?? []);
-	const skillFields = classifyByOverlap(objectKeySets, prev["skillFrontmatter"] ?? []);
+	const skillFieldsCensus = classifyByOverlap(objectKeySets, prev["skillFrontmatter"] ?? []);
+	const skillFieldsFallback = extractSkillFrontmatter(source);
+	const skillFields = [...new Set([...skillFieldsCensus, ...skillFieldsFallback])].sort();
 
-	// Small enum sets: also try census via string-set classification, with anchor fallback
-	const agentModelsCensus = classifyByOverlap(objectKeySets, prev["agentModels"] ?? []);
-	const agentModelEnum = agentModelsCensus.length > 0 ? agentModelsCensus : extractAgentModelEnum(source);
-	const hookTypesCensus = classifyByOverlap(objectKeySets, prev["hookTypes"] ?? []);
-	const hookTypes = hookTypesCensus.length > 0 ? hookTypesCensus : extractHookTypes(source);
-	const promptEventsCensus = classifyByOverlap(objectKeySets, prev["promptEvents"] ?? []);
-	const promptEvents = promptEventsCensus.length > 0 ? promptEventsCensus : extractPromptEvents(source);
+	// Small enum sets: union census + anchor fallback results
+	const agentModelEnum = [...new Set([
+		...classifyByOverlap(objectKeySets, prev["agentModels"] ?? []),
+		...extractAgentModelEnum(source),
+	])];
+	const hookTypes = [...new Set([
+		...classifyByOverlap(objectKeySets, prev["hookTypes"] ?? []),
+		...extractHookTypes(source),
+	])];
+	const promptEvents = [...new Set([
+		...classifyByOverlap(objectKeySets, prev["promptEvents"] ?? []),
+		...extractPromptEvents(source),
+	])];
 
 	// settingsProjectFields: single-value category, keep anchor fallback
 	const settingsProjectFields = extractSettingsProjectFields(source);

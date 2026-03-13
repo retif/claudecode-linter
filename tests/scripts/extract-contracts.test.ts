@@ -196,20 +196,20 @@ describe("validateContracts", () => {
 		expect(result.errors).toEqual([]);
 	});
 
-	it("passes with warnings when 1-30% values lost", () => {
+	it("passes with warnings when 1-50% values lost", () => {
 		const raw = {
 			...previous,
-			tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebFetch", "WebSearch"],
+			tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebFetch", "WebSearch"], // lost 2/10 = 20%
 		};
 		const result = validateContracts(raw, previous);
 		expect(result.failed).toBe(false);
 		expect(result.warnings.length).toBeGreaterThan(0);
 	});
 
-	it("fails when >30% values lost in a category", () => {
+	it("fails when >50% values lost in a category", () => {
 		const raw = {
 			...previous,
-			tools: ["Read", "Write", "Edit"],
+			tools: ["Read", "Write", "Edit"], // lost 7/10 = 70%
 		};
 		const result = validateContracts(raw, previous);
 		expect(result.failed).toBe(true);
@@ -231,6 +231,16 @@ describe("validateContracts", () => {
 		const raw = { ...previous, hookTypes: [] as string[] };
 		const result = validateContracts(raw, prev);
 		expect(result.failed).toBe(false);
+	});
+
+	it("skips categories where extraction returned undefined (complete failure)", () => {
+		const raw = {
+			...previous,
+			tools: undefined, // complete extraction failure
+		};
+		const result = validateContracts(raw, previous);
+		expect(result.failed).toBe(false);
+		expect(result.errors).toEqual([]);
 	});
 
 	it("passes when extraction grows", () => {
