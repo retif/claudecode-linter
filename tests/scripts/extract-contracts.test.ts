@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractTopLevelKeys, collectObjectKeySets, classifyByOverlap } from "../../scripts/extract-contracts.js";
+import { extractTopLevelKeys, collectObjectKeySets, classifyByOverlap, parseToolsDts } from "../../scripts/extract-contracts.js";
 import * as acorn from "acorn";
 
 function parseCode(code: string) {
@@ -138,5 +138,46 @@ describe("classifyByOverlap", () => {
 
 	it("returns empty array for empty input", () => {
 		expect(classifyByOverlap([], knownPluginFields)).toEqual([]);
+	});
+});
+
+describe("parseToolsDts", () => {
+	it("extracts tool names from interface declarations", () => {
+		const dts = `
+export interface BashInput { command: string; }
+export interface BashOutput { stdout: string; }
+export interface FileReadInput { path: string; }
+export interface GrepInput { pattern: string; }
+`;
+		const tools = parseToolsDts(dts);
+		expect(tools).toContain("Bash");
+		expect(tools).toContain("Read");
+		expect(tools).toContain("Grep");
+	});
+
+	it("applies name mappings for FileRead/FileEdit/FileWrite", () => {
+		const dts = `
+export interface FileReadInput { path: string; }
+export interface FileEditInput { path: string; }
+export interface FileWriteInput { path: string; }
+`;
+		const tools = parseToolsDts(dts);
+		expect(tools).toContain("Read");
+		expect(tools).toContain("Edit");
+		expect(tools).toContain("Write");
+		expect(tools).not.toContain("FileRead");
+		expect(tools).not.toContain("FileEdit");
+		expect(tools).not.toContain("FileWrite");
+	});
+
+	it("returns empty array for empty/invalid input", () => {
+		expect(parseToolsDts("")).toEqual([]);
+		expect(parseToolsDts("no interfaces here")).toEqual([]);
+	});
+
+	it("does not include Output-only interfaces", () => {
+		const dts = `export interface AgentOutput { result: string; }`;
+		const tools = parseToolsDts(dts);
+		expect(tools).not.toContain("Agent");
 	});
 });

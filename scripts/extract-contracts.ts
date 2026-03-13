@@ -352,6 +352,25 @@ function extractZodObjectKeys(source: string, anchor: string): string[] {
 	return extractTopLevelKeys(block);
 }
 
+const DTS_NAME_MAP: Record<string, string> = {
+	FileRead: "Read",
+	FileEdit: "Edit",
+	FileWrite: "Write",
+};
+
+export function parseToolsDts(content: string): string[] {
+	if (!content) return [];
+
+	const tools = new Set<string>();
+	const pattern = /export interface (\w+)Input\b/g;
+	for (const m of content.matchAll(pattern)) {
+		const raw = m[1];
+		const mapped = DTS_NAME_MAP[raw] ?? raw;
+		tools.add(mapped);
+	}
+	return [...tools].sort();
+}
+
 // ---------------------------------------------------------------------------
 // 5. Specific extractors
 // ---------------------------------------------------------------------------
