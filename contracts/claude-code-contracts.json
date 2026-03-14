@@ -1,6 +1,6 @@
 {
-	"version": "2.1.75",
-	"extractedAt": "2026-03-13T18:18:02.811Z",
+	"version": "2.1.76",
+	"extractedAt": "2026-03-14T06:23:34.339Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -48,6 +48,7 @@
 			"InstructionsLoaded",
 			"Notification",
 			"PermissionRequest",
+			"PostCompact",
 			"PostToolUse",
 			"PostToolUseFailure",
 			"PreCompact",
@@ -202,6 +203,7 @@
 			"extraKnownMarketplaces",
 			"fastMode",
 			"fastModePerSessionOptIn",
+			"feedbackSurveyRate",
 			"fileSuggestion",
 			"forceLoginMethod",
 			"forceLoginOrgUUID",

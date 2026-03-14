@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.75 — extracted 2026-03-13T18:18:02.811Z
+// Claude Code v2.1.76 — extracted 2026-03-14T06:23:34.339Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -49,6 +49,7 @@ export const HOOK_EVENTS = new Set<string>([
 	"InstructionsLoaded",
 	"Notification",
 	"PermissionRequest",
+	"PostCompact",
 	"PostToolUse",
 	"PostToolUseFailure",
 	"PreCompact",
@@ -213,6 +214,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"extraKnownMarketplaces",
 	"fastMode",
 	"fastModePerSessionOptIn",
+	"feedbackSurveyRate",
 	"fileSuggestion",
 	"forceLoginMethod",
 	"forceLoginOrgUUID",
