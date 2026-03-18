@@ -1,6 +1,6 @@
 {
-	"version": "2.1.77",
-	"extractedAt": "2026-03-17T00:41:34.101Z",
+	"version": "2.1.78",
+	"extractedAt": "2026-03-18T00:44:52.755Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -57,6 +57,7 @@
 			"SessionStart",
 			"Setup",
 			"Stop",
+			"StopFailure",
 			"SubagentStart",
 			"SubagentStop",
 			"TaskCompleted",

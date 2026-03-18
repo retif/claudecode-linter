@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.77 — extracted 2026-03-17T00:41:34.101Z
+// Claude Code v2.1.78 — extracted 2026-03-18T00:44:52.755Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -58,6 +58,7 @@ export const HOOK_EVENTS = new Set<string>([
 	"SessionStart",
 	"Setup",
 	"Stop",
+	"StopFailure",
 	"SubagentStart",
 	"SubagentStop",
 	"TaskCompleted",
