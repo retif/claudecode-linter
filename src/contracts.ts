@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.80 — extracted 2026-03-20T00:42:55.482Z
+// Claude Code v2.1.81 — extracted 2026-03-21T00:40:44.808Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -192,6 +192,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"alwaysThinkingEnabled",
 	"apiKeyHelper",
 	"attribution",
+	"autoDreamEnabled",
 	"autoMemoryDirectory",
 	"autoMemoryEnabled",
 	"autoMode",
@@ -203,6 +204,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"claudeMdExcludes",
 	"cleanupPeriodDays",
 	"companyAnnouncements",
+	"defaultShell",
 	"deniedMcpServers",
 	"disableAllHooks",
 	"disableAutoMode",
@@ -239,6 +241,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"remote",
 	"respectGitignore",
 	"sandbox",
+	"showClearContextOnPlanAccept",
 	"showThinkingSummaries",
 	"skipAutoPermissionPrompt",
 	"skipDangerousModePermissionPrompt",
@@ -249,6 +252,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"sshConfigs",
 	"statusLine",
 	"strictKnownMarketplaces",
+	"strictPluginOnlyCustomization",
 	"syntaxHighlightingDisabled",
 	"terminalTitleFromRename",
 	"voiceEnabled",

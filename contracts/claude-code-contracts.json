@@ -1,6 +1,6 @@
 {
-	"version": "2.1.80",
-	"extractedAt": "2026-03-20T00:42:55.482Z",
+	"version": "2.1.81",
+	"extractedAt": "2026-03-21T00:40:44.808Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -181,6 +181,7 @@
 			"alwaysThinkingEnabled",
 			"apiKeyHelper",
 			"attribution",
+			"autoDreamEnabled",
 			"autoMemoryDirectory",
 			"autoMemoryEnabled",
 			"autoMode",
@@ -192,6 +193,7 @@
 			"claudeMdExcludes",
 			"cleanupPeriodDays",
 			"companyAnnouncements",
+			"defaultShell",
 			"deniedMcpServers",
 			"disableAllHooks",
 			"disableAutoMode",
@@ -228,6 +230,7 @@
 			"remote",
 			"respectGitignore",
 			"sandbox",
+			"showClearContextOnPlanAccept",
 			"showThinkingSummaries",
 			"skipAutoPermissionPrompt",
 			"skipDangerousModePermissionPrompt",
@@ -238,6 +241,7 @@
 			"sshConfigs",
 			"statusLine",
 			"strictKnownMarketplaces",
+			"strictPluginOnlyCustomization",
 			"syntaxHighlightingDisabled",
 			"terminalTitleFromRename",
 			"voiceEnabled",
