@@ -1,6 +1,6 @@
 {
-	"version": "2.1.81",
-	"extractedAt": "2026-03-21T00:40:44.808Z",
+	"version": "2.1.83",
+	"extractedAt": "2026-03-25T06:32:01.478Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -43,8 +43,10 @@
 		],
 		"hookEvents": [
 			"ConfigChange",
+			"CwdChanged",
 			"Elicitation",
 			"ElicitationResult",
+			"FileChanged",
 			"InstructionsLoaded",
 			"Notification",
 			"PermissionRequest",
@@ -127,6 +129,7 @@
 			"criticalSystemReminder_EXPERIMENTAL",
 			"description",
 			"disallowedTools",
+			"initialPrompt",
 			"maxTurns",
 			"mcpServers",
 			"model",
@@ -172,6 +175,7 @@
 		],
 		"settingsUserFields": [
 			"$schema",
+			"advisorModel",
 			"agent",
 			"allowManagedHooksOnly",
 			"allowManagedMcpServersOnly",

@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.81 — extracted 2026-03-21T00:40:44.808Z
+// Claude Code v2.1.83 — extracted 2026-03-25T06:32:01.478Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -44,8 +44,10 @@ export const TOOLS = new Set<string>([
 
 export const HOOK_EVENTS = new Set<string>([
 	"ConfigChange",
+	"CwdChanged",
 	"Elicitation",
 	"ElicitationResult",
+	"FileChanged",
 	"InstructionsLoaded",
 	"Notification",
 	"PermissionRequest",
@@ -134,6 +136,7 @@ export const AGENT_FRONTMATTER = new Set<string>([
 	"criticalSystemReminder_EXPERIMENTAL",
 	"description",
 	"disallowedTools",
+	"initialPrompt",
 	"maxTurns",
 	"mcpServers",
 	"model",
@@ -183,6 +186,7 @@ export const SKILL_FRONTMATTER = new Set<string>([
 
 export const SETTINGS_USER_FIELDS = new Set<string>([
 	"$schema",
+	"advisorModel",
 	"agent",
 	"allowManagedHooksOnly",
 	"allowManagedMcpServersOnly",
