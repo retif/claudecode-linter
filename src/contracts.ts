@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.83 — extracted 2026-03-25T06:32:01.478Z
+// Claude Code v2.1.84 — extracted 2026-03-26T00:47:20.055Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -64,6 +64,7 @@ export const HOOK_EVENTS = new Set<string>([
 	"SubagentStart",
 	"SubagentStop",
 	"TaskCompleted",
+	"TaskCreated",
 	"TeammateIdle",
 	"UserPromptSubmit",
 	"WorktreeCreate",
@@ -191,6 +192,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"allowManagedHooksOnly",
 	"allowManagedMcpServersOnly",
 	"allowManagedPermissionRulesOnly",
+	"allowedChannelPlugins",
 	"allowedHttpHookUrls",
 	"allowedMcpServers",
 	"alwaysThinkingEnabled",
@@ -205,6 +207,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"awsAuthRefresh",
 	"awsCredentialExport",
 	"blockedMarketplaces",
+	"channelsEnabled",
 	"claudeMdExcludes",
 	"cleanupPeriodDays",
 	"companyAnnouncements",

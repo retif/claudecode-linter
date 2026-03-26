@@ -1,6 +1,6 @@
 {
-	"version": "2.1.83",
-	"extractedAt": "2026-03-25T06:32:01.478Z",
+	"version": "2.1.84",
+	"extractedAt": "2026-03-26T00:47:20.055Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -63,6 +63,7 @@
 			"SubagentStart",
 			"SubagentStop",
 			"TaskCompleted",
+			"TaskCreated",
 			"TeammateIdle",
 			"UserPromptSubmit",
 			"WorktreeCreate",
@@ -180,6 +181,7 @@
 			"allowManagedHooksOnly",
 			"allowManagedMcpServersOnly",
 			"allowManagedPermissionRulesOnly",
+			"allowedChannelPlugins",
 			"allowedHttpHookUrls",
 			"allowedMcpServers",
 			"alwaysThinkingEnabled",
@@ -194,6 +196,7 @@
 			"awsAuthRefresh",
 			"awsCredentialExport",
 			"blockedMarketplaces",
+			"channelsEnabled",
 			"claudeMdExcludes",
 			"cleanupPeriodDays",
 			"companyAnnouncements",

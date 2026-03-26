@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.1.84 (2026-03-26)
+
+Synced with Claude Code v2.1.84.
+
+### Changes
+
+- **Hook Events**: +TaskCreated
+- **Settings (User)**: +allowedChannelPlugins, +channelsEnabled
+
+### Contract Summary
+
+| Category | Count | Values |
+|----------|------:|--------|
+| Tools | 37 | Agent, AskUserQuestion, Bash, Config, Edit, EnterPlanMode, EnterWorktree, ExitPlanMode, ExitWorktree, Glob, … (37 total) |
+| Hook Events | 26 | ConfigChange, CwdChanged, Elicitation, ElicitationResult, FileChanged, InstructionsLoaded, Notification, PermissionRequest, PostCompact, PostToolUse, … (26 total) |
+| Hook Types | 4 | agent, command, http, prompt |
+| Prompt Events | 21 | ConfigChange, Elicitation, ElicitationResult, InstructionsLoaded, Notification, PermissionRequest, PostToolUse, PostToolUseFailure, PreCompact, PreToolUse, … (21 total) |
+| Agent Colors | 9 | blue, cyan, green, magenta, orange, pink, purple, red, yellow |
+| Agent Models | 4 | haiku, inherit, opus, sonnet |
+| Plugin JSON Fields | 9 | author, dependencies, description, homepage, keywords, license, name, repository, version |
+| Agent Frontmatter | 10 | criticalSystemReminder_EXPERIMENTAL, description, disallowedTools, initialPrompt, maxTurns, mcpServers, model, prompt, skills, tools |
+| Command Frontmatter | 6 | allowedTools, argumentHint, content, description, model, source |
+| MCP Server Fields | 9 | args, command, cwd, env, headers, headersHelper, oauth, type, url |
+| Skill Frontmatter | 15 | allowed-tools, argument-hint, author, dependencies, description, disable-model-invocation, homepage, keywords, license, model, … (15 total) |
+| Settings (User) | 78 | $schema, advisorModel, agent, allowManagedHooksOnly, allowManagedMcpServersOnly, allowManagedPermissionRulesOnly, allowedChannelPlugins, allowedHttpHookUrls, allowedMcpServers, alwaysThinkingEnabled, … (78 total) |
+| Settings (Project) | 1 | permissions |
+
 ## 2.1.83 (2026-03-25)
 
 Synced with Claude Code v2.1.83.
