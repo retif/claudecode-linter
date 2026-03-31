@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.87 — extracted 2026-03-29T06:33:11.607Z
+// Claude Code v2.1.88 — extracted 2026-03-31T00:47:25.030Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -50,6 +50,7 @@ export const HOOK_EVENTS = new Set<string>([
 	"FileChanged",
 	"InstructionsLoaded",
 	"Notification",
+	"PermissionDenied",
 	"PermissionRequest",
 	"PostCompact",
 	"PostToolUse",
@@ -134,13 +135,17 @@ export const PLUGIN_JSON_FIELDS = new Set<string>([
 ]);
 
 export const AGENT_FRONTMATTER = new Set<string>([
+	"background",
 	"criticalSystemReminder_EXPERIMENTAL",
 	"description",
 	"disallowedTools",
+	"effort",
 	"initialPrompt",
 	"maxTurns",
 	"mcpServers",
+	"memory",
 	"model",
+	"permissionMode",
 	"prompt",
 	"skills",
 	"tools",

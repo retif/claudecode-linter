@@ -1,6 +1,6 @@
 {
-	"version": "2.1.87",
-	"extractedAt": "2026-03-29T06:33:11.607Z",
+	"version": "2.1.88",
+	"extractedAt": "2026-03-31T00:47:25.030Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -49,6 +49,7 @@
 			"FileChanged",
 			"InstructionsLoaded",
 			"Notification",
+			"PermissionDenied",
 			"PermissionRequest",
 			"PostCompact",
 			"PostToolUse",
@@ -127,13 +128,17 @@
 			"version"
 		],
 		"agentFrontmatter": [
+			"background",
 			"criticalSystemReminder_EXPERIMENTAL",
 			"description",
 			"disallowedTools",
+			"effort",
 			"initialPrompt",
 			"maxTurns",
 			"mcpServers",
+			"memory",
 			"model",
+			"permissionMode",
 			"prompt",
 			"skills",
 			"tools"
