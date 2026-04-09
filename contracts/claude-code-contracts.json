@@ -1,6 +1,6 @@
 {
-	"version": "2.1.96",
-	"extractedAt": "2026-04-08T06:42:06.686Z",
+	"version": "2.1.97",
+	"extractedAt": "2026-04-09T00:41:06.967Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -260,6 +260,7 @@
 			"strictPluginOnlyCustomization",
 			"syntaxHighlightingDisabled",
 			"terminalTitleFromRename",
+			"viewMode",
 			"voice",
 			"voiceEnabled",
 			"worktree"
