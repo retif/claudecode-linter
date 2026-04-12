@@ -59,7 +59,7 @@
 		"acorn": "^8.16.0",
 		"acorn-walk": "^8.3.5",
 		"knip": "^6.0.5",
-		"npm-check-updates": "^19.6.3",
+		"npm-check-updates": "^20.0.1",
 		"tsx": "^4.21.0",
 		"typescript": "^6.0.2",
 		"vitest": "4.1.4"
