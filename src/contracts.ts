@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.109 — extracted 2026-04-15T06:47:29.481Z
+// Claude Code v2.1.110 — extracted 2026-04-16T00:55:01.855Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -276,6 +276,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"subagentStatusLine",
 	"syntaxHighlightingDisabled",
 	"terminalTitleFromRename",
+	"tui",
 	"viewMode",
 	"voice",
 	"voiceEnabled",

@@ -1,6 +1,6 @@
 {
-	"version": "2.1.109",
-	"extractedAt": "2026-04-15T06:47:29.481Z",
+	"version": "2.1.110",
+	"extractedAt": "2026-04-16T00:55:01.855Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -265,6 +265,7 @@
 			"subagentStatusLine",
 			"syntaxHighlightingDisabled",
 			"terminalTitleFromRename",
+			"tui",
 			"viewMode",
 			"voice",
 			"voiceEnabled",
