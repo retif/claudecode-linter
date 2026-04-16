@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.110 — extracted 2026-04-16T00:55:01.855Z
+// Claude Code v2.1.111 — extracted 2026-04-16T18:35:14.524Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -255,6 +255,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"prefersReducedMotion",
 	"proactive",
 	"promptSuggestionEnabled",
+	"proxyAuthHelper",
 	"remote",
 	"respectGitignore",
 	"sandbox",
