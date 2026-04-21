@@ -3,7 +3,6 @@
 [![CI](https://github.com/retif/claudecode-linter/actions/workflows/ci.yml/badge.svg)](https://github.com/retif/claudecode-linter/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/claudecode-linter)](https://www.npmjs.com/package/claudecode-linter)
 [![license](https://img.shields.io/npm/l/claudecode-linter)](https://github.com/retif/claudecode-linter/blob/main/LICENSE)
-[![Known Vulnerabilities](https://snyk.io/test/github/retif/claudecode-linter/badge.svg)](https://snyk.io/test/github/retif/claudecode-linter)
 [![Socket Badge](https://socket.dev/api/badge/npm/package/claudecode-linter)](https://socket.dev/npm/package/claudecode-linter)
 
 Standalone linter for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugins and configuration files.
