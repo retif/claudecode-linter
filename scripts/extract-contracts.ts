@@ -58,7 +58,10 @@ function fetchCliSource(requestedVersion?: string): {
 
 		let sdkToolsDts: string | null = null;
 		try {
-			sdkToolsDts = readFileSync(join(tmp, "package", "sdk-tools.d.ts"), "utf8");
+			sdkToolsDts = readFileSync(
+				join(tmp, "package", "sdk-tools.d.ts"),
+				"utf8",
+			);
 		} catch {
 			// File may not exist in all versions
 		}
@@ -205,7 +208,10 @@ export function collectObjectKeySets(ast: acorn.Program): ObjectKeySet[] {
 				if (prop.computed) continue;
 				if (prop.key.type === "Identifier") {
 					keys.push(prop.key.name);
-				} else if (prop.key.type === "Literal" && typeof prop.key.value === "string") {
+				} else if (
+					prop.key.type === "Literal" &&
+					typeof prop.key.value === "string"
+				) {
 					keys.push(prop.key.value);
 				}
 			}
@@ -241,10 +247,11 @@ export function classifyByOverlap(
 	let bestSizeDiff = Infinity;
 
 	for (const s of sets) {
-		const intersectionCount = s.keys.filter(k => knownSet.has(k)).length;
+		const intersectionCount = s.keys.filter((k) => knownSet.has(k)).length;
 		if (intersectionCount < MIN_OVERLAP_FLOOR) continue;
 
-		const score = intersectionCount / Math.max(s.keys.length, knownValues.length);
+		const score =
+			intersectionCount / Math.max(s.keys.length, knownValues.length);
 		if (score < MIN_SCORE) continue;
 
 		const sizeDiff = Math.abs(s.keys.length - knownValues.length);
@@ -458,7 +465,7 @@ export function validateContracts(
 		if (!(field in rawExtracted) || rawExtracted[field] === undefined) continue;
 
 		const extractedSet = new Set(rawExtracted[field]!);
-		const lost = prevValues.filter(v => !extractedSet.has(v));
+		const lost = prevValues.filter((v) => !extractedSet.has(v));
 		const dropRate = lost.length / prevValues.length;
 
 		if (dropRate > 0.5) {
@@ -652,7 +659,9 @@ function main() {
 	const objectKeySets = collectObjectKeySets(ast);
 	console.log(
 		pc.cyan("▸ Extracting contracts..."),
-		pc.dim(`(${stringSets.length} string sets, ${objectKeySets.length} object-key sets)`),
+		pc.dim(
+			`(${stringSets.length} string sets, ${objectKeySets.length} object-key sets)`,
+		),
 	);
 
 	// --- String-set classification (tools, events, colors — already robust) ---
@@ -663,15 +672,23 @@ function main() {
 	if (sdkToolsDts) {
 		const dtsTools = parseToolsDts(sdkToolsDts);
 		const censusTools = new Set(allTools);
-		const missingFromCensus = dtsTools.filter(t => !censusTools.has(t));
+		const missingFromCensus = dtsTools.filter((t) => !censusTools.has(t));
 		if (missingFromCensus.length > 0) {
-			console.log(pc.yellow(`  ⚠ Tools in sdk-tools.d.ts but not in bundle: ${missingFromCensus.join(", ")}`));
+			console.log(
+				pc.yellow(
+					`  ⚠ Tools in sdk-tools.d.ts but not in bundle: ${missingFromCensus.join(", ")}`,
+				),
+			);
 			// Add them — d.ts is authoritative for SDK tools
 			for (const t of missingFromCensus) allTools.push(t);
 			allTools.sort();
 		}
 	} else {
-		console.log(pc.yellow("  ⚠ sdk-tools.d.ts not found in package — skipping d.ts cross-validation"));
+		console.log(
+			pc.yellow(
+				"  ⚠ sdk-tools.d.ts not found in package — skipping d.ts cross-validation",
+			),
+		);
 	}
 
 	// --- Object-key census classification (replaces fragile anchor extractors) ---
@@ -687,22 +704,44 @@ function main() {
 		// First run — no previous file
 	}
 
-	const pluginFields = classifyByOverlap(objectKeySets, prev["pluginJsonFields"] ?? []);
-	const agentFields = classifyByOverlap(objectKeySets, prev["agentFrontmatter"] ?? []);
-	const commandFields = classifyByOverlap(objectKeySets, prev["commandFrontmatter"] ?? []);
-	const mcpFieldsCensus = classifyByOverlap(objectKeySets, prev["mcpServerFields"] ?? []);
+	const pluginFields = classifyByOverlap(
+		objectKeySets,
+		prev["pluginJsonFields"] ?? [],
+	);
+	const agentFields = classifyByOverlap(
+		objectKeySets,
+		prev["agentFrontmatter"] ?? [],
+	);
+	const commandFields = classifyByOverlap(
+		objectKeySets,
+		prev["commandFrontmatter"] ?? [],
+	);
+	const mcpFieldsCensus = classifyByOverlap(
+		objectKeySets,
+		prev["mcpServerFields"] ?? [],
+	);
 	const mcpFieldsFallback = extractMcpServerFields(source);
 	const mcpFields = [...new Set([...mcpFieldsCensus, ...mcpFieldsFallback])];
-	const settingsUserFields = classifyByOverlap(objectKeySets, prev["settingsUserFields"] ?? []);
-	const skillFieldsCensus = classifyByOverlap(objectKeySets, prev["skillFrontmatter"] ?? []);
+	const settingsUserFields = classifyByOverlap(
+		objectKeySets,
+		prev["settingsUserFields"] ?? [],
+	);
+	const skillFieldsCensus = classifyByOverlap(
+		objectKeySets,
+		prev["skillFrontmatter"] ?? [],
+	);
 	const skillFieldsFallback = extractSkillFrontmatter(source);
-	const skillFields = [...new Set([...skillFieldsCensus, ...skillFieldsFallback])].sort();
+	const skillFields = [
+		...new Set([...skillFieldsCensus, ...skillFieldsFallback]),
+	].sort();
 
 	// Small enum sets: union census + anchor fallback results
-	const agentModelEnum = [...new Set([
-		...classifyByOverlap(objectKeySets, prev["agentModels"] ?? []),
-		...extractAgentModelEnum(source),
-	])];
+	const agentModelEnum = [
+		...new Set([
+			...classifyByOverlap(objectKeySets, prev["agentModels"] ?? []),
+			...extractAgentModelEnum(source),
+		]),
+	];
 	// hookTypes and promptEvents: small/subset categories where census matches
 	// the same object as hookEvents. Use dedicated extractors only.
 	const hookTypes = extractHookTypes(source);
@@ -734,22 +773,33 @@ function main() {
 		commandFrontmatter: commandFields.length > 0 ? commandFields : undefined,
 		mcpServerFields: mcpFields.length > 0 ? mcpFields : undefined,
 		skillFrontmatter: skillFields.length > 0 ? skillFields : undefined,
-		settingsUserFields: settingsUserFields.length > 0 ? settingsUserFields.sort() : undefined,
-		settingsProjectFields: settingsProjectFields.length > 0 ? settingsProjectFields.sort() : undefined,
+		settingsUserFields:
+			settingsUserFields.length > 0 ? settingsUserFields.sort() : undefined,
+		settingsProjectFields:
+			settingsProjectFields.length > 0
+				? settingsProjectFields.sort()
+				: undefined,
 	};
 
 	// --- CI Contract Gate (pre-merge) ---
-	const validation = validateContracts(rawContracts as Record<string, string[] | undefined>, prev);
+	const validation = validateContracts(
+		rawContracts as Record<string, string[] | undefined>,
+		prev,
+	);
 	if (validation.warnings.length > 0) {
 		console.log(pc.yellow("\n  Contract warnings:"));
 		for (const w of validation.warnings) console.log(pc.yellow(`    ⚠ ${w}`));
 	}
 	if (validation.failed) {
 		if (process.env.FORCE_CONTRACTS === "1") {
-			console.log(pc.yellow("\n  ⚠ FORCE_CONTRACTS=1 — bypassing contract gate"));
+			console.log(
+				pc.yellow("\n  ⚠ FORCE_CONTRACTS=1 — bypassing contract gate"),
+			);
 			for (const e of validation.errors) console.log(pc.yellow(`    ${e}`));
 		} else {
-			console.log(pc.red("\n  ✗ Contract gate FAILED — extraction degraded >30%:"));
+			console.log(
+				pc.red("\n  ✗ Contract gate FAILED — extraction degraded >30%:"),
+			);
 			for (const e of validation.errors) console.log(pc.red(`    ${e}`));
 			console.log(pc.red("\n  Set FORCE_CONTRACTS=1 to override."));
 			process.exit(1);
@@ -769,7 +819,10 @@ function main() {
 
 	const contracts: Record<string, string[] | undefined> = {};
 	for (const field of FIELDS) {
-		contracts[field] = mergeWithPrevious(rawContracts[field] as string[] | undefined, field);
+		contracts[field] = mergeWithPrevious(
+			rawContracts[field] as string[] | undefined,
+			field,
+		);
 	}
 
 	const output = {
