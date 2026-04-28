@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.119 — extracted 2026-04-24T03:29:23.326Z
+// Claude Code v2.1.121 — extracted 2026-04-28T03:45:47.661Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -125,6 +125,7 @@ export const AGENT_MODELS = new Set<string>([
 ]);
 
 export const PLUGIN_JSON_FIELDS = new Set<string>([
+	"$schema",
 	"author",
 	"dependencies",
 	"description",
@@ -163,6 +164,7 @@ export const COMMAND_FRONTMATTER = new Set<string>([
 ]);
 
 export const MCP_SERVER_FIELDS = new Set<string>([
+	"alwaysLoad",
 	"args",
 	"command",
 	"cwd",
@@ -180,13 +182,19 @@ export const SKILL_FRONTMATTER = new Set<string>([
 	"author",
 	"dependencies",
 	"description",
+	"devDependencies",
 	"disable-model-invocation",
+	"engines",
+	"files",
 	"homepage",
 	"keywords",
 	"license",
+	"main",
 	"model",
 	"name",
 	"repository",
+	"scripts",
+	"types",
 	"user-invocable",
 	"version",
 	"when_to_use",
@@ -224,10 +232,12 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"claudeMdExcludes",
 	"cleanupPeriodDays",
 	"companyAnnouncements",
+	"daemonColdStart",
 	"defaultShell",
 	"deniedMcpServers",
 	"disableAllHooks",
 	"disableAutoMode",
+	"disableBackgroundAgents",
 	"disableSkillShellExecution",
 	"disabledMcpjsonServers",
 	"editorMode",
