@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.121 — extracted 2026-04-28T03:45:47.661Z
+// Claude Code v2.1.122 — extracted 2026-04-29T00:59:57.299Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -180,20 +180,25 @@ export const SKILL_FRONTMATTER = new Set<string>([
 	"allowed-tools",
 	"argument-hint",
 	"author",
+	"config",
+	"contributors",
 	"dependencies",
 	"description",
 	"devDependencies",
 	"disable-model-invocation",
 	"engines",
 	"files",
+	"funding",
 	"homepage",
 	"keywords",
 	"license",
 	"main",
 	"model",
 	"name",
+	"optionalDependencies",
 	"repository",
 	"scripts",
+	"type",
 	"types",
 	"user-invocable",
 	"version",
