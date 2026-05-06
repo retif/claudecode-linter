@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.1.131 (2026-05-06)
+
+Synced with Claude Code v2.1.131.
+
+### Contract Summary
+
+| Category | Count | Values |
+|----------|------:|--------|
+| Tools | 37 | Agent, AskUserQuestion, Bash, Config, Edit, EnterPlanMode, EnterWorktree, ExitPlanMode, ExitWorktree, Glob, … (37 total) |
+| Hook Events | 29 | ConfigChange, CwdChanged, Elicitation, ElicitationResult, FileChanged, InstructionsLoaded, Notification, PermissionDenied, PermissionRequest, PostCompact, … (29 total) |
+| Hook Types | 4 | agent, command, http, prompt |
+| Prompt Events | 21 | ConfigChange, Elicitation, ElicitationResult, InstructionsLoaded, Notification, PermissionRequest, PostToolUse, PostToolUseFailure, PreCompact, PreToolUse, … (21 total) |
+| Agent Colors | 9 | blue, cyan, green, magenta, orange, pink, purple, red, yellow |
+| Agent Models | 4 | haiku, inherit, opus, sonnet |
+| Plugin JSON Fields | 10 | $schema, author, dependencies, description, homepage, keywords, license, name, repository, version |
+| Agent Frontmatter | 14 | background, criticalSystemReminder_EXPERIMENTAL, description, disallowedTools, effort, initialPrompt, maxTurns, mcpServers, memory, model, … (14 total) |
+| Command Frontmatter | 6 | allowedTools, argumentHint, content, description, model, source |
+| MCP Server Fields | 10 | alwaysLoad, args, command, cwd, env, headers, headersHelper, oauth, type, url |
+| Skill Frontmatter | 26 | allowed-tools, argument-hint, author, config, contributors, dependencies, description, devDependencies, disable-model-invocation, engines, … (26 total) |
+| Settings (User) | 114 | $schema, advisorModel, agent, agentPushNotifEnabled, allowManagedHooksOnly, allowManagedMcpServersOnly, allowManagedPermissionRulesOnly, allowedChannelPlugins, allowedHttpHookUrls, allowedMcpServers, … (114 total) |
+| Settings (Project) | 1 | permissions |
+
 ## 2.1.129 (2026-05-06)
 
 Synced with Claude Code v2.1.129.
