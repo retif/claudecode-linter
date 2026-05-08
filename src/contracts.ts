@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.132 — extracted 2026-05-07T00:59:12.259Z
+// Claude Code v2.1.133 — extracted 2026-05-08T00:59:22.968Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -275,6 +275,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"modelOverrides",
 	"otelHeadersHelper",
 	"outputStyle",
+	"parentSettingsBehavior",
 	"permissions",
 	"plansDirectory",
 	"pluginConfigs",

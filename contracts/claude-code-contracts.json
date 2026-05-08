@@ -1,6 +1,6 @@
 {
-	"version": "2.1.132",
-	"extractedAt": "2026-05-07T00:59:12.259Z",
+	"version": "2.1.133",
+	"extractedAt": "2026-05-08T00:59:22.968Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -264,6 +264,7 @@
 			"modelOverrides",
 			"otelHeadersHelper",
 			"outputStyle",
+			"parentSettingsBehavior",
 			"permissions",
 			"plansDirectory",
 			"pluginConfigs",
