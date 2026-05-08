@@ -1,6 +1,6 @@
 {
-	"version": "2.1.133",
-	"extractedAt": "2026-05-08T00:59:22.968Z",
+	"version": "2.1.136",
+	"extractedAt": "2026-05-08T18:40:06.818Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -269,6 +269,7 @@
 			"plansDirectory",
 			"pluginConfigs",
 			"pluginTrustMessage",
+			"policyHelper",
 			"prUrlTemplate",
 			"preferredNotifChannel",
 			"prefersReducedMotion",

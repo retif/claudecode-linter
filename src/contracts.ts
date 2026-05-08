@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.133 — extracted 2026-05-08T00:59:22.968Z
+// Claude Code v2.1.136 — extracted 2026-05-08T18:40:06.818Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -280,6 +280,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"plansDirectory",
 	"pluginConfigs",
 	"pluginTrustMessage",
+	"policyHelper",
 	"prUrlTemplate",
 	"preferredNotifChannel",
 	"prefersReducedMotion",
