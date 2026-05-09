@@ -1,4 +1,11 @@
-import { AGENT_FRONTMATTER, AGENT_MODELS, AGENT_COLORS } from "../contracts.js";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import {
+	AGENT_FRONTMATTER,
+	AGENT_MODELS,
+	AGENT_COLORS,
+	TOOLS,
+} from "../contracts.js";
 import type {
 	Linter,
 	LintDiagnostic,
@@ -7,6 +14,62 @@ import type {
 } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
+
+function findPluginRoot(agentFilePath: string): string | null {
+	let dir = dirname(agentFilePath);
+	for (let i = 0; i < 10; i++) {
+		if (existsSync(join(dir, ".claude-plugin", "plugin.json"))) return dir;
+		const parent = dirname(dir);
+		if (parent === dir) break;
+		dir = parent;
+	}
+	return null;
+}
+
+function loadJson(p: string): unknown {
+	try {
+		return JSON.parse(readFileSync(p, "utf-8"));
+	} catch {
+		return null;
+	}
+}
+
+function loadPluginName(pluginRoot: string): string | null {
+	const j = loadJson(join(pluginRoot, ".claude-plugin", "plugin.json"));
+	if (j && typeof j === "object" && j !== null && "name" in j) {
+		const n = (j as Record<string, unknown>).name;
+		return typeof n === "string" ? n : null;
+	}
+	return null;
+}
+
+function loadMcpServerNames(pluginRoot: string): Set<string> {
+	const j = loadJson(join(pluginRoot, ".mcp.json"));
+	const out = new Set<string>();
+	if (
+		j &&
+		typeof j === "object" &&
+		j !== null &&
+		"mcpServers" in j &&
+		typeof (j as Record<string, unknown>).mcpServers === "object" &&
+		(j as Record<string, unknown>).mcpServers !== null
+	) {
+		for (const k of Object.keys(
+			(j as { mcpServers: Record<string, unknown> }).mcpServers,
+		)) {
+			out.add(k);
+		}
+	}
+	return out;
+}
+
+function parseToolsField(v: unknown): string[] {
+	if (typeof v !== "string") return [];
+	return v
+		.split(",")
+		.map((s) => s.trim())
+		.filter(Boolean);
+}
 
 interface RuleDef {
 	id: string;
@@ -27,6 +90,8 @@ const RULES: RuleDef[] = [
 	{ id: "agent-md/system-prompt-length", defaultSeverity: "warning" },
 	{ id: "agent-md/system-prompt-second-person", defaultSeverity: "info" },
 	{ id: "agent-md/no-unknown-frontmatter", defaultSeverity: "info" },
+	{ id: "agent-md/known-tools", defaultSeverity: "warning" },
+	{ id: "agent-md/mcp-tools-resolve", defaultSeverity: "error" },
 ];
 
 function diag(
@@ -236,6 +301,85 @@ export const agentMdLinter: Linter = {
 						fm.bodyStartLine,
 					),
 				);
+			}
+		}
+
+		// tools
+		const declaredTools = parseToolsField(fm.data.tools);
+		if (declaredTools.length > 0) {
+			const pluginRoot = findPluginRoot(filePath);
+			const pluginName = pluginRoot ? loadPluginName(pluginRoot) : null;
+			const mcpServers = pluginRoot
+				? loadMcpServerNames(pluginRoot)
+				: new Set<string>();
+
+			for (const t of declaredTools) {
+				if (t.startsWith("mcp__")) {
+					// Two valid shapes:
+					//   mcp__plugin_<plugin>_<server>__<tool>   plugin-namespaced
+					//   mcp__<server>__<tool>                   user-config (non-plugin)
+					const ns = t.match(
+						/^mcp__plugin_([a-z0-9-]+)_([a-z0-9-]+)__(.+)$/,
+					);
+					const bare = t.match(/^mcp__([a-z0-9-]+)__(.+)$/);
+
+					if (ns) {
+						const declaredPlugin = ns[1];
+						const declaredServer = ns[2];
+						if (pluginName && declaredPlugin !== pluginName) {
+							push(
+								diag(
+									config,
+									filePath,
+									"agent-md/mcp-tools-resolve",
+									"error",
+									`Tool "${t}" references plugin "${declaredPlugin}", but this plugin is named "${pluginName}".`,
+								),
+							);
+						}
+						if (
+							pluginRoot &&
+							mcpServers.size > 0 &&
+							!mcpServers.has(declaredServer)
+						) {
+							push(
+								diag(
+									config,
+									filePath,
+									"agent-md/mcp-tools-resolve",
+									"error",
+									`Tool "${t}" references MCP server "${declaredServer}", but .mcp.json declares: [${[...mcpServers].join(", ")}].`,
+								),
+							);
+						}
+					} else if (bare && pluginRoot) {
+						const server = bare[1];
+						const rest = bare[2];
+						if (mcpServers.has(server)) {
+							push(
+								diag(
+									config,
+									filePath,
+									"agent-md/mcp-tools-resolve",
+									"error",
+									`Tool "${t}" uses bare "mcp__<server>__<tool>" form, but this is a plugin (${pluginName ?? "unknown name"}). Plugin agents must use the namespaced form: "mcp__plugin_${pluginName ?? "<plugin>"}_${server}__${rest}".`,
+								),
+							);
+						}
+					}
+					continue;
+				}
+				if (!TOOLS.has(t)) {
+					push(
+						diag(
+							config,
+							filePath,
+							"agent-md/known-tools",
+							"warning",
+							`Unknown built-in tool "${t}" in tools: field. Valid: ${[...TOOLS].sort().join(", ")}.`,
+						),
+					);
+				}
 			}
 		}
 
