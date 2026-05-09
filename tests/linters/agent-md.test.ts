@@ -244,11 +244,13 @@ describe("agent-md linter", () => {
 	it("does not warn on Glob/Grep outside a plugin", () => {
 		const content =
 			"---\nname: ok-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\ntools: Bash, Read, Glob, Grep\n---\n\nYou are a test agent.";
-		const diags = agentMdLinter.lint("/tmp/some-non-plugin/test.md", content, CONFIG);
+		const diags = agentMdLinter.lint(
+			"/tmp/some-non-plugin/test.md",
+			content,
+			CONFIG,
+		);
 		expect(
-			diags.filter(
-				(d) => d.rule === "agent-md/plugin-subagent-blocked-tools",
-			),
+			diags.filter((d) => d.rule === "agent-md/plugin-subagent-blocked-tools"),
 		).toHaveLength(0);
 	});
 

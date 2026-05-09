@@ -324,15 +324,10 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"wslInheritsWindowsSettings",
 ]);
 
-export const SETTINGS_PROJECT_FIELDS = new Set<string>([
-	"permissions",
-]);
+export const SETTINGS_PROJECT_FIELDS = new Set<string>(["permissions"]);
 
 // Hand-curated denylist of tools declared in agent frontmatter that never
 // reach plugin-defined subagents at runtime. Source: tracked upstream bugs
 //   https://github.com/anthropics/claude-code/issues/52055
 //   https://github.com/anthropics/claude-code/issues/52004
-export const PLUGIN_SUBAGENT_BLOCKED_TOOLS = new Set<string>([
-	"Glob",
-	"Grep",
-]);
+export const PLUGIN_SUBAGENT_BLOCKED_TOOLS = new Set<string>(["Glob", "Grep"]);

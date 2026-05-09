@@ -55,10 +55,7 @@ const lines = [
 	"// reach plugin-defined subagents at runtime. Source: tracked upstream bugs",
 	"//   https://github.com/anthropics/claude-code/issues/52055",
 	"//   https://github.com/anthropics/claude-code/issues/52004",
-	setLiteral(
-		"PLUGIN_SUBAGENT_BLOCKED_TOOLS",
-		c.pluginSubagentBlockedTools,
-	),
+	setLiteral("PLUGIN_SUBAGENT_BLOCKED_TOOLS", c.pluginSubagentBlockedTools),
 	"",
 ];
 

@@ -72,12 +72,7 @@
 			"WorktreeCreate",
 			"WorktreeRemove"
 		],
-		"hookTypes": [
-			"agent",
-			"command",
-			"http",
-			"prompt"
-		],
+		"hookTypes": ["agent", "command", "http", "prompt"],
 		"promptEvents": [
 			"ConfigChange",
 			"Elicitation",
@@ -112,12 +107,7 @@
 			"red",
 			"yellow"
 		],
-		"agentModels": [
-			"haiku",
-			"inherit",
-			"opus",
-			"sonnet"
-		],
+		"agentModels": ["haiku", "inherit", "opus", "sonnet"],
 		"pluginJsonFields": [
 			"$schema",
 			"author",
@@ -312,12 +302,7 @@
 			"worktree",
 			"wslInheritsWindowsSettings"
 		],
-		"settingsProjectFields": [
-			"permissions"
-		],
-		"pluginSubagentBlockedTools": [
-			"Glob",
-			"Grep"
-		]
+		"settingsProjectFields": ["permissions"],
+		"pluginSubagentBlockedTools": ["Glob", "Grep"]
 	}
 }
