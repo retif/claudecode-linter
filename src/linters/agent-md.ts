@@ -318,9 +318,7 @@ export const agentMdLinter: Linter = {
 					// Two valid shapes:
 					//   mcp__plugin_<plugin>_<server>__<tool>   plugin-namespaced
 					//   mcp__<server>__<tool>                   user-config (non-plugin)
-					const ns = t.match(
-						/^mcp__plugin_([a-z0-9-]+)_([a-z0-9-]+)__(.+)$/,
-					);
+					const ns = t.match(/^mcp__plugin_([a-z0-9-]+)_([a-z0-9-]+)__(.+)$/);
 					const bare = t.match(/^mcp__([a-z0-9-]+)__(.+)$/);
 
 					if (ns) {

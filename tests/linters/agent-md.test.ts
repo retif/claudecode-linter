@@ -117,9 +117,9 @@ describe("agent-md linter", () => {
 		const content =
 			"---\nname: ok-tools\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\ntools: Bash, Read, Edit, Glob, Grep, WebFetch\n---\n\nYou are a test agent.";
 		const diags = agentMdLinter.lint("test.md", content, CONFIG);
-		expect(
-			diags.filter((d) => d.rule === "agent-md/known-tools"),
-		).toHaveLength(0);
+		expect(diags.filter((d) => d.rule === "agent-md/known-tools")).toHaveLength(
+			0,
+		);
 	});
 
 	it("flags bare mcp__server__tool form inside a plugin", async () => {
