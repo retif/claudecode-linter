@@ -882,6 +882,15 @@ const FIELDS = [
 	"skillFrontmatter",
 	"settingsUserFields",
 	"settingsProjectFields",
+	// pluginSubagentBlockedTools: hand-curated list of tool names that are
+	// declared in agent frontmatter but never reach the runtime tool schema
+	// of plugin-defined subagents. Tracked upstream:
+	//   https://github.com/anthropics/claude-code/issues/52055
+	//   https://github.com/anthropics/claude-code/issues/52004
+	// Not auto-extracted from cli.js — this set is preserved across
+	// extractions via mergeWithPrevious. Update by editing the JSON file
+	// directly when the upstream bug list changes.
+	"pluginSubagentBlockedTools",
 ];
 
 const LABELS: Record<string, string> = {

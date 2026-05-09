@@ -51,6 +51,15 @@ const lines = [
 	"",
 	setLiteral("SETTINGS_PROJECT_FIELDS", c.settingsProjectFields),
 	"",
+	"// Hand-curated denylist of tools declared in agent frontmatter that never",
+	"// reach plugin-defined subagents at runtime. Source: tracked upstream bugs",
+	"//   https://github.com/anthropics/claude-code/issues/52055",
+	"//   https://github.com/anthropics/claude-code/issues/52004",
+	setLiteral(
+		"PLUGIN_SUBAGENT_BLOCKED_TOOLS",
+		c.pluginSubagentBlockedTools,
+	),
+	"",
 ];
 
 writeFileSync(outputPath, lines.join("\n"));

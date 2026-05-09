@@ -314,6 +314,10 @@
 		],
 		"settingsProjectFields": [
 			"permissions"
+		],
+		"pluginSubagentBlockedTools": [
+			"Glob",
+			"Grep"
 		]
 	}
 }

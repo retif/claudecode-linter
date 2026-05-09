@@ -212,6 +212,46 @@ describe("agent-md linter", () => {
 		expect(errs.some((e) => e.message.includes('"grafana"'))).toBe(true);
 	});
 
+	it("warns on Glob/Grep declared in a plugin agent (upstream bug #52055)", async () => {
+		const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
+		const { tmpdir } = await import("node:os");
+		const root = mkdtempSync(resolve(tmpdir(), "linter-test-"));
+		mkdirSync(resolve(root, ".claude-plugin"));
+		mkdirSync(resolve(root, "agents"));
+		writeFileSync(
+			resolve(root, ".claude-plugin/plugin.json"),
+			JSON.stringify({ name: "test-plugin", version: "1.0.0" }),
+		);
+		const agentPath = resolve(root, "agents/test.md");
+		writeFileSync(
+			agentPath,
+			"---\nname: test-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\ntools: Bash, Read, Glob, Grep\n---\n\nYou are a test agent.",
+		);
+		const diags = agentMdLinter.lint(
+			agentPath,
+			readFileSync(agentPath, "utf-8"),
+			CONFIG,
+		);
+		const warns = diags.filter(
+			(d) => d.rule === "agent-md/plugin-subagent-blocked-tools",
+		);
+		expect(warns).toHaveLength(2);
+		expect(warns.some((w) => w.message.includes('"Glob"'))).toBe(true);
+		expect(warns.some((w) => w.message.includes('"Grep"'))).toBe(true);
+		expect(warns[0].message).toContain("52055");
+	});
+
+	it("does not warn on Glob/Grep outside a plugin", () => {
+		const content =
+			"---\nname: ok-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\ntools: Bash, Read, Glob, Grep\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("/tmp/some-non-plugin/test.md", content, CONFIG);
+		expect(
+			diags.filter(
+				(d) => d.rule === "agent-md/plugin-subagent-blocked-tools",
+			),
+		).toHaveLength(0);
+	});
+
 	it("accepts properly-namespaced plugin MCP tools", async () => {
 		const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
 		const { tmpdir } = await import("node:os");

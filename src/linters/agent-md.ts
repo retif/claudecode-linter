@@ -5,6 +5,7 @@ import {
 	AGENT_MODELS,
 	AGENT_COLORS,
 	TOOLS,
+	PLUGIN_SUBAGENT_BLOCKED_TOOLS,
 } from "../contracts.js";
 import type {
 	Linter,
@@ -92,6 +93,7 @@ const RULES: RuleDef[] = [
 	{ id: "agent-md/no-unknown-frontmatter", defaultSeverity: "info" },
 	{ id: "agent-md/known-tools", defaultSeverity: "warning" },
 	{ id: "agent-md/mcp-tools-resolve", defaultSeverity: "error" },
+	{ id: "agent-md/plugin-subagent-blocked-tools", defaultSeverity: "warning" },
 ];
 
 function diag(
@@ -375,6 +377,17 @@ export const agentMdLinter: Linter = {
 							"agent-md/known-tools",
 							"warning",
 							`Unknown built-in tool "${t}" in tools: field. Valid: ${[...TOOLS].sort().join(", ")}.`,
+						),
+					);
+				}
+				if (pluginRoot && PLUGIN_SUBAGENT_BLOCKED_TOOLS.has(t)) {
+					push(
+						diag(
+							config,
+							filePath,
+							"agent-md/plugin-subagent-blocked-tools",
+							"warning",
+							`Tool "${t}" is declared but does NOT reach plugin subagents at runtime — known Claude Code bug (https://github.com/anthropics/claude-code/issues/52055). The agent will silently lack this tool. For local file ops, use Bash with rg/find, or dispatch the built-in Explore subagent.`,
 						),
 					);
 				}
