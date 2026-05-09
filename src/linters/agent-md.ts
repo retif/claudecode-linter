@@ -85,7 +85,7 @@ const RULES: RuleDef[] = [
 	{ id: "agent-md/description-examples", defaultSeverity: "warning" },
 	{ id: "agent-md/model-required", defaultSeverity: "error" },
 	{ id: "agent-md/model-valid", defaultSeverity: "warning" },
-	{ id: "agent-md/color-required", defaultSeverity: "error" },
+	{ id: "agent-md/color-required", defaultSeverity: "warning" },
 	{ id: "agent-md/color-valid", defaultSeverity: "warning" },
 	{ id: "agent-md/system-prompt-present", defaultSeverity: "error" },
 	{ id: "agent-md/system-prompt-length", defaultSeverity: "warning" },
@@ -235,7 +235,7 @@ export const agentMdLinter: Linter = {
 					config,
 					filePath,
 					"agent-md/color-required",
-					"error",
+					"warning",
 					'"color" is required in frontmatter',
 				),
 			);
