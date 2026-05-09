@@ -158,8 +158,8 @@ export const agentMdLinter: Linter = {
 		} else {
 			const name = fm.data.name;
 			if (
-				!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(name) ||
-				name.length < 3 ||
+				!/^[a-z][a-z0-9-]*[a-z0-9]?$/.test(name) ||
+				name.length < 2 ||
 				name.length > 50
 			) {
 				push(
@@ -168,7 +168,7 @@ export const agentMdLinter: Linter = {
 						filePath,
 						"agent-md/name-format",
 						"error",
-						`"name" must be 3-50 chars, lowercase alphanumeric + hyphens (got "${name}")`,
+						`"name" must be 2-50 chars, lowercase alphanumeric + hyphens (got "${name}")`,
 					),
 				);
 			}
