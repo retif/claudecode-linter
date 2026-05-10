@@ -907,6 +907,7 @@ const LABELS: Record<string, string> = {
 	skillFrontmatter: "Skill Frontmatter",
 	settingsUserFields: "Settings (User)",
 	settingsProjectFields: "Settings (Project)",
+	pluginSubagentBlockedTools: "Plugin Subagent Blocked Tools",
 };
 
 interface DriftEntry {
