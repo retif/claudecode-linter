@@ -27,18 +27,38 @@ export const CANONICAL_ARTIFACTS: CanonicalArtifact[] = [
 		description: "plugin manifest",
 	},
 	{
-		basename: "hooks.json",
-		expectedPath: "hooks/hooks.json",
-		description: "plugin hooks config",
-	},
-	{
 		basename: "marketplace.json",
 		expectedPath: ".claude-plugin/marketplace.json",
 		description: "marketplace manifest",
 	},
 	{
+		basename: "hooks.json",
+		expectedPath: "hooks/hooks.json",
+		description: "plugin hooks config",
+	},
+	{
 		basename: "SKILL.md",
 		expectedPattern: "skills/*/SKILL.md",
 		description: "skill manifest",
+	},
+	{
+		basename: ".mcp.json",
+		expectedPath: ".mcp.json",
+		description: "plugin MCP server definitions",
+	},
+	{
+		basename: ".lsp.json",
+		expectedPath: ".lsp.json",
+		description: "plugin LSP server configurations",
+	},
+	{
+		basename: "monitors.json",
+		expectedPath: "monitors/monitors.json",
+		description: "plugin background-monitor declarations",
+	},
+	{
+		basename: "settings.json",
+		expectedPath: "settings.json",
+		description: "plugin default settings",
 	},
 ];
