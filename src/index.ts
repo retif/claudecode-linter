@@ -17,6 +17,10 @@ import { hooksJsonLinter } from "./linters/hooks-json.js";
 import { settingsJsonLinter } from "./linters/settings-json.js";
 import { mcpJsonLinter } from "./linters/mcp-json.js";
 import { claudeMdLinter } from "./linters/claude-md.js";
+import {
+	misplacedFileLinter,
+	MISPLACED_FILE_RULES,
+} from "./linters/misplaced-file.js";
 import { pluginJsonFixer } from "./fixers/plugin-json.js";
 import { frontmatterFixer } from "./fixers/frontmatter.js";
 import { hooksJsonFixer } from "./fixers/hooks-json.js";
@@ -48,6 +52,7 @@ const LINTERS: Record<ArtifactType, Linter> = {
 	"settings-json": settingsJsonLinter,
 	"mcp-json": mcpJsonLinter,
 	"claude-md": claudeMdLinter,
+	"misplaced-file": misplacedFileLinter,
 };
 
 const FIXERS: Partial<Record<ArtifactType, Fixer>> = {
@@ -70,6 +75,7 @@ const ALL_RULES = [
 	...SETTINGS_JSON_RULES,
 	...MCP_JSON_RULES,
 	...CLAUDE_MD_RULES,
+	...MISPLACED_FILE_RULES,
 ];
 
 function simpleDiff(

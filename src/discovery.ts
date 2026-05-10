@@ -3,6 +3,7 @@ import { basename, dirname, resolve, join, relative } from "node:path";
 import { homedir } from "node:os";
 import { globSync } from "tinyglobby";
 import { minimatch } from "minimatch";
+import { CANONICAL_ARTIFACTS } from "./canonical-paths.js";
 import type { ArtifactType, ConfigScope, DiscoveredArtifact } from "./types.js";
 
 const CLAUDE_USER_DIR = join(homedir(), ".claude");
@@ -249,7 +250,59 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 		});
 	}
 
+	// Misplaced-file scan: only meaningful inside a plugin tree
+	// (we use `.claude-plugin/` as the marker). Outside plugin
+	// trees, a stray `plugin.json` / `hooks.json` could legitimately
+	// belong to some other tool and we don't want to false-positive.
+	if (existsSync(join(dir, ".claude-plugin"))) {
+		for (const m of findMisplacedFiles(dir)) {
+			artifacts.push(m);
+		}
+	}
+
 	return artifacts;
+}
+
+/**
+ * Walk `pluginRoot` looking for files whose basename is reserved
+ * for a Claude Code artifact and which Claude Code reads only from
+ * a single canonical path. Anything matching a basename but
+ * sitting at a non-canonical location is returned as a
+ * `misplaced-file` artifact for the misplaced-file linter to flag.
+ *
+ * Ignores typical noise dirs (`node_modules`, `.git`, `dist`, the
+ * plugin install cache's `.in_use` / `.orphaned_at` markers).
+ */
+function findMisplacedFiles(pluginRoot: string): DiscoveredArtifact[] {
+	const out: DiscoveredArtifact[] = [];
+	for (const entry of CANONICAL_ARTIFACTS) {
+		const found = globSync(`**/${entry.basename}`, {
+			cwd: pluginRoot,
+			absolute: true,
+			// dot: walk into dot-directories like `.claude-plugin/`
+			// — that's exactly where the most common misplacement
+			// (hooks.json under `.claude-plugin/` instead of plugin
+			// root's `hooks/`) lives.
+			dot: true,
+			ignore: [
+				"**/node_modules/**",
+				"**/.git/**",
+				"**/dist/**",
+				"**/.in_use/**",
+				"**/.orphaned_at/**",
+			],
+		});
+		for (const filePath of found) {
+			const rel = relative(pluginRoot, filePath);
+			const isCanonical = entry.expectedPattern
+				? minimatch(rel, entry.expectedPattern)
+				: rel === entry.expectedPath;
+			if (!isCanonical) {
+				out.push({ filePath, artifactType: "misplaced-file" });
+			}
+		}
+	}
+	return out;
 }
 
 function classifyFile(filePath: string): ArtifactType | null {

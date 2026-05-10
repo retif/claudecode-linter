@@ -8,7 +8,8 @@ export type ArtifactType =
   | "hooks-json"
   | "settings-json"
   | "mcp-json"
-  | "claude-md";
+  | "claude-md"
+  | "misplaced-file";
 
 export interface LintDiagnostic {
   rule: string;

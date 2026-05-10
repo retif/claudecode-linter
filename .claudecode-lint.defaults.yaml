@@ -110,3 +110,10 @@ rules:
   claude-md/no-absolute-paths: info
   claude-md/no-todo-markers: info
   claude-md/no-trailing-whitespace: info
+
+  # ── Misplaced files ──────────────────────────────────────
+  # Reserved artifact basenames (plugin.json, hooks.json,
+  # marketplace.json, SKILL.md) found at non-canonical paths inside
+  # a plugin tree. Claude Code silently ignores them — easy to make,
+  # hard to debug.
+  misplaced-file/canonical-location: warning
