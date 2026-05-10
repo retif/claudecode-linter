@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync, copyFileSync, existsSync } from "node:fs";
 import { resolve, relative, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Command } from "commander";
+import sade from "sade";
 import pc from "picocolors";
 import { loadConfig, mergeCliRules } from "./config.js";
 import { discoverArtifacts } from "./discovery.js";
@@ -108,44 +108,46 @@ function simpleDiff(
 	return lines.join("\n");
 }
 
-const program = new Command();
+const pkgVersion = JSON.parse(
+	readFileSync(
+		join(dirname(fileURLToPath(import.meta.url)), "..", "package.json"),
+		"utf8",
+	),
+).version;
 
-program
-	.name("claudecode-linter")
-	.description("Linter for Claude Code plugin artifacts")
-	.version(
-		JSON.parse(
-			readFileSync(
-				join(dirname(fileURLToPath(import.meta.url)), "..", "package.json"),
-				"utf8",
-			),
-		).version,
-	)
-	.argument("[paths...]", "Plugin directories or individual files", ["."])
+sade("claudecode-linter", true)
+	.version(pkgVersion)
+	.describe("Linter for Claude Code plugin artifacts")
 	.option("--lint", "Lint artifacts and report issues (default)")
 	.option("--fix", "Auto-fix lint violations, then report remaining issues")
 	.option(
 		"--format",
 		"Format all artifacts for consistent style (no lint output)",
 	)
-	.option("--output <type>", "Output format: human | json", "human")
-	.option("--config <path>", "Config file path")
-	.option("--scope <scope>", "Filter by scope: user | project | subdirectory")
-	.option("--ignore <patterns>", "Comma-separated glob patterns to ignore")
+	.option("--output", "Output format: human | json", "human")
+	.option("--config", "Config file path")
+	.option("--scope", "Filter by scope: user | project | subdirectory")
+	.option("--ignore", "Comma-separated glob patterns to ignore")
 	.option("--quiet", "Only show errors")
-	.option("--enable <rules>", "Comma-separated rule IDs to enable")
-	.option("--disable <rules>", "Comma-separated rule IDs to disable")
-	.option("--rule <rule>", "Run only this single rule ID")
+	.option("--enable", "Comma-separated rule IDs to enable")
+	.option("--disable", "Comma-separated rule IDs to disable")
+	.option("--rule", "Run only this single rule ID")
 	.option(
 		"--list-rules",
 		"Print all rules with their default severity and exit",
 	)
 	.option("--fix-dry-run", "Run fixers but print diff instead of writing")
 	.option(
-		"--init [path]",
+		"--init",
 		"Copy default config to path (default: current directory)",
 	)
-	.action(async (paths: string[], opts) => {
+	.action(async (opts) => {
+		// sade accepts variadic positional via opts._; default to ["."] when empty.
+		// Multi-word flags like --list-rules arrive in kebab-case form on opts.
+		const paths: string[] =
+			Array.isArray(opts._) && opts._.length > 0 ? opts._ : ["."];
+		const listRules: boolean = !!opts["list-rules"];
+		const fixDryRun: boolean = !!opts["fix-dry-run"];
 		try {
 			if (opts.init !== undefined) {
 				const __filename = fileURLToPath(import.meta.url);
@@ -163,7 +165,7 @@ program
 				process.exit(0);
 			}
 
-			if (opts.listRules) {
+			if (listRules) {
 				const sevColor = { error: pc.red, warning: pc.yellow, info: pc.blue };
 				for (const rule of ALL_RULES) {
 					const color = sevColor[rule.defaultSeverity];
@@ -250,7 +252,7 @@ program
 								fixed = 1;
 							}
 						}
-					} else if (opts.fixDryRun) {
+					} else if (fixDryRun) {
 						const fixer = FIXERS[artifact.artifactType];
 						if (fixer) {
 							const fixedContent = await fixer.fix(
@@ -305,7 +307,7 @@ program
 				process.exit(0);
 			}
 
-			if (!opts.fixDryRun) {
+			if (!fixDryRun) {
 				const output =
 					opts.output === "json"
 						? formatJson(results, !!opts.quiet)
@@ -322,6 +324,5 @@ program
 			process.stderr.write(pc.red(`Fatal error: ${(err as Error).message}\n`));
 			process.exit(2);
 		}
-	});
-
-program.parse();
+	})
+	.parse(process.argv);

@@ -17,7 +17,7 @@ function lintFile(path: string) {
 
 describe("settings-json linter", () => {
   it("passes for valid settings", () => {
-    const diags = lintFile(resolve(FIXTURES, "valid-plugin/.claude/settings.json"));
+    const diags = lintFile(resolve(FIXTURES, "valid-plugin/.claude/settings.local.json"));
     const errors = diags.filter((d) => d.severity === "error");
     expect(errors).toHaveLength(0);
   });

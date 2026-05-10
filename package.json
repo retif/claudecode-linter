@@ -45,10 +45,11 @@
 		"node": ">=18"
 	},
 	"dependencies": {
-		"commander": "^14.0.3",
+		"@types/sade": "^1.7.8",
 		"minimatch": "^10.2.4",
 		"picocolors": "^1.1.1",
 		"prettier": "^3.8.1",
+		"sade": "^1.8.1",
 		"semver": "^7.7.4",
 		"tinyglobby": "^0.2.15",
 		"yaml": "^2.8.3"
