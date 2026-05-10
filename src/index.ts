@@ -137,10 +137,7 @@ sade("claudecode-linter", true)
 		"Print all rules with their default severity and exit",
 	)
 	.option("--fix-dry-run", "Run fixers but print diff instead of writing")
-	.option(
-		"--init",
-		"Copy default config to path (default: current directory)",
-	)
+	.option("--init", "Copy default config to path (default: current directory)")
 	.action(async (opts) => {
 		// sade accepts variadic positional via opts._; default to ["."] when empty.
 		// Multi-word flags like --list-rules arrive in kebab-case form on opts.
