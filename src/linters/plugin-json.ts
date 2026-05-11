@@ -1,5 +1,10 @@
 import semver from "semver";
 import { PLUGIN_JSON_FIELDS } from "../contracts.js";
+import {
+	formatAjvError,
+	loadPluginSchema,
+	summarizeErrors,
+} from "../plugin-schema.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { isKebabCase } from "../utils/kebab-case.js";
@@ -17,6 +22,7 @@ interface RuleDef {
 
 const RULES: RuleDef[] = [
   { id: "plugin-json/valid-json", defaultSeverity: "error" },
+  { id: "plugin-json/schema-valid", defaultSeverity: "error" },
   { id: "plugin-json/name-required", defaultSeverity: "error" },
   { id: "plugin-json/name-kebab-case", defaultSeverity: "error" },
   { id: "plugin-json/name-length", defaultSeverity: "error" },
@@ -83,6 +89,29 @@ export const pluginJsonLinter: Linter = {
       push(diag(config, filePath, "plugin-json/valid-json", "error",
         "plugin.json must be a JSON object"));
       return diagnostics;
+    }
+
+    // schema-valid — defer to extracted JSON Schema for type/enum/nested checks
+    // that the per-field rules below don't cover. Existing rules (name-required,
+    // version-semver, …) handle the common cases with friendlier messages, so
+    // most users will see schema-valid fire only on deeper structural issues
+    // (MCP transport unions, userConfig shape, etc.). Skipped silently if the
+    // schema bundle isn't shipped with this install.
+    if (isRuleEnabled(config, "plugin-json/schema-valid")) {
+      const ctx = loadPluginSchema();
+      if (ctx) {
+        const ok = ctx.validate(parsed);
+        if (!ok && ctx.validate.errors) {
+          const filtered = summarizeErrors(ctx.validate.errors);
+          for (const err of filtered) {
+            // First path segment maps to a top-level field we can highlight.
+            const firstSeg = err.instancePath.split("/").filter(Boolean)[0];
+            const p = firstSeg ? pos(firstSeg) : undefined;
+            push(diag(config, filePath, "plugin-json/schema-valid", "error",
+              formatAjvError(err), p?.line, p?.column));
+          }
+        }
+      }
     }
 
     // name
@@ -176,12 +205,19 @@ export const pluginJsonLinter: Linter = {
       }
     }
 
-    // unknown fields
-    for (const key of Object.keys(parsed)) {
-      if (!PLUGIN_JSON_FIELDS.has(key)) {
-        const p = pos(key);
-        push(diag(config, filePath, "plugin-json/no-unknown-fields", "info",
-          `Unknown field "${key}" (known: ${[...PLUGIN_JSON_FIELDS].join(", ")})`, p?.line, p?.column));
+    // unknown fields — prefer the schema's property set (full + nested-aware)
+    // when available; fall back to the contract-extracted PLUGIN_JSON_FIELDS
+    // for installs that didn't ship the schema bundle.
+    {
+      const ctx = loadPluginSchema();
+      const known = ctx?.knownFields ?? PLUGIN_JSON_FIELDS;
+      for (const key of Object.keys(parsed)) {
+        if (!known.has(key)) {
+          const p = pos(key);
+          push(diag(config, filePath, "plugin-json/no-unknown-fields", "info",
+            `Unknown field "${key}" (known: ${[...known].sort().join(", ")})`,
+            p?.line, p?.column));
+        }
       }
     }
 

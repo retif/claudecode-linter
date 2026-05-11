@@ -1,0 +1,8 @@
+{
+	"name": "demo-plugin",
+	"mcpServers": {
+		"local": {
+			"type": "stdio"
+		}
+	}
+}

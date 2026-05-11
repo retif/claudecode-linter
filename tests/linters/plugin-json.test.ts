@@ -99,4 +99,44 @@ describe("plugin-json linter", () => {
     const lengthErrors = diags.filter((d) => d.rule === "plugin-json/name-length");
     expect(lengthErrors).toHaveLength(1);
   });
+
+  describe("plugin-json/schema-valid", () => {
+    it("flags wrong type for name", () => {
+      const diags = lintFile(resolve(FIXTURES, "invalid/plugin-json/wrong-name-type.json"));
+      const schema = diags.filter((d) => d.rule === "plugin-json/schema-valid");
+      expect(schema.some((d) => d.message.includes("/name") && d.message.includes("string"))).toBe(true);
+    });
+
+    it("flags unknown MCP server transport", () => {
+      const diags = lintFile(resolve(FIXTURES, "invalid/plugin-json/bad-mcp-transport.json"));
+      const schema = diags.filter((d) => d.rule === "plugin-json/schema-valid");
+      expect(schema.length).toBeGreaterThan(0);
+      expect(schema.some((d) => d.message.includes("mcpServers"))).toBe(true);
+    });
+
+    it("flags stdio transport missing command", () => {
+      const diags = lintFile(resolve(FIXTURES, "invalid/plugin-json/stdio-missing-command.json"));
+      const schema = diags.filter((d) => d.rule === "plugin-json/schema-valid");
+      expect(schema.some((d) => d.message.includes("command"))).toBe(true);
+    });
+
+    it("flags invalid userConfig.type enum", () => {
+      const diags = lintFile(resolve(FIXTURES, "invalid/plugin-json/bad-user-config-type.json"));
+      const schema = diags.filter((d) => d.rule === "plugin-json/schema-valid");
+      expect(schema.some((d) => d.message.includes("userConfig") && d.message.includes("one of"))).toBe(true);
+    });
+
+    it("respects disable via config", () => {
+      const config: LinterConfig = {
+        rules: { "plugin-json/schema-valid": false },
+      };
+      const content = readFileSync(
+        resolve(FIXTURES, "invalid/plugin-json/wrong-name-type.json"),
+        "utf-8",
+      );
+      const diags = pluginJsonLinter.lint("test.json", content, config);
+      const schema = diags.filter((d) => d.rule === "plugin-json/schema-valid");
+      expect(schema).toHaveLength(0);
+    });
+  });
 });

@@ -1,0 +1,9 @@
+{
+	"name": "demo-plugin",
+	"mcpServers": {
+		"bad": {
+			"type": "telegraph",
+			"command": "echo"
+		}
+	}
+}

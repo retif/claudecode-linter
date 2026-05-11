@@ -1,0 +1,1319 @@
+{
+	"extractedFromClaudeCodeVersion": "2.1.138",
+	"extractedAt": "2026-05-11T08:02:42.909Z",
+	"schema": {
+		"$schema": "https://json-schema.org/draft/2020-12/schema",
+		"title": "Claude Code plugin.json",
+		"type": "object",
+		"properties": {
+			"$schema": {
+				"type": "string",
+				"description": "JSON Schema reference for editor autocomplete/validation; ignored at load time"
+			},
+			"name": {
+				"type": "string",
+				"minLength": 1,
+				"description": "Unique identifier for the plugin, used for namespacing (prefer kebab-case)"
+			},
+			"version": {
+				"type": "string",
+				"description": "Semantic version (e.g., 1.2.3) following semver.org specification"
+			},
+			"description": {
+				"type": "string",
+				"description": "Brief, user-facing explanation of what the plugin provides"
+			},
+			"author": {
+				"type": "object",
+				"properties": {
+					"name": {
+						"type": "string",
+						"minLength": 1,
+						"description": "Display name of the plugin author or organization"
+					},
+					"email": {
+						"type": "string",
+						"description": "Contact email for support or feedback"
+					},
+					"url": {
+						"type": "string",
+						"description": "Website, GitHub profile, or organization URL"
+					}
+				},
+				"required": [
+					"name"
+				],
+				"description": "Information about the plugin creator or maintainer"
+			},
+			"homepage": {
+				"type": "string",
+				"format": "uri",
+				"description": "Plugin homepage or documentation URL"
+			},
+			"repository": {
+				"type": "string",
+				"description": "Source code repository URL"
+			},
+			"license": {
+				"type": "string",
+				"description": "SPDX license identifier (e.g., MIT, Apache-2.0)"
+			},
+			"keywords": {
+				"type": "array",
+				"items": {
+					"type": "string"
+				},
+				"description": "Tags for plugin discovery and categorization"
+			},
+			"dependencies": {
+				"type": "array",
+				"items": {
+					"anyOf": [
+						{
+							"type": "string"
+						},
+						{
+							"type": "object",
+							"properties": {
+								"name": {
+									"type": "string",
+									"minLength": 1,
+									"pattern": "^[A-Za-z0-9][-A-Za-z0-9._]*$"
+								},
+								"marketplace": {
+									"type": "string",
+									"minLength": 1,
+									"pattern": "^[A-Za-z0-9][-A-Za-z0-9._]*$"
+								}
+							},
+							"required": [
+								"name"
+							]
+						}
+					]
+				},
+				"description": "`Plugins that must be enabled for this plugin to function. Bare names (no \"@marketplace\") are resolved against the declaring plugin's own marketplace.`"
+			},
+			"hooks": {
+				"anyOf": [
+					{
+						"type": "string",
+						"description": "Path to file with additional hooks (in addition to those in hooks/hooks.json, if it exists), relative to the plugin root"
+					},
+					{
+						"description": "Additional hooks (in addition to those in hooks/hooks.json, if it exists)"
+					},
+					{
+						"type": "array",
+						"items": {
+							"anyOf": [
+								{
+									"type": "string",
+									"description": "Path to file with additional hooks (in addition to those in hooks/hooks.json, if it exists), relative to the plugin root"
+								},
+								{
+									"description": "Additional hooks (in addition to those in hooks/hooks.json, if it exists)"
+								}
+							]
+						}
+					}
+				]
+			},
+			"commands": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "string"
+							}
+						],
+						"description": "Path to additional command file or skill directory (in addition to those in the commands/ directory, if it exists), relative to the plugin root"
+					},
+					{
+						"type": "array",
+						"items": {
+							"anyOf": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "string"
+								}
+							],
+							"description": "Path to additional command file or skill directory (in addition to those in the commands/ directory, if it exists), relative to the plugin root"
+						},
+						"description": "List of paths to additional command files or skill directories"
+					},
+					{
+						"type": "object",
+						"additionalProperties": {
+							"type": "object",
+							"properties": {
+								"source": {
+									"anyOf": [
+										{
+											"type": "string"
+										},
+										{
+											"type": "string"
+										}
+									],
+									"description": "Path to command markdown file, relative to plugin root"
+								},
+								"content": {
+									"type": "string",
+									"description": "Inline markdown content for the command"
+								},
+								"description": {
+									"type": "string",
+									"description": "Command description override"
+								},
+								"argumentHint": {
+									"type": "string",
+									"description": "Hint for command arguments (e.g., \"[file]\")"
+								},
+								"model": {
+									"type": "string",
+									"description": "Default model for this command"
+								},
+								"allowedTools": {
+									"type": "array",
+									"items": {
+										"type": "string"
+									},
+									"description": "Tools allowed when command runs"
+								}
+							}
+						},
+						"description": "Object mapping of command names to their metadata and source files. Command name becomes the slash command name (e.g., \"about\" \\u2192 \"/plugin:about\")"
+					}
+				]
+			},
+			"agents": {
+				"anyOf": [
+					{
+						"type": "string",
+						"description": "Path to additional agent file (in addition to those in the agents/ directory, if it exists), relative to the plugin root"
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string",
+							"description": "Path to additional agent file (in addition to those in the agents/ directory, if it exists), relative to the plugin root"
+						},
+						"description": "List of paths to additional agent files"
+					}
+				]
+			},
+			"skills": {
+				"anyOf": [
+					{
+						"type": "string",
+						"description": "Path to additional skill directory (in addition to those in the skills/ directory, if it exists), relative to the plugin root"
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string",
+							"description": "Path to additional skill directory (in addition to those in the skills/ directory, if it exists), relative to the plugin root"
+						},
+						"description": "List of paths to additional skill directories"
+					}
+				]
+			},
+			"outputStyles": {
+				"anyOf": [
+					{
+						"type": "string",
+						"description": "Path to additional output styles directory or file (in addition to those in the output-styles/ directory, if it exists), relative to the plugin root"
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string",
+							"description": "Path to additional output styles directory or file (in addition to those in the output-styles/ directory, if it exists), relative to the plugin root"
+						},
+						"description": "List of paths to additional output styles directories or files"
+					}
+				]
+			},
+			"themes": {
+				"anyOf": [
+					{
+						"type": "string",
+						"description": "Path to additional themes directory or file (in addition to those in the themes/ directory, if it exists), relative to the plugin root"
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string",
+							"description": "Path to additional themes directory or file (in addition to those in the themes/ directory, if it exists), relative to the plugin root"
+						},
+						"description": "List of paths to additional themes directories or files"
+					}
+				]
+			},
+			"channels": {
+				"type": "array",
+				"items": {
+					"type": "object",
+					"properties": {
+						"server": {
+							"type": "string",
+							"minLength": 1,
+							"description": "Name of the MCP server this channel binds to. Must match a key in this plugin's mcpServers."
+						},
+						"displayName": {
+							"type": "string",
+							"description": "Human-readable name shown in the config dialog title (e.g., \"Telegram\"). Defaults to the server name."
+						},
+						"userConfig": {
+							"type": "object",
+							"additionalProperties": {
+								"type": "object",
+								"properties": {
+									"type": {
+										"enum": [
+											"string",
+											"number",
+											"boolean",
+											"directory",
+											"file"
+										],
+										"description": "Type of the configuration value"
+									},
+									"title": {
+										"type": "string",
+										"description": "Human-readable label shown in the config dialog"
+									},
+									"description": {
+										"type": "string",
+										"description": "Help text shown beneath the field in the config dialog"
+									},
+									"required": {
+										"type": "boolean",
+										"description": "If true, validation fails when this field is empty"
+									},
+									"default": {
+										"anyOf": [
+											{
+												"type": "string"
+											},
+											{
+												"type": "number"
+											},
+											{
+												"type": "boolean"
+											},
+											{
+												"type": "array",
+												"items": {
+													"type": "string"
+												}
+											}
+										],
+										"description": "Default value used when the user provides nothing"
+									},
+									"multiple": {
+										"type": "boolean",
+										"description": "For string type: allow an array of strings"
+									},
+									"sensitive": {
+										"type": "boolean",
+										"description": "If true, masks dialog input and stores value in secure storage (keychain/credentials file) instead of settings.json"
+									},
+									"min": {
+										"type": "number",
+										"description": "Minimum value (number type only)"
+									},
+									"max": {
+										"type": "number",
+										"description": "Maximum value (number type only)"
+									}
+								},
+								"required": [
+									"type",
+									"title",
+									"description"
+								],
+								"additionalProperties": false
+							},
+							"description": "Fields to prompt the user for when enabling this plugin in assistant mode. Saved values are substituted into ${user_config.KEY} references in the mcpServers env."
+						}
+					},
+					"required": [
+						"server"
+					],
+					"additionalProperties": false
+				},
+				"description": "Channels this plugin provides. Each entry declares an MCP server as a message channel and optionally specifies user configuration to prompt for at enable time."
+			},
+			"mcpServers": {
+				"anyOf": [
+					{
+						"type": "string",
+						"description": "MCP servers to include in the plugin (in addition to those in the .mcp.json file, if it exists)"
+					},
+					{
+						"anyOf": [
+							{
+								"type": "string",
+								"description": "Path to MCPB file relative to plugin root"
+							},
+							{
+								"type": "string",
+								"format": "uri",
+								"description": "URL to MCPB file"
+							}
+						],
+						"description": "Path or URL to MCPB file containing MCP server configuration"
+					},
+					{
+						"type": "object",
+						"additionalProperties": {
+							"anyOf": [
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"const": "stdio"
+										},
+										"command": {
+											"type": "string",
+											"minLength": 1
+										},
+										"args": {
+											"type": "array",
+											"items": {
+												"type": "string"
+											},
+											"default": "[]"
+										},
+										"env": {
+											"type": "object",
+											"additionalProperties": {
+												"type": "string"
+											}
+										},
+										"alwaysLoad": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"command"
+									]
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"const": "sse"
+										},
+										"url": {
+											"type": "string"
+										},
+										"headers": {
+											"type": "object",
+											"additionalProperties": {
+												"type": "string"
+											}
+										},
+										"headersHelper": {
+											"type": "string"
+										},
+										"oauth": {
+											"type": "object",
+											"properties": {
+												"clientId": {
+													"type": "string"
+												},
+												"callbackPort": {
+													"type": "number"
+												},
+												"authServerMetadataUrl": {
+													"type": "string",
+													"format": "uri"
+												},
+												"scopes": {
+													"type": "string",
+													"minLength": 1
+												},
+												"xaa": {
+													"type": "boolean"
+												}
+											}
+										},
+										"alwaysLoad": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"type",
+										"url"
+									]
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"const": "sse-ide"
+										},
+										"url": {
+											"type": "string"
+										},
+										"ideName": {
+											"type": "string"
+										},
+										"ideRunningInWindows": {
+											"type": "boolean"
+										},
+										"alwaysLoad": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"type",
+										"url",
+										"ideName"
+									]
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"const": "ws-ide"
+										},
+										"url": {
+											"type": "string"
+										},
+										"ideName": {
+											"type": "string"
+										},
+										"authToken": {
+											"type": "string"
+										},
+										"ideRunningInWindows": {
+											"type": "boolean"
+										},
+										"alwaysLoad": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"type",
+										"url",
+										"ideName"
+									]
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"enum": [
+												"http",
+												"streamable-http"
+											]
+										},
+										"url": {
+											"type": "string"
+										},
+										"headers": {
+											"type": "object",
+											"additionalProperties": {
+												"type": "string"
+											}
+										},
+										"headersHelper": {
+											"type": "string"
+										},
+										"oauth": {
+											"type": "object",
+											"properties": {
+												"clientId": {
+													"type": "string"
+												},
+												"callbackPort": {
+													"type": "number"
+												},
+												"authServerMetadataUrl": {
+													"type": "string",
+													"format": "uri"
+												},
+												"scopes": {
+													"type": "string",
+													"minLength": 1
+												},
+												"xaa": {
+													"type": "boolean"
+												}
+											}
+										},
+										"alwaysLoad": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"type",
+										"url"
+									]
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"const": "ws"
+										},
+										"url": {
+											"type": "string"
+										},
+										"headers": {
+											"type": "object",
+											"additionalProperties": {
+												"type": "string"
+											}
+										},
+										"headersHelper": {
+											"type": "string"
+										},
+										"alwaysLoad": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"type",
+										"url"
+									]
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"const": "sdk"
+										},
+										"name": {
+											"type": "string"
+										},
+										"alwaysLoad": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"type",
+										"name"
+									]
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"const": "claudeai-proxy"
+										},
+										"url": {
+											"type": "string"
+										},
+										"id": {
+											"type": "string"
+										},
+										"alwaysLoad": {
+											"type": "boolean"
+										},
+										"toolPermissions": {
+											"type": "object",
+											"additionalProperties": {
+												"enum": [
+													"allow",
+													"ask",
+													"blocked"
+												]
+											}
+										}
+									},
+									"required": [
+										"type",
+										"url",
+										"id"
+									]
+								}
+							]
+						},
+						"description": "MCP server configurations keyed by server name"
+					},
+					{
+						"type": "array",
+						"items": {
+							"anyOf": [
+								{
+									"type": "string",
+									"description": "Path to MCP servers configuration file"
+								},
+								{
+									"anyOf": [
+										{
+											"type": "string",
+											"description": "Path to MCPB file relative to plugin root"
+										},
+										{
+											"type": "string",
+											"format": "uri",
+											"description": "URL to MCPB file"
+										}
+									],
+									"description": "Path or URL to MCPB file"
+								},
+								{
+									"type": "object",
+									"additionalProperties": {
+										"anyOf": [
+											{
+												"type": "object",
+												"properties": {
+													"type": {
+														"const": "stdio"
+													},
+													"command": {
+														"type": "string",
+														"minLength": 1
+													},
+													"args": {
+														"type": "array",
+														"items": {
+															"type": "string"
+														},
+														"default": "[]"
+													},
+													"env": {
+														"type": "object",
+														"additionalProperties": {
+															"type": "string"
+														}
+													},
+													"alwaysLoad": {
+														"type": "boolean"
+													}
+												},
+												"required": [
+													"command"
+												]
+											},
+											{
+												"type": "object",
+												"properties": {
+													"type": {
+														"const": "sse"
+													},
+													"url": {
+														"type": "string"
+													},
+													"headers": {
+														"type": "object",
+														"additionalProperties": {
+															"type": "string"
+														}
+													},
+													"headersHelper": {
+														"type": "string"
+													},
+													"oauth": {
+														"type": "object",
+														"properties": {
+															"clientId": {
+																"type": "string"
+															},
+															"callbackPort": {
+																"type": "number"
+															},
+															"authServerMetadataUrl": {
+																"type": "string",
+																"format": "uri"
+															},
+															"scopes": {
+																"type": "string",
+																"minLength": 1
+															},
+															"xaa": {
+																"type": "boolean"
+															}
+														}
+													},
+													"alwaysLoad": {
+														"type": "boolean"
+													}
+												},
+												"required": [
+													"type",
+													"url"
+												]
+											},
+											{
+												"type": "object",
+												"properties": {
+													"type": {
+														"const": "sse-ide"
+													},
+													"url": {
+														"type": "string"
+													},
+													"ideName": {
+														"type": "string"
+													},
+													"ideRunningInWindows": {
+														"type": "boolean"
+													},
+													"alwaysLoad": {
+														"type": "boolean"
+													}
+												},
+												"required": [
+													"type",
+													"url",
+													"ideName"
+												]
+											},
+											{
+												"type": "object",
+												"properties": {
+													"type": {
+														"const": "ws-ide"
+													},
+													"url": {
+														"type": "string"
+													},
+													"ideName": {
+														"type": "string"
+													},
+													"authToken": {
+														"type": "string"
+													},
+													"ideRunningInWindows": {
+														"type": "boolean"
+													},
+													"alwaysLoad": {
+														"type": "boolean"
+													}
+												},
+												"required": [
+													"type",
+													"url",
+													"ideName"
+												]
+											},
+											{
+												"type": "object",
+												"properties": {
+													"type": {
+														"enum": [
+															"http",
+															"streamable-http"
+														]
+													},
+													"url": {
+														"type": "string"
+													},
+													"headers": {
+														"type": "object",
+														"additionalProperties": {
+															"type": "string"
+														}
+													},
+													"headersHelper": {
+														"type": "string"
+													},
+													"oauth": {
+														"type": "object",
+														"properties": {
+															"clientId": {
+																"type": "string"
+															},
+															"callbackPort": {
+																"type": "number"
+															},
+															"authServerMetadataUrl": {
+																"type": "string",
+																"format": "uri"
+															},
+															"scopes": {
+																"type": "string",
+																"minLength": 1
+															},
+															"xaa": {
+																"type": "boolean"
+															}
+														}
+													},
+													"alwaysLoad": {
+														"type": "boolean"
+													}
+												},
+												"required": [
+													"type",
+													"url"
+												]
+											},
+											{
+												"type": "object",
+												"properties": {
+													"type": {
+														"const": "ws"
+													},
+													"url": {
+														"type": "string"
+													},
+													"headers": {
+														"type": "object",
+														"additionalProperties": {
+															"type": "string"
+														}
+													},
+													"headersHelper": {
+														"type": "string"
+													},
+													"alwaysLoad": {
+														"type": "boolean"
+													}
+												},
+												"required": [
+													"type",
+													"url"
+												]
+											},
+											{
+												"type": "object",
+												"properties": {
+													"type": {
+														"const": "sdk"
+													},
+													"name": {
+														"type": "string"
+													},
+													"alwaysLoad": {
+														"type": "boolean"
+													}
+												},
+												"required": [
+													"type",
+													"name"
+												]
+											},
+											{
+												"type": "object",
+												"properties": {
+													"type": {
+														"const": "claudeai-proxy"
+													},
+													"url": {
+														"type": "string"
+													},
+													"id": {
+														"type": "string"
+													},
+													"alwaysLoad": {
+														"type": "boolean"
+													},
+													"toolPermissions": {
+														"type": "object",
+														"additionalProperties": {
+															"enum": [
+																"allow",
+																"ask",
+																"blocked"
+															]
+														}
+													}
+												},
+												"required": [
+													"type",
+													"url",
+													"id"
+												]
+											}
+										]
+									},
+									"description": "Inline MCP server configurations"
+								}
+							]
+						},
+						"description": "Array of MCP server configurations (paths, MCPB files, or inline definitions)"
+					}
+				]
+			},
+			"lspServers": {
+				"anyOf": [
+					{
+						"type": "string",
+						"description": "Path to .lsp.json configuration file relative to plugin root"
+					},
+					{
+						"type": "object",
+						"additionalProperties": {
+							"type": "object",
+							"properties": {
+								"command": {
+									"type": "string",
+									"minLength": 1,
+									"description": "Command to execute the LSP server (e.g., \"typescript-language-server\")"
+								},
+								"args": {
+									"type": "array",
+									"items": {
+										"type": "string",
+										"minLength": 1
+									},
+									"description": "Command-line arguments to pass to the server"
+								},
+								"extensionToLanguage": {
+									"type": "object",
+									"additionalProperties": {
+										"type": "string",
+										"minLength": 1
+									},
+									"description": "Mapping from file extension to LSP language ID. File extensions and languages are derived from this mapping."
+								},
+								"transport": {
+									"enum": [
+										"stdio",
+										"socket"
+									],
+									"default": "stdio",
+									"description": "Communication transport mechanism"
+								},
+								"env": {
+									"type": "object",
+									"additionalProperties": {
+										"type": "string"
+									},
+									"description": "Environment variables to set when starting the server"
+								},
+								"initializationOptions": {
+									"description": "Initialization options passed to the server during initialization"
+								},
+								"settings": {
+									"description": "Settings passed to the server via workspace/didChangeConfiguration"
+								},
+								"workspaceFolder": {
+									"type": "string",
+									"description": "Workspace folder path to use for the server"
+								},
+								"startupTimeout": {
+									"type": "number",
+									"description": "Maximum time to wait for server startup (milliseconds)"
+								},
+								"shutdownTimeout": {
+									"type": "number",
+									"description": "Maximum time to wait for graceful shutdown (milliseconds)"
+								},
+								"restartOnCrash": {
+									"type": "boolean",
+									"description": "Whether to restart the server if it crashes"
+								},
+								"maxRestarts": {
+									"type": "number",
+									"description": "Maximum number of restart attempts before giving up"
+								}
+							},
+							"required": [
+								"command",
+								"extensionToLanguage"
+							],
+							"additionalProperties": false
+						},
+						"description": "LSP server configurations keyed by server name"
+					},
+					{
+						"type": "array",
+						"items": {
+							"anyOf": [
+								{
+									"type": "string",
+									"description": "Path to LSP configuration file"
+								},
+								{
+									"type": "object",
+									"additionalProperties": {
+										"type": "object",
+										"properties": {
+											"command": {
+												"type": "string",
+												"minLength": 1,
+												"description": "Command to execute the LSP server (e.g., \"typescript-language-server\")"
+											},
+											"args": {
+												"type": "array",
+												"items": {
+													"type": "string",
+													"minLength": 1
+												},
+												"description": "Command-line arguments to pass to the server"
+											},
+											"extensionToLanguage": {
+												"type": "object",
+												"additionalProperties": {
+													"type": "string",
+													"minLength": 1
+												},
+												"description": "Mapping from file extension to LSP language ID. File extensions and languages are derived from this mapping."
+											},
+											"transport": {
+												"enum": [
+													"stdio",
+													"socket"
+												],
+												"default": "stdio",
+												"description": "Communication transport mechanism"
+											},
+											"env": {
+												"type": "object",
+												"additionalProperties": {
+													"type": "string"
+												},
+												"description": "Environment variables to set when starting the server"
+											},
+											"initializationOptions": {
+												"description": "Initialization options passed to the server during initialization"
+											},
+											"settings": {
+												"description": "Settings passed to the server via workspace/didChangeConfiguration"
+											},
+											"workspaceFolder": {
+												"type": "string",
+												"description": "Workspace folder path to use for the server"
+											},
+											"startupTimeout": {
+												"type": "number",
+												"description": "Maximum time to wait for server startup (milliseconds)"
+											},
+											"shutdownTimeout": {
+												"type": "number",
+												"description": "Maximum time to wait for graceful shutdown (milliseconds)"
+											},
+											"restartOnCrash": {
+												"type": "boolean",
+												"description": "Whether to restart the server if it crashes"
+											},
+											"maxRestarts": {
+												"type": "number",
+												"description": "Maximum number of restart attempts before giving up"
+											}
+										},
+										"required": [
+											"command",
+											"extensionToLanguage"
+										],
+										"additionalProperties": false
+									},
+									"description": "Inline LSP server configurations"
+								}
+							]
+						},
+						"description": "Array of LSP server configurations (paths or inline definitions)"
+					}
+				]
+			},
+			"monitors": {
+				"anyOf": [
+					{
+						"type": "string",
+						"description": "Path to a JSON file containing the monitors array, relative to the plugin root"
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"name": {
+									"type": "string",
+									"minLength": 1,
+									"description": "Identifier for this monitor, unique within the plugin. Used to dedupe so re-arming (plugin reload, repeat skill invoke) does not spawn duplicates."
+								},
+								"command": {
+									"type": "string",
+									"minLength": 1,
+									"description": "Shell command to run as a persistent background monitor. Each stdout line is delivered to the model as a <task_notification> event; the process runs for the session lifetime. ${CLAUDE_PLUGIN_ROOT}, ${CLAUDE_PLUGIN_DATA}, ${user_config.*}, and ${ENV_VAR} are substituted. Runs in the session cwd \\u2014 prefix with `cd \"${CLAUDE_PLUGIN_ROOT}\" && ` if the script needs its own directory."
+								},
+								"description": {
+									"type": "string",
+									"minLength": 1,
+									"description": "Short human-readable description of what is being monitored (shown in task panel and notification summary)."
+								},
+								"when": {
+									"anyOf": [
+										{
+											"const": "always"
+										},
+										{
+											"type": "string"
+										}
+									],
+									"default": "always",
+									"description": "Arm trigger. \"always\" arms at session start and on plugin reload. \"on-skill-invoke:<skill>\" arms the first time that skill is dispatched (via Skill tool or slash command)."
+								}
+							},
+							"required": [
+								"name",
+								"command",
+								"description"
+							],
+							"additionalProperties": false
+						}
+					}
+				],
+				"description": "Background watch scripts the host arms as persistent Monitor tasks (unsandboxed, same trust tier as hooks) so plugins need not instruct the model to arm them. When omitted, monitors/monitors.json at the plugin root is loaded if present."
+			},
+			"settings": {
+				"type": "object",
+				"additionalProperties": {},
+				"description": "Settings to merge into the user settings while this plugin is enabled. Only the documented allowlisted keys are applied."
+			},
+			"userConfig": {
+				"type": "object",
+				"additionalProperties": {
+					"type": "object",
+					"properties": {
+						"type": {
+							"enum": [
+								"string",
+								"number",
+								"boolean",
+								"directory",
+								"file"
+							],
+							"description": "Type of the configuration value"
+						},
+						"title": {
+							"type": "string",
+							"description": "Human-readable label shown in the config dialog"
+						},
+						"description": {
+							"type": "string",
+							"description": "Help text shown beneath the field in the config dialog"
+						},
+						"required": {
+							"type": "boolean",
+							"description": "If true, validation fails when this field is empty"
+						},
+						"default": {
+							"anyOf": [
+								{
+									"type": "string"
+								},
+								{
+									"type": "number"
+								},
+								{
+									"type": "boolean"
+								},
+								{
+									"type": "array",
+									"items": {
+										"type": "string"
+									}
+								}
+							],
+							"description": "Default value used when the user provides nothing"
+						},
+						"multiple": {
+							"type": "boolean",
+							"description": "For string type: allow an array of strings"
+						},
+						"sensitive": {
+							"type": "boolean",
+							"description": "If true, masks dialog input and stores value in secure storage (keychain/credentials file) instead of settings.json"
+						},
+						"min": {
+							"type": "number",
+							"description": "Minimum value (number type only)"
+						},
+						"max": {
+							"type": "number",
+							"description": "Maximum value (number type only)"
+						}
+					},
+					"required": [
+						"type",
+						"title",
+						"description"
+					],
+					"additionalProperties": false
+				},
+				"description": "User-configurable values this plugin needs. Prompted at enable time. Non-sensitive values saved to settings.json; sensitive values to secure storage. Available as ${user_config.KEY} in MCP/LSP server config, hook commands, and (non-sensitive only) skill/agent content. Keep sensitive value counts small."
+			},
+			"experimental": {
+				"type": "object",
+				"properties": {
+					"themes": {
+						"anyOf": [
+							{
+								"type": "string",
+								"description": "Path to additional themes directory or file (in addition to those in the themes/ directory, if it exists), relative to the plugin root"
+							},
+							{
+								"type": "array",
+								"items": {
+									"type": "string",
+									"description": "Path to additional themes directory or file (in addition to those in the themes/ directory, if it exists), relative to the plugin root"
+								},
+								"description": "List of paths to additional themes directories or files"
+							}
+						]
+					},
+					"monitors": {
+						"anyOf": [
+							{
+								"type": "string",
+								"description": "Path to a JSON file containing the monitors array, relative to the plugin root"
+							},
+							{
+								"type": "array",
+								"items": {
+									"type": "object",
+									"properties": {
+										"name": {
+											"type": "string",
+											"minLength": 1,
+											"description": "Identifier for this monitor, unique within the plugin. Used to dedupe so re-arming (plugin reload, repeat skill invoke) does not spawn duplicates."
+										},
+										"command": {
+											"type": "string",
+											"minLength": 1,
+											"description": "Shell command to run as a persistent background monitor. Each stdout line is delivered to the model as a <task_notification> event; the process runs for the session lifetime. ${CLAUDE_PLUGIN_ROOT}, ${CLAUDE_PLUGIN_DATA}, ${user_config.*}, and ${ENV_VAR} are substituted. Runs in the session cwd \\u2014 prefix with `cd \"${CLAUDE_PLUGIN_ROOT}\" && ` if the script needs its own directory."
+										},
+										"description": {
+											"type": "string",
+											"minLength": 1,
+											"description": "Short human-readable description of what is being monitored (shown in task panel and notification summary)."
+										},
+										"when": {
+											"anyOf": [
+												{
+													"const": "always"
+												},
+												{
+													"type": "string"
+												}
+											],
+											"default": "always",
+											"description": "Arm trigger. \"always\" arms at session start and on plugin reload. \"on-skill-invoke:<skill>\" arms the first time that skill is dispatched (via Skill tool or slash command)."
+										}
+									},
+									"required": [
+										"name",
+										"command",
+										"description"
+									],
+									"additionalProperties": false
+								}
+							}
+						],
+						"description": "Background watch scripts the host arms as persistent Monitor tasks (unsandboxed, same trust tier as hooks) so plugins need not instruct the model to arm them. When omitted, monitors/monitors.json at the plugin root is loaded if present."
+					}
+				},
+				"description": "Components whose manifest shape may change without a deprecation cycle. Move a key out of here once it is promoted to stable."
+			}
+		},
+		"required": [
+			"name"
+		]
+	}
+}

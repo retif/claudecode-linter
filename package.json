@@ -17,11 +17,15 @@
 		"deps:update": "ncu -u",
 		"knip": "knip --exclude types",
 		"check-deps": "tsx scripts/check-deps.ts",
-		"extract-contracts": "tsx scripts/extract-contracts.ts",
+		"extract-contracts": "tsx scripts/extract-contracts.ts && tsx scripts/extract-plugin-schema.ts",
+		"extract-plugin-schema": "tsx scripts/extract-plugin-schema.ts",
 		"generate-contracts": "tsx scripts/generate-contracts.ts"
 	},
 	"files": [
 		"dist/**/*.js",
+		"contracts/plugin.schema.json",
+		"contracts/lsp.schema.json",
+		"contracts/monitors.schema.json",
 		".claudecode-lint.defaults.yaml",
 		"README.md"
 	],
@@ -45,6 +49,8 @@
 		"node": ">=18"
 	},
 	"dependencies": {
+		"ajv": "^8.20.0",
+		"ajv-formats": "^3.0.1",
 		"minimatch": "^10.2.4",
 		"picocolors": "^1.1.1",
 		"prettier": "^3.8.1",

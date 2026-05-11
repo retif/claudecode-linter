@@ -1,0 +1,10 @@
+{
+	"name": "demo-plugin",
+	"userConfig": {
+		"api_key": {
+			"type": "telegraph",
+			"title": "API key",
+			"description": "credential"
+		}
+	}
+}

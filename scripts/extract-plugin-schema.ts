@@ -1,0 +1,1128 @@
+#!/usr/bin/env tsx
+/**
+ * Extracts the plugin.json Zod validator from Claude Code's cli.js bundle and
+ * translates it to a JSON Schema (draft-2020-12) suitable for Ajv validation.
+ *
+ * Strategy:
+ *   1. Find the master CSH-like schema by anchoring on .strict().safeParse near
+ *      the "kebab-case" name-validation error message in oL$().
+ *   2. Parse its body: { ...subN().shape, ...subM().partial().shape, ... }.
+ *   3. Recursively resolve each <sub> = CH(() => <ZodExpr>) definition.
+ *   4. Walk Zod call chains and emit JSON Schema. Unknown patterns degrade to
+ *      `{}` (permissive) rather than failing — better to under-validate than
+ *      reject a valid file.
+ *
+ * Output: contracts/plugin.schema.json
+ */
+
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
+import { execSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import pc from "picocolors";
+
+// ---------------------------------------------------------------------------
+// 1. Bundle acquisition — duplicates fetchCliSource from extract-contracts.ts.
+//    Kept inline so this extractor can run standalone.
+// ---------------------------------------------------------------------------
+
+export interface BundleResult {
+	source: string;
+	version: string;
+}
+
+export function fetchBundle(requestedVersion?: string): BundleResult {
+	const npmPkg = requestedVersion
+		? `@anthropic-ai/claude-code@${requestedVersion}`
+		: "@anthropic-ai/claude-code";
+	const tmp = mkdtempSync(join(tmpdir(), "claude-plugin-schema-"));
+	try {
+		execSync(`npm pack ${npmPkg} --pack-destination .`, {
+			cwd: tmp,
+			stdio: "pipe",
+		});
+		const tgz = execSync("ls *.tgz", { cwd: tmp, encoding: "utf8" }).trim();
+		execSync(`tar xzf "${tgz}"`, { cwd: tmp, stdio: "pipe" });
+		const pkg = JSON.parse(
+			readFileSync(join(tmp, "package", "package.json"), "utf8"),
+		);
+		const legacyCli = join(tmp, "package", "cli.js");
+		if (existsSync(legacyCli)) {
+			return { source: readFileSync(legacyCli, "utf8"), version: pkg.version };
+		}
+		const platformDir = join(tmp, "platform");
+		mkdirSync(platformDir);
+		execSync(
+			`npm pack @anthropic-ai/claude-code-linux-x64@${pkg.version} --pack-destination .`,
+			{ cwd: platformDir, stdio: "pipe" },
+		);
+		const ptgz = execSync("ls *.tgz", {
+			cwd: platformDir,
+			encoding: "utf8",
+		}).trim();
+		execSync(`tar xzf "${ptgz}"`, { cwd: platformDir, stdio: "pipe" });
+		const binary = readFileSync(join(platformDir, "package", "claude"));
+		const versionMarker = Buffer.from(`// Version: ${pkg.version}`);
+		const versionIdx = binary.indexOf(versionMarker);
+		const bunMarker = Buffer.from("// @bun @bytecode @bun-cjs");
+		const bundleStart = binary.lastIndexOf(bunMarker, versionIdx);
+		const slice = binary
+			.subarray(bundleStart, Math.min(bundleStart + 60_000_000, binary.length))
+			.toString("utf8");
+		return { source: slice, version: pkg.version };
+	} finally {
+		rmSync(tmp, { recursive: true, force: true });
+	}
+}
+
+// ---------------------------------------------------------------------------
+// 2. Generic source helpers
+// ---------------------------------------------------------------------------
+
+/** Find balanced delimiter pair starting at the opener position. */
+export function extractBalanced(
+	src: string,
+	openIdx: number,
+	open: string,
+	close: string,
+): string {
+	let depth = 0;
+	let inStr: string | null = null;
+	for (let i = openIdx; i < src.length; i++) {
+		const c = src[i];
+		if (inStr) {
+			if (c === "\\") {
+				i++;
+				continue;
+			}
+			if (c === inStr) inStr = null;
+			continue;
+		}
+		if (c === '"' || c === "'" || c === "`") {
+			inStr = c;
+			continue;
+		}
+		if (c === open) depth++;
+		else if (c === close) {
+			depth--;
+			if (depth === 0) return src.slice(openIdx, i + 1);
+		}
+	}
+	return "";
+}
+
+/** Split a top-level argument list (already stripped of outer parens). */
+export function splitTopLevelArgs(body: string): string[] {
+	const out: string[] = [];
+	let depth = 0;
+	let inStr: string | null = null;
+	let start = 0;
+	for (let i = 0; i < body.length; i++) {
+		const c = body[i];
+		if (inStr) {
+			if (c === "\\") {
+				i++;
+				continue;
+			}
+			if (c === inStr) inStr = null;
+			continue;
+		}
+		if (c === '"' || c === "'" || c === "`") {
+			inStr = c;
+			continue;
+		}
+		if (c === "(" || c === "[" || c === "{") depth++;
+		else if (c === ")" || c === "]" || c === "}") depth--;
+		else if (c === "," && depth === 0) {
+			out.push(body.slice(start, i).trim());
+			start = i + 1;
+		}
+	}
+	const tail = body.slice(start).trim();
+	if (tail.length > 0) out.push(tail);
+	return out;
+}
+
+/** Split top-level key:value pairs inside an object literal (curly braces stripped). */
+export function splitObjectEntries(body: string): string[] {
+	return splitTopLevelArgs(body);
+}
+
+/** Parse a `<key>:<value>` entry. Key may be identifier or quoted string. */
+export function parseEntry(
+	entry: string,
+): { key: string; value: string } | null {
+	let inStr: string | null = null;
+	let depth = 0;
+	for (let i = 0; i < entry.length; i++) {
+		const c = entry[i];
+		if (inStr) {
+			if (c === "\\") {
+				i++;
+				continue;
+			}
+			if (c === inStr) inStr = null;
+			continue;
+		}
+		if (c === '"' || c === "'" || c === "`") {
+			inStr = c;
+			continue;
+		}
+		if (c === "(" || c === "[" || c === "{") depth++;
+		else if (c === ")" || c === "]" || c === "}") depth--;
+		else if (c === ":" && depth === 0) {
+			const rawKey = entry.slice(0, i).trim();
+			const value = entry.slice(i + 1).trim();
+			const key = unquote(rawKey);
+			return { key, value };
+		}
+	}
+	return null;
+}
+
+function unquote(s: string): string {
+	if (
+		(s.startsWith('"') && s.endsWith('"')) ||
+		(s.startsWith("'") && s.endsWith("'"))
+	) {
+		try {
+			return JSON.parse(s.replace(/'/g, '"'));
+		} catch {
+			return s.slice(1, -1);
+		}
+	}
+	return s;
+}
+
+// ---------------------------------------------------------------------------
+// 3. Top-level definition index — maps `<name> = <expr>` for resolution.
+// ---------------------------------------------------------------------------
+
+export interface DefinitionIndex {
+	/** Bundle source. */
+	source: string;
+	/** Maps symbol name → expression text (right-hand side of the assignment). */
+	defs: Map<string, string>;
+	/** Detected Zod alias (e.g. "E" or "I" or "y"). */
+	zodAlias: string;
+	/** Detected lazy-wrapper helper (e.g. "CH" or "xH" — `<name>(()=>...)`). */
+	lazyWrapper: string;
+}
+
+/**
+ * Build an index of `<name>=<expr>` assignments where <expr> looks like a Zod
+ * schema factory: `CH(()=>...)`, `E.object({...})`, `E.union([...])`, etc.
+ *
+ * The bundle minifier emits a flat sequence of `var/let` declarations and the
+ * factories are wrapped in a lazy `CH(()=>...)` helper. We scan the entire
+ * source for `<ident>=` followed by recognized Zod-ish RHS expressions and
+ * record their text spans.
+ */
+export function indexDefinitions(source: string): DefinitionIndex {
+	const defs = new Map<string, string>();
+	const zodAlias = detectZodAlias(source);
+	const lazyWrapper = detectLazyWrapper(source, zodAlias);
+	const factoryStarts = [
+		`${lazyWrapper}(()=>`,
+		`${zodAlias}.object({`,
+		`${zodAlias}.strictObject({`,
+		`${zodAlias}.union([`,
+		`${zodAlias}.discriminatedUnion(`,
+		`${zodAlias}.lazy(`,
+	];
+	// Walk every "=<factory>" occurrence and grab the preceding identifier.
+	for (const start of factoryStarts) {
+		let pos = 0;
+		while (true) {
+			const idx = source.indexOf(start, pos);
+			if (idx === -1) break;
+			pos = idx + 1;
+			// preceding char must be '='
+			if (source[idx - 1] !== "=") continue;
+			// walk back through the identifier
+			let nameEnd = idx - 1;
+			let nameStart = nameEnd;
+			while (
+				nameStart > 0 &&
+				/[\w$]/.test(source[nameStart - 1])
+			)
+				nameStart--;
+			if (nameStart === nameEnd) continue;
+			const name = source.slice(nameStart, nameEnd);
+			if (defs.has(name)) continue;
+			// extract the RHS expression text
+			const expr = extractExpression(source, idx);
+			if (expr) defs.set(name, expr);
+		}
+	}
+	return { source, defs, zodAlias, lazyWrapper };
+}
+
+/**
+ * Detect the lazy-wrapper helper used to wrap Zod schemas — `<wrapper>(()=>...)`.
+ *
+ * The bundle also contains a generic module-factory helper (often `T(()=>{...})`
+ * for Bun-compiled CJS modules) that uses the same pattern but isn't related
+ * to Zod. We disambiguate by requiring the arrow body to start with the Zod
+ * alias call: `<wrapper>(()=><zodAlias>.<method>`.
+ */
+function detectLazyWrapper(source: string, zodAlias: string): string {
+	const counts = new Map<string, number>();
+	const re = new RegExp(
+		`\\b([A-Za-z_$][\\w$]*)\\(\\(\\)=>${zodAlias.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\.`,
+		"g",
+	);
+	let m;
+	while ((m = re.exec(source)) !== null) {
+		const name = m[1];
+		counts.set(name, (counts.get(name) ?? 0) + 1);
+	}
+	let best = "CH";
+	let bestN = 0;
+	for (const [name, n] of counts) {
+		if (n > bestN) {
+			bestN = n;
+			best = name;
+		}
+	}
+	return best;
+}
+
+/**
+ * Extract the RHS expression starting at exprStart. The expression continues
+ * through balanced parens/brackets/braces and method-chain calls until we hit
+ * a separator at depth 0 (',', ';', or newline outside of literals).
+ */
+function extractExpression(src: string, exprStart: number): string {
+	let depth = 0;
+	let inStr: string | null = null;
+	for (let i = exprStart; i < src.length; i++) {
+		const c = src[i];
+		if (inStr) {
+			if (c === "\\") {
+				i++;
+				continue;
+			}
+			if (c === inStr) inStr = null;
+			continue;
+		}
+		if (c === '"' || c === "'" || c === "`") {
+			inStr = c;
+			continue;
+		}
+		if (c === "(" || c === "[" || c === "{") depth++;
+		else if (c === ")" || c === "]" || c === "}") {
+			if (depth === 0) return src.slice(exprStart, i);
+			depth--;
+		} else if (depth === 0 && (c === "," || c === ";")) {
+			return src.slice(exprStart, i);
+		}
+	}
+	return src.slice(exprStart);
+}
+
+function detectZodAlias(source: string): string {
+	// Find the most common alias used for .object({...}).
+	const candidates = new Map<string, number>();
+	const re = /\b([A-Za-z_$])\.object\(\{/g;
+	let m;
+	while ((m = re.exec(source)) !== null) {
+		candidates.set(m[1], (candidates.get(m[1]) ?? 0) + 1);
+	}
+	let best = "E";
+	let bestN = 0;
+	for (const [alias, n] of candidates) {
+		if (n > bestN) {
+			bestN = n;
+			best = alias;
+		}
+	}
+	return best;
+}
+
+// ---------------------------------------------------------------------------
+// 4. Master schema locator
+// ---------------------------------------------------------------------------
+
+/**
+ * Find the plugin.json master schema by anchoring on `.strict().safeParse(`
+ * adjacent to the "kebab-case" error string. The master schema's symbol name
+ * appears immediately before that .strict() chain.
+ */
+export function findMasterSchemaName(index: DefinitionIndex): string | null {
+	const { source } = index;
+	const anchor = "is not kebab-case";
+	const anchorIdx = source.indexOf(anchor);
+	if (anchorIdx === -1) return null;
+	// Search backwards for the nearest ".strict().safeParse(" call.
+	const search = source.slice(Math.max(0, anchorIdx - 4000), anchorIdx);
+	const callIdx = search.lastIndexOf(".strict().safeParse(");
+	if (callIdx === -1) return null;
+	const absoluteCallIdx = Math.max(0, anchorIdx - 4000) + callIdx;
+	// Walk back across `().` to find the symbol name.
+	let i = absoluteCallIdx - 1;
+	// expect pattern: <name>()
+	if (source.slice(i - 1, i + 1) !== "()") return null;
+	let nameEnd = i - 1;
+	let nameStart = nameEnd;
+	while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
+	if (nameStart === nameEnd) return null;
+	return source.slice(nameStart, nameEnd);
+}
+
+// ---------------------------------------------------------------------------
+// 5. Master schema spread parser
+// ---------------------------------------------------------------------------
+
+export interface SpreadRef {
+	name: string;
+	partial: boolean;
+}
+
+/**
+ * Parse `E.object({...subA().shape, ...subB().partial().shape})` into the list
+ * of sub-schema references with their partial flag.
+ */
+export function parseMasterSpread(
+	expr: string,
+	zodAlias: string,
+	lazyWrapper = "CH",
+): SpreadRef[] {
+	// Strip the `<lazyWrapper>(()=>...)` wrapper if present.
+	let body = expr;
+	const wrapperPrefix = `${lazyWrapper}(()=>`;
+	if (body.startsWith(wrapperPrefix)) {
+		// The opening `(` of the wrapper sits right after the identifier.
+		const inner = extractBalanced(body, lazyWrapper.length, "(", ")");
+		body = inner.slice(1, -1); // strip outer parens
+		body = body.replace(/^\(\)=>/, "");
+	}
+	// Expect E.object({...})
+	const objStart = body.indexOf(`${zodAlias}.object(`);
+	if (objStart === -1) return [];
+	const parenBlock = extractBalanced(
+		body,
+		objStart + `${zodAlias}.object`.length,
+		"(",
+		")",
+	);
+	const objLiteral = parenBlock.slice(1, -1); // strip outer parens
+	if (!objLiteral.startsWith("{") || !objLiteral.endsWith("}")) return [];
+	const inner = objLiteral.slice(1, -1);
+	const entries = splitObjectEntries(inner);
+	const refs: SpreadRef[] = [];
+	for (const e of entries) {
+		// pattern: ...<name>()(.partial())?.shape
+		const m = e.match(/^\.\.\.([\w$]+)\(\)(\.partial\(\))?\.shape$/);
+		if (m) refs.push({ name: m[1], partial: !!m[2] });
+	}
+	return refs;
+}
+
+// ---------------------------------------------------------------------------
+// 6. Zod → JSON Schema evaluator
+// ---------------------------------------------------------------------------
+
+export type JSONSchema = Record<string, unknown>;
+
+interface EvalContext {
+	index: DefinitionIndex;
+	resolving: Set<string>; // cycle guard
+}
+
+/**
+ * Translate a Zod expression to JSON Schema. Unknown/unsupported patterns fall
+ * back to `{}` (permissive). The evaluator is intentionally lenient — false
+ * negatives are better than false positives in a linter.
+ */
+export function evalZod(expr: string, ctx: EvalContext): JSONSchema {
+	expr = expr.trim();
+
+	// Strip the detected lazy wrapper, e.g. `CH(()=>X)` or `xH(()=>X)`.
+	const lazyPrefix = `${ctx.index.lazyWrapper}(()=>`;
+	if (expr.startsWith(lazyPrefix)) {
+		const wrapped = extractBalanced(
+			expr,
+			ctx.index.lazyWrapper.length,
+			"(",
+			")",
+		);
+		const inner = wrapped.slice(1, -1).replace(/^\(\)=>/, "");
+		return evalZod(inner, ctx);
+	}
+	// Strip plain (X) wrapping.
+	if (expr.startsWith("(") && extractBalanced(expr, 0, "(", ")") === expr) {
+		return evalZod(expr.slice(1, -1), ctx);
+	}
+
+	// Resolve a method chain by reading the head term and then folding modifiers.
+	const chain = splitChain(expr);
+	if (chain.length === 0) return {};
+
+	let schema: JSONSchema = evalHead(chain[0], ctx);
+	for (let i = 1; i < chain.length; i++) {
+		schema = applyMethod(schema, chain[i], ctx);
+	}
+	return schema;
+}
+
+/**
+ * Split `E.object({...}).optional().describe(...)` into
+ *   ["E.object({...})", "optional()", "describe(...)"].
+ *
+ * Only splits on `.` that appears after a `)` or `]` at depth 0 — this keeps
+ * the head call (`E.object({...})` or `<ident>()`) intact while peeling off
+ * subsequent method chain steps.
+ */
+export function splitChain(expr: string): string[] {
+	const out: string[] = [];
+	let depth = 0;
+	let inStr: string | null = null;
+	let start = 0;
+	let prev = "";
+	for (let i = 0; i < expr.length; i++) {
+		const c = expr[i];
+		if (inStr) {
+			if (c === "\\") {
+				i++;
+				continue;
+			}
+			if (c === inStr) inStr = null;
+			prev = c;
+			continue;
+		}
+		if (c === '"' || c === "'" || c === "`") {
+			inStr = c;
+			prev = c;
+			continue;
+		}
+		if (c === "(" || c === "[" || c === "{") depth++;
+		else if (c === ")" || c === "]" || c === "}") depth--;
+		else if (
+			c === "." &&
+			depth === 0 &&
+			(prev === ")" || prev === "]")
+		) {
+			out.push(expr.slice(start, i));
+			start = i + 1;
+		}
+		prev = c;
+	}
+	out.push(expr.slice(start));
+	return out;
+}
+
+function evalHead(head: string, ctx: EvalContext): JSONSchema {
+	const { zodAlias, defs } = ctx.index;
+	head = head.trim();
+
+	// Resolve identifier()  →  follow definition.
+	const idCall = head.match(/^([\w$]+)\(\)$/);
+	if (idCall && idCall[1] !== zodAlias) {
+		const name = idCall[1];
+		if (ctx.resolving.has(name)) return {}; // cycle
+		const def = defs.get(name);
+		if (!def) return {};
+		ctx.resolving.add(name);
+		try {
+			return evalZod(def, ctx);
+		} finally {
+			ctx.resolving.delete(name);
+		}
+	}
+
+	// E.<method>(...args)
+	if (head.startsWith(`${zodAlias}.`)) {
+		const rest = head.slice(zodAlias.length + 1);
+		const callMatch = rest.match(/^([\w$]+)/);
+		if (!callMatch) return {};
+		const method = callMatch[1];
+		const argsBody =
+			head[zodAlias.length + 1 + method.length] === "("
+				? extractBalanced(
+						head,
+						zodAlias.length + 1 + method.length,
+						"(",
+						")",
+					).slice(1, -1)
+				: "";
+		return evalZodPrimitive(method, argsBody, ctx);
+	}
+
+	return {};
+}
+
+function evalZodPrimitive(
+	method: string,
+	argsBody: string,
+	ctx: EvalContext,
+): JSONSchema {
+	const args = argsBody.length > 0 ? splitTopLevelArgs(argsBody) : [];
+	switch (method) {
+		case "string":
+			return { type: "string" };
+		case "number":
+		case "bigint":
+			return { type: "number" };
+		case "boolean":
+			return { type: "boolean" };
+		case "null":
+			return { type: "null" };
+		case "undefined":
+		case "void":
+			return { not: {} };
+		case "any":
+		case "unknown":
+			return {};
+		case "never":
+			return { not: {} };
+		case "literal": {
+			if (args.length === 0) return {};
+			return { const: evalLiteralValue(args[0]) };
+		}
+		case "enum":
+		case "nativeEnum": {
+			if (args.length === 0) return {};
+			const arrBody = args[0];
+			if (arrBody.startsWith("[") && arrBody.endsWith("]")) {
+				const vals = splitTopLevelArgs(arrBody.slice(1, -1)).map(
+					evalLiteralValue,
+				);
+				return { enum: vals };
+			}
+			return {};
+		}
+		case "array": {
+			if (args.length === 0) return { type: "array" };
+			return { type: "array", items: evalZod(args[0], ctx) };
+		}
+		case "tuple": {
+			if (args.length === 0) return { type: "array" };
+			const arr = args[0];
+			if (arr.startsWith("[") && arr.endsWith("]")) {
+				const items = splitTopLevelArgs(arr.slice(1, -1)).map((e) =>
+					evalZod(e, ctx),
+				);
+				return { type: "array", prefixItems: items, items: false };
+			}
+			return { type: "array" };
+		}
+		case "object": {
+			if (args.length === 0) return { type: "object" };
+			return evalZodObject(args[0], ctx, /*strict*/ false);
+		}
+		case "strictObject": {
+			if (args.length === 0) return { type: "object" };
+			return evalZodObject(args[0], ctx, /*strict*/ true);
+		}
+		case "looseObject":
+		case "passthrough": {
+			if (args.length === 0) return { type: "object" };
+			const obj = evalZodObject(args[0], ctx, /*strict*/ false);
+			return { ...obj, additionalProperties: true };
+		}
+		case "record": {
+			if (args.length === 0)
+				return { type: "object", additionalProperties: {} };
+			// Two forms: record(V) or record(K, V). We only need V (additionalProperties).
+			const valueExpr = args.length === 1 ? args[0] : args[1];
+			return { type: "object", additionalProperties: evalZod(valueExpr, ctx) };
+		}
+		case "union": {
+			if (args.length === 0) return {};
+			const arr = args[0];
+			if (arr.startsWith("[") && arr.endsWith("]")) {
+				const branches = splitTopLevelArgs(arr.slice(1, -1)).map((e) =>
+					evalZod(e, ctx),
+				);
+				return { anyOf: branches };
+			}
+			return {};
+		}
+		case "discriminatedUnion": {
+			// (discriminatorKey, [branches])
+			if (args.length < 2) return {};
+			const arr = args[1];
+			if (arr.startsWith("[") && arr.endsWith("]")) {
+				const branches = splitTopLevelArgs(arr.slice(1, -1)).map((e) =>
+					evalZod(e, ctx),
+				);
+				return { oneOf: branches };
+			}
+			return {};
+		}
+		case "intersection": {
+			if (args.length < 2) return {};
+			return { allOf: [evalZod(args[0], ctx), evalZod(args[1], ctx)] };
+		}
+		case "lazy": {
+			// lazy(() => X) — strip arrow function wrapper, eval body.
+			if (args.length === 0) return {};
+			let body = args[0].trim();
+			body = body.replace(/^\(\)=>/, "");
+			return evalZod(body, ctx);
+		}
+		case "preprocess": {
+			// preprocess(transformFn, innerSchema) — transformFn coerces input;
+			// innerSchema is what actually gets validated. We only care about
+			// the post-transform schema for static checking.
+			if (args.length < 2) return {};
+			return evalZod(args[1], ctx);
+		}
+		default:
+			return {};
+	}
+}
+
+/** Parse a Zod object body `{key: zodExpr, ...spread, ...}` into JSON Schema. */
+function evalZodObject(
+	objLiteral: string,
+	ctx: EvalContext,
+	strict: boolean,
+): JSONSchema {
+	if (!objLiteral.startsWith("{") || !objLiteral.endsWith("}"))
+		return { type: "object" };
+	const inner = objLiteral.slice(1, -1);
+	const entries = splitObjectEntries(inner);
+	const props: Record<string, JSONSchema> = {};
+	const required: string[] = [];
+
+	for (const e of entries) {
+		// Spread: `...<expr>.shape` (Zod's way to merge another schema's keys).
+		// We re-evaluate the spread source and merge its properties+required in.
+		const spreadMatch = e.match(/^\.\.\.(.+?)(?:\.shape)?$/);
+		if (e.startsWith("...") && spreadMatch) {
+			const subExpr = spreadMatch[1];
+			const sub = evalZod(subExpr, ctx);
+			const subProps = (sub.properties as Record<string, JSONSchema>) ?? {};
+			for (const [k, v] of Object.entries(subProps)) {
+				props[k] = v;
+			}
+			const subReq = (sub.required as string[]) ?? [];
+			for (const r of subReq) required.push(r);
+			continue;
+		}
+
+		const parsed = parseEntry(e);
+		if (!parsed) continue;
+		const { key, value } = parsed;
+		const valueSchema = evalZod(value, ctx);
+		props[key] = valueSchema;
+		if (!isOptional(value)) required.push(key);
+	}
+
+	const out: JSONSchema = { type: "object", properties: props };
+	if (required.length > 0) out.required = [...new Set(required)];
+	if (strict) out.additionalProperties = false;
+	return out;
+}
+
+/** Detect `.optional()` or `.nullish()` in a Zod expression's chain. */
+function isOptional(expr: string): boolean {
+	const chain = splitChain(expr);
+	for (const part of chain) {
+		if (part.startsWith("optional(")) return true;
+		if (part.startsWith("nullish(")) return true;
+		if (part.startsWith("default(")) return true;
+	}
+	return false;
+}
+
+function evalLiteralValue(expr: string): unknown {
+	expr = expr.trim();
+	if (expr === "true") return true;
+	if (expr === "false") return false;
+	if (expr === "null") return null;
+	if (/^-?\d+(\.\d+)?$/.test(expr)) return Number(expr);
+	if (
+		(expr.startsWith('"') && expr.endsWith('"')) ||
+		(expr.startsWith("'") && expr.endsWith("'"))
+	) {
+		try {
+			return JSON.parse(expr.replace(/^'|'$/g, '"'));
+		} catch {
+			return expr.slice(1, -1);
+		}
+	}
+	return expr;
+}
+
+function applyMethod(
+	schema: JSONSchema,
+	step: string,
+	ctx: EvalContext,
+): JSONSchema {
+	const callMatch = step.match(/^([\w$]+)\(?/);
+	if (!callMatch) return schema;
+	const method = callMatch[1];
+	const argsBody =
+		step[method.length] === "("
+			? extractBalanced(step, method.length, "(", ")").slice(1, -1)
+			: "";
+	const args = argsBody.length > 0 ? splitTopLevelArgs(argsBody) : [];
+
+	switch (method) {
+		case "optional":
+		case "nullable":
+		case "nullish":
+		case "describe":
+		case "default":
+		case "refine":
+		case "superRefine":
+		case "transform":
+		case "pipe":
+		case "brand":
+		case "readonly":
+		case "catch":
+			// Mostly transparent for validation purposes. .describe attaches text;
+			// .nullable allows null; .default provides fallback. We surface
+			// description but otherwise pass-through.
+			if (method === "describe" && args.length > 0) {
+				const desc = evalLiteralValue(args[0]);
+				if (typeof desc === "string") schema = { ...schema, description: desc };
+			}
+			if (method === "nullable") {
+				// allow null in addition to the existing type
+				if (schema.type && typeof schema.type === "string") {
+					schema = { ...schema, type: [schema.type as string, "null"] };
+				}
+			}
+			if (method === "default" && args.length > 0) {
+				schema = { ...schema, default: evalLiteralValue(args[0]) };
+			}
+			return schema;
+		case "min":
+			if (schema.type === "string")
+				return { ...schema, minLength: Number(args[0] ?? 0) };
+			if (schema.type === "array")
+				return { ...schema, minItems: Number(args[0] ?? 0) };
+			return { ...schema, minimum: Number(args[0] ?? 0) };
+		case "max":
+			if (schema.type === "string")
+				return { ...schema, maxLength: Number(args[0] ?? 0) };
+			if (schema.type === "array")
+				return { ...schema, maxItems: Number(args[0] ?? 0) };
+			return { ...schema, maximum: Number(args[0] ?? 0) };
+		case "length":
+			if (schema.type === "string") {
+				const n = Number(args[0] ?? 0);
+				return { ...schema, minLength: n, maxLength: n };
+			}
+			return schema;
+		case "regex":
+			if (args.length > 0) {
+				const r = args[0].trim();
+				const slash = r.match(/^\/(.+)\/([a-z]*)$/);
+				if (slash) return { ...schema, pattern: slash[1] };
+			}
+			return schema;
+		case "email":
+			return { ...schema, format: "email" };
+		case "url":
+			return { ...schema, format: "uri" };
+		case "uuid":
+			return { ...schema, format: "uuid" };
+		case "strict":
+			return { ...schema, additionalProperties: false };
+		case "passthrough":
+			return { ...schema, additionalProperties: true };
+		case "partial": {
+			// Drop the required array on object schemas.
+			if (schema.type === "object") {
+				const { required: _r, ...rest } = schema as Record<string, unknown>;
+				return rest as JSONSchema;
+			}
+			return schema;
+		}
+		case "extend":
+		case "merge": {
+			// Merge another object schema's properties into this one.
+			if (args.length === 0) return schema;
+			const other = evalZod(args[0], ctx);
+			return mergeObjectSchemas(schema, other);
+		}
+		case "shape":
+			// `.shape` is a property access used in spreads like `X.shape`. When it
+			// appears as a method-style step (rare), treat as pass-through.
+			return schema;
+		case "array":
+			return { type: "array", items: schema };
+		default:
+			return schema;
+	}
+}
+
+function mergeObjectSchemas(a: JSONSchema, b: JSONSchema): JSONSchema {
+	const props = {
+		...((a.properties as Record<string, JSONSchema>) ?? {}),
+		...((b.properties as Record<string, JSONSchema>) ?? {}),
+	};
+	const required = [
+		...((a.required as string[]) ?? []),
+		...((b.required as string[]) ?? []),
+	];
+	const out: JSONSchema = { type: "object", properties: props };
+	if (required.length > 0) out.required = [...new Set(required)];
+	return out;
+}
+
+// ---------------------------------------------------------------------------
+// 7. Compose master schema from sub-schemas
+// ---------------------------------------------------------------------------
+
+/**
+ * Walk back from an in-source anchor to the nearest `<symbol>=CH(()=>` and
+ * return that symbol's name. Used to locate sub-schemas (RSH, vC8, M09, ...)
+ * across minifier rotations — anchor text is a stable error message inside
+ * the schema's refine/describe call.
+ */
+export function findSymbolByAnchor(
+	index: DefinitionIndex,
+	anchorText: string,
+): string | null {
+	const { source, lazyWrapper } = index;
+	const anchorIdx = source.indexOf(anchorText);
+	if (anchorIdx === -1) return null;
+	const eq = source.lastIndexOf(`=${lazyWrapper}(()=>`, anchorIdx);
+	if (eq === -1) return null;
+	let nameEnd = eq;
+	let nameStart = nameEnd;
+	while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
+	if (nameStart === nameEnd) return null;
+	return source.slice(nameStart, nameEnd);
+}
+
+/**
+ * Build the `.lsp.json` schema. Shape: record of server-name → RSH (the
+ * per-server strict object). Matches Claude Code's runtime validator
+ * `E.record(E.string(), RSH()).safeParse(content)`.
+ */
+export function buildLspSchema(index: DefinitionIndex): JSONSchema | null {
+	const rsh = findSymbolByAnchor(
+		index,
+		"extensionToLanguage must have at least one mapping",
+	);
+	if (!rsh) return null;
+	const def = index.defs.get(rsh);
+	if (!def) return null;
+	const rshSchema = evalZod(def, { index, resolving: new Set() });
+	return {
+		$schema: "https://json-schema.org/draft/2020-12/schema",
+		title: "Claude Code .lsp.json",
+		type: "object",
+		additionalProperties: rshSchema,
+		description:
+			"Flat map of server-name → LSP server config. The top-level keys are server names; their values match the per-server schema. This file is loaded by Claude Code when present at the plugin root.",
+	};
+}
+
+/**
+ * Build the `monitors/monitors.json` schema. Shape: array of M09 entries with
+ * a refine() check that all `name` values are unique. The unique-name check
+ * can't be expressed in JSON Schema; the monitors-json linter enforces it
+ * separately.
+ */
+export function buildMonitorsSchema(index: DefinitionIndex): JSONSchema | null {
+	const vc8 = findSymbolByAnchor(
+		index,
+		"Monitor names must be unique within a plugin",
+	);
+	if (!vc8) return null;
+	const def = index.defs.get(vc8);
+	if (!def) return null;
+	const arrSchema = evalZod(def, { index, resolving: new Set() });
+	return {
+		$schema: "https://json-schema.org/draft/2020-12/schema",
+		title: "Claude Code monitors.json",
+		...arrSchema,
+		description:
+			"Array of monitor entries. Each monitor's `name` must be unique within the plugin (Claude Code enforces this with a refine() check that is not expressible in JSON Schema; the monitors-json linter does it separately).",
+	};
+}
+
+export function buildPluginSchema(index: DefinitionIndex): JSONSchema {
+	const masterName = findMasterSchemaName(index);
+	if (!masterName) {
+		throw new Error(
+			"Could not locate master plugin schema (kebab-case anchor not found)",
+		);
+	}
+	const masterExpr = index.defs.get(masterName);
+	if (!masterExpr) {
+		throw new Error(`Master schema symbol ${masterName} has no definition`);
+	}
+	const refs = parseMasterSpread(masterExpr, index.zodAlias, index.lazyWrapper);
+	if (refs.length === 0) {
+		throw new Error("Master schema spread parsing returned 0 refs");
+	}
+
+	const properties: Record<string, JSONSchema> = {};
+	const required: string[] = [];
+	const ctx: EvalContext = { index, resolving: new Set() };
+
+	for (const ref of refs) {
+		const def = index.defs.get(ref.name);
+		if (!def) continue;
+		const sub = evalZod(def, ctx);
+		const subProps = (sub.properties as Record<string, JSONSchema>) ?? {};
+		const subRequired = (sub.required as string[]) ?? [];
+		for (const [k, v] of Object.entries(subProps)) {
+			properties[k] = v;
+		}
+		if (!ref.partial) {
+			for (const r of subRequired) required.push(r);
+		}
+	}
+
+	const out: JSONSchema = {
+		$schema: "https://json-schema.org/draft/2020-12/schema",
+		title: "Claude Code plugin.json",
+		type: "object",
+		properties,
+	};
+	if (required.length > 0) out.required = [...new Set(required)];
+	return out;
+}
+
+// ---------------------------------------------------------------------------
+// 8. Main
+// ---------------------------------------------------------------------------
+
+function main() {
+	const versionIdx = process.argv.indexOf("--version");
+	const requestedVersion =
+		versionIdx !== -1 ? process.argv[versionIdx + 1] : undefined;
+	const label = requestedVersion ? `v${requestedVersion}` : "latest";
+	console.log(pc.cyan(`▸ Fetching @anthropic-ai/claude-code (${label})...`));
+	const { source, version } = fetchBundle(requestedVersion);
+	console.log(
+		pc.cyan("▸ Indexing definitions"),
+		pc.dim(`(v${version}, ${(source.length / 1e6).toFixed(1)}MB)`),
+	);
+
+	const index = indexDefinitions(source);
+	console.log(
+		pc.dim(`  ${index.defs.size} definitions, Zod alias = ${index.zodAlias}`),
+	);
+
+	const masterName = findMasterSchemaName(index);
+	console.log(pc.cyan(`▸ Master schema: ${masterName ?? "<not found>"}`));
+
+	const schema = buildPluginSchema(index);
+	const propCount = Object.keys(schema.properties as object).length;
+	const reqCount = ((schema.required as string[]) ?? []).length;
+	console.log(
+		pc.cyan(
+			`▸ Composed schema: ${propCount} properties, ${reqCount} required`,
+		),
+	);
+
+	const rootDir = join(import.meta.dirname!, "..");
+	const outPath = join(rootDir, "contracts", "plugin.schema.json");
+
+	// Drift gate: compare the new property set to the previous extraction and
+	// fail loudly if we lost >30% of the fields. Mirrors extract-contracts.ts.
+	// Override with FORCE_SCHEMA=1 if the loss is intentional (e.g., upstream
+	// removed an experimental field).
+	let prevSchema: { properties?: Record<string, unknown> } | null = null;
+	try {
+		const prev = JSON.parse(readFileSync(outPath, "utf8")) as {
+			schema?: { properties?: Record<string, unknown> };
+		};
+		prevSchema = prev.schema ?? null;
+	} catch {
+		// no previous file — first run
+	}
+	if (prevSchema) {
+		const prevKeys = new Set(Object.keys(prevSchema.properties ?? {}));
+		const nowKeys = new Set(
+			Object.keys(schema.properties as Record<string, unknown>),
+		);
+		const lost = [...prevKeys].filter((k) => !nowKeys.has(k));
+		const gained = [...nowKeys].filter((k) => !prevKeys.has(k));
+		if (gained.length > 0) {
+			console.log(
+				pc.green(`  + Schema gained: ${gained.sort().join(", ")}`),
+			);
+		}
+		if (lost.length > 0) {
+			const dropRate = lost.length / prevKeys.size;
+			const msg = `Schema lost ${lost.length}/${prevKeys.size} top-level fields (${(dropRate * 100).toFixed(0)}%): ${lost.sort().join(", ")}`;
+			if (dropRate > 0.3 && process.env.FORCE_SCHEMA !== "1") {
+				console.log(pc.red(`  ✗ ${msg}`));
+				console.log(pc.red("    Set FORCE_SCHEMA=1 to override."));
+				process.exit(1);
+			}
+			console.log(pc.yellow(`  ⚠ ${msg}`));
+		}
+	}
+	const wrapped = {
+		extractedFromClaudeCodeVersion: version,
+		extractedAt: new Date().toISOString(),
+		schema,
+	};
+	writeFileSync(outPath, JSON.stringify(wrapped, null, "\t") + "\n");
+	console.log(pc.dim(`  Written to ${outPath}`));
+
+	// LSP schema (record of server-name → RSH)
+	const lspSchema = buildLspSchema(index);
+	if (lspSchema) {
+		const lspPath = join(rootDir, "contracts", "lsp.schema.json");
+		writeFileSync(
+			lspPath,
+			JSON.stringify(
+				{
+					extractedFromClaudeCodeVersion: version,
+					extractedAt: new Date().toISOString(),
+					schema: lspSchema,
+				},
+				null,
+				"\t",
+			) + "\n",
+		);
+		console.log(pc.cyan(`▸ LSP schema written to ${lspPath}`));
+	} else {
+		console.log(
+			pc.yellow(
+				"  ⚠ Could not locate LSP per-server schema (extensionToLanguage anchor)",
+			),
+		);
+	}
+
+	// Monitors schema (array of M09)
+	const monitorsSchema = buildMonitorsSchema(index);
+	if (monitorsSchema) {
+		const monPath = join(rootDir, "contracts", "monitors.schema.json");
+		writeFileSync(
+			monPath,
+			JSON.stringify(
+				{
+					extractedFromClaudeCodeVersion: version,
+					extractedAt: new Date().toISOString(),
+					schema: monitorsSchema,
+				},
+				null,
+				"\t",
+			) + "\n",
+		);
+		console.log(pc.cyan(`▸ Monitors schema written to ${monPath}`));
+	} else {
+		console.log(
+			pc.yellow(
+				"  ⚠ Could not locate monitors schema (unique-name anchor)",
+			),
+		);
+	}
+}
+
+if (resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[1])) {
+	main();
+}
