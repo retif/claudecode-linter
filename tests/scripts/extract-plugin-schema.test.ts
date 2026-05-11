@@ -67,19 +67,11 @@ describe("splitTopLevelArgs", () => {
 	});
 
 	it("ignores commas inside string literals", () => {
-		expect(splitTopLevelArgs('a, "b, c", d')).toEqual([
-			"a",
-			'"b, c"',
-			"d",
-		]);
+		expect(splitTopLevelArgs('a, "b, c", d')).toEqual(["a", '"b, c"', "d"]);
 	});
 
 	it("handles escaped quotes inside strings", () => {
-		expect(splitTopLevelArgs('a, "b\\"c", d')).toEqual([
-			"a",
-			'"b\\"c"',
-			"d",
-		]);
+		expect(splitTopLevelArgs('a, "b\\"c", d')).toEqual(["a", '"b\\"c"', "d"]);
 	});
 });
 
@@ -127,7 +119,10 @@ describe("parseEntry", () => {
 });
 
 describe("evalZod primitives", () => {
-	const ctx = { index: indexDefinitions(makeBundle()), resolving: new Set<string>() };
+	const ctx = {
+		index: indexDefinitions(makeBundle()),
+		resolving: new Set<string>(),
+	};
 
 	it("translates E.string() → {type: string}", () => {
 		expect(evalZod("E.string()", ctx)).toEqual({ type: "string" });
@@ -141,7 +136,7 @@ describe("evalZod primitives", () => {
 		expect(evalZod("E.boolean()", ctx)).toEqual({ type: "boolean" });
 	});
 
-	it("translates E.literal(\"x\") → {const: x}", () => {
+	it('translates E.literal("x") → {const: x}', () => {
 		expect(evalZod('E.literal("x")', ctx)).toEqual({ const: "x" });
 	});
 
@@ -194,10 +189,7 @@ describe("evalZod primitives", () => {
 	});
 
 	it("applies .partial() → drops required[]", () => {
-		const out = evalZod(
-			"E.object({a:E.string(),b:E.string()}).partial()",
-			ctx,
-		);
+		const out = evalZod("E.object({a:E.string(),b:E.string()}).partial()", ctx);
 		expect(out.required).toBeUndefined();
 	});
 
@@ -225,10 +217,7 @@ describe("evalZod primitives", () => {
 	});
 
 	it("strips preprocess(transformFn, innerSchema) to the inner schema", () => {
-		const out = evalZod(
-			"E.preprocess((x)=>x,E.object({a:E.string()}))",
-			ctx,
-		);
+		const out = evalZod("E.preprocess((x)=>x,E.object({a:E.string()}))", ctx);
 		expect((out.properties as Record<string, object>).a).toEqual({
 			type: "string",
 		});
@@ -245,7 +234,10 @@ describe("evalZod primitives", () => {
 			minLength: 1,
 			description: "author name",
 		});
-		expect(props.email).toEqual({ type: "string", description: "contact email" });
+		expect(props.email).toEqual({
+			type: "string",
+			description: "contact email",
+		});
 		expect(props.extra).toEqual({ type: "boolean" });
 	});
 });
