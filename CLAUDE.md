@@ -33,6 +33,7 @@ src/
   index.ts          CLI entry (commander)
   types.ts          Core types: LintDiagnostic, Severity, ArtifactType, Linter, Fixer, ConfigScope
   contracts.ts      Auto-generated contract constants (tools, events, fields, colors, models)
+  plugin-schema.ts  Lazy loader + Ajv compilation for plugin/lsp/monitors JSON Schemas
   config.ts         Load .claudecode-lint.yaml, merge with CLI flags
   discovery.ts      Find artifacts by convention, detect scope (user/project/subdirectory)
   linters/          One file per artifact type, each exports a Linter
@@ -41,13 +42,30 @@ src/
   utils/            Shared helpers (YAML frontmatter parser, kebab-case validation)
 contracts/
   claude-code-contracts.json  Extracted contracts from Claude Code (source of truth)
+  plugin.schema.json          Auto-extracted JSON Schema for plugin.json (Zod → JSON Schema)
+  lsp.schema.json             Auto-extracted JSON Schema for .lsp.json
+  monitors.schema.json        Auto-extracted JSON Schema for monitors/monitors.json
 scripts/
-  extract-contracts.ts        AST-based extractor: downloads Claude Code, parses cli.js
+  extract-contracts.ts        AST-based extractor: contract sets (tools, events, fields…)
+  extract-plugin-schema.ts    Zod → JSON Schema walker for plugin/lsp/monitors validators
   generate-contracts.ts       Codegen: reads JSON → writes src/contracts.ts
 tests/
   linters/          Test files matching src/linters/ 1:1
+  scripts/          Unit tests for the Zod walker (extract-plugin-schema.test.ts)
   fixtures/         valid-plugin/ (complete valid plugin) + invalid/ (per-artifact bad files)
 ```
+
+## Schema extraction pipeline
+
+`scripts/extract-plugin-schema.ts` walks Claude Code's minified Zod schemas and emits JSON Schema (draft-2020-12) for three validators:
+
+1. **plugin.json** — master schema located via the "kebab-case" error string anchor near `.strict().safeParse(...)`; composed from N spread sub-schemas (`{...sub().shape, ...sub().partial().shape}`).
+2. **`.lsp.json`** — `E.record(E.string(), RSH())` where RSH is located via the "extensionToLanguage must have at least one mapping" anchor.
+3. **monitors/monitors.json** — `E.array(M09())` where the wrapping array is located via the "Monitor names must be unique" anchor.
+
+The walker auto-detects the Zod alias (`E`/`I`/`y`/…) and the lazy-wrapper helper (`CH(()=>…)`/`xH(()=>…)`/…) per release — minifier rotations don't break extraction. A drift gate (>30% top-level field loss vs the previous extraction) fails CI; override with `FORCE_SCHEMA=1`.
+
+Verified against 2.1.131 (older symbol set) and 2.1.138 (current). When extraction does break on a new release, the walker falls back to `{}` (permissive) per missing primitive — never emits a stricter schema than Claude Code actually enforces.
 
 ## Linter Pattern
 
@@ -74,6 +92,8 @@ Rules are named `<artifact>/<rule>` (e.g., `plugin-json/name-kebab-case`). Use `
 | `settings-json` | `settings.json`, `settings.local.json` | user, project |
 | `mcp-json` | `.mcp.json`, `mcp.json` | user, project |
 | `claude-md` | `CLAUDE.md` | user, project |
+| `lsp-json` | `.lsp.json` | — |
+| `monitors-json` | `monitors/monitors.json` | — |
 
 Scope detection (`discovery.ts`): files in `~/.claude/` or `~/` → user, files in project `.claude/` → project.
 
