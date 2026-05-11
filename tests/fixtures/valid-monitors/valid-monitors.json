@@ -1,0 +1,12 @@
+[
+	{
+		"name": "syslog-tail",
+		"command": "tail -f /var/log/syslog",
+		"description": "Stream syslog entries to the model"
+	},
+	{
+		"name": "auth-tail",
+		"command": "tail -f /var/log/auth.log",
+		"description": "Stream auth.log entries to the model"
+	}
+]

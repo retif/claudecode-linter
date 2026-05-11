@@ -198,6 +198,21 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 		artifacts.push({ filePath: f, artifactType: "hooks-json" });
 	}
 
+	// .lsp.json (flat record at plugin root; Claude Code reads from <plugin>/.lsp.json)
+	const lspDot = join(dir, ".lsp.json");
+	if (existsSync(lspDot)) {
+		artifacts.push({ filePath: lspDot, artifactType: "lsp-json" });
+	}
+
+	// monitors/monitors.json
+	const monitors = globSync("monitors/monitors.json", {
+		cwd: dir,
+		absolute: true,
+	});
+	for (const f of monitors) {
+		artifacts.push({ filePath: f, artifactType: "monitors-json" });
+	}
+
 	// Claude config files — settings
 	for (const name of ["settings.json", "settings.local.json"]) {
 		// Direct in dir (handles both ~/.claude/settings.json and project root)
@@ -313,6 +328,8 @@ function classifyFile(filePath: string): ArtifactType | null {
 		return "plugin-json";
 	if (name === "SKILL.md") return "skill-md";
 	if (name === "hooks.json" && parent === "hooks") return "hooks-json";
+	if (name === ".lsp.json") return "lsp-json";
+	if (name === "monitors.json" && parent === "monitors") return "monitors-json";
 	if (name.endsWith(".md") && parent === "agents") return "agent-md";
 	if (name.endsWith(".md") && parent === "commands") return "command-md";
 

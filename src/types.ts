@@ -9,6 +9,8 @@ export type ArtifactType =
   | "settings-json"
   | "mcp-json"
   | "claude-md"
+  | "lsp-json"
+  | "monitors-json"
   | "misplaced-file";
 
 export interface LintDiagnostic {

@@ -1,0 +1,9 @@
+[
+	{
+		"name": "watcher",
+		"command": "tail -f /var/log/a",
+		"description": "a",
+		"skip": true,
+		"throttle": 5
+	}
+]

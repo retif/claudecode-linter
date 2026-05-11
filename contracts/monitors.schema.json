@@ -1,0 +1,48 @@
+{
+	"extractedFromClaudeCodeVersion": "2.1.138",
+	"extractedAt": "2026-05-11T08:02:42.913Z",
+	"schema": {
+		"$schema": "https://json-schema.org/draft/2020-12/schema",
+		"title": "Claude Code monitors.json",
+		"type": "array",
+		"items": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"type": "string",
+					"minLength": 1,
+					"description": "Identifier for this monitor, unique within the plugin. Used to dedupe so re-arming (plugin reload, repeat skill invoke) does not spawn duplicates."
+				},
+				"command": {
+					"type": "string",
+					"minLength": 1,
+					"description": "Shell command to run as a persistent background monitor. Each stdout line is delivered to the model as a <task_notification> event; the process runs for the session lifetime. ${CLAUDE_PLUGIN_ROOT}, ${CLAUDE_PLUGIN_DATA}, ${user_config.*}, and ${ENV_VAR} are substituted. Runs in the session cwd \\u2014 prefix with `cd \"${CLAUDE_PLUGIN_ROOT}\" && ` if the script needs its own directory."
+				},
+				"description": {
+					"type": "string",
+					"minLength": 1,
+					"description": "Short human-readable description of what is being monitored (shown in task panel and notification summary)."
+				},
+				"when": {
+					"anyOf": [
+						{
+							"const": "always"
+						},
+						{
+							"type": "string"
+						}
+					],
+					"default": "always",
+					"description": "Arm trigger. \"always\" arms at session start and on plugin reload. \"on-skill-invoke:<skill>\" arms the first time that skill is dispatched (via Skill tool or slash command)."
+				}
+			},
+			"required": [
+				"name",
+				"command",
+				"description"
+			],
+			"additionalProperties": false
+		},
+		"description": "Array of monitor entries. Each monitor's `name` must be unique within the plugin (Claude Code enforces this with a refine() check that is not expressible in JSON Schema; the monitors-json linter does it separately)."
+	}
+}

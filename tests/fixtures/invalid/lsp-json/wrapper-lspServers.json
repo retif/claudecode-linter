@@ -1,0 +1,10 @@
+{
+	"lspServers": {
+		"yaml-language-server": {
+			"command": "yaml-language-server",
+			"args": ["--stdio"],
+			"filetypes": ["yaml", "yml"],
+			"rootPatterns": [".git"]
+		}
+	}
+}

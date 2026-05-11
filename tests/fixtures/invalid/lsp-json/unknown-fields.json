@@ -1,0 +1,8 @@
+{
+	"yaml-language-server": {
+		"command": "yaml-language-server",
+		"extensionToLanguage": { ".yaml": "yaml" },
+		"filetypes": ["yaml"],
+		"rootPatterns": [".git"]
+	}
+}

@@ -1,0 +1,4 @@
+[
+	{ "name": "watcher", "command": "tail -f /var/log/a", "description": "a" },
+	{ "name": "watcher", "command": "tail -f /var/log/b", "description": "b" }
+]

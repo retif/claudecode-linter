@@ -17,6 +17,8 @@ import { hooksJsonLinter } from "./linters/hooks-json.js";
 import { settingsJsonLinter } from "./linters/settings-json.js";
 import { mcpJsonLinter } from "./linters/mcp-json.js";
 import { claudeMdLinter } from "./linters/claude-md.js";
+import { lspJsonLinter } from "./linters/lsp-json.js";
+import { monitorsJsonLinter } from "./linters/monitors-json.js";
 import {
 	misplacedFileLinter,
 	MISPLACED_FILE_RULES,
@@ -35,6 +37,8 @@ import { HOOKS_JSON_RULES } from "./linters/hooks-json.js";
 import { SETTINGS_JSON_RULES } from "./linters/settings-json.js";
 import { MCP_JSON_RULES } from "./linters/mcp-json.js";
 import { CLAUDE_MD_RULES } from "./linters/claude-md.js";
+import { LSP_JSON_RULES } from "./linters/lsp-json.js";
+import { MONITORS_JSON_RULES } from "./linters/monitors-json.js";
 import type {
 	ArtifactType,
 	ConfigScope,
@@ -52,6 +56,8 @@ const LINTERS: Record<ArtifactType, Linter> = {
 	"settings-json": settingsJsonLinter,
 	"mcp-json": mcpJsonLinter,
 	"claude-md": claudeMdLinter,
+	"lsp-json": lspJsonLinter,
+	"monitors-json": monitorsJsonLinter,
 	"misplaced-file": misplacedFileLinter,
 };
 
@@ -75,6 +81,8 @@ const ALL_RULES = [
 	...SETTINGS_JSON_RULES,
 	...MCP_JSON_RULES,
 	...CLAUDE_MD_RULES,
+	...LSP_JSON_RULES,
+	...MONITORS_JSON_RULES,
 	...MISPLACED_FILE_RULES,
 ];
 

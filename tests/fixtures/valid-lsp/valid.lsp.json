@@ -1,0 +1,14 @@
+{
+	"yaml-language-server": {
+		"command": "yaml-language-server",
+		"args": ["--stdio"],
+		"extensionToLanguage": { ".yaml": "yaml", ".yml": "yaml" }
+	},
+	"typescript-language-server": {
+		"command": "typescript-language-server",
+		"args": ["--stdio"],
+		"extensionToLanguage": { ".ts": "typescript", ".tsx": "typescriptreact" },
+		"transport": "stdio",
+		"env": { "NODE_ENV": "development" }
+	}
+}

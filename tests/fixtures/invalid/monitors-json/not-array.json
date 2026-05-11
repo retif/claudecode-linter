@@ -1,0 +1,5 @@
+{
+	"name": "watcher",
+	"command": "tail -f /var/log/a",
+	"description": "a"
+}

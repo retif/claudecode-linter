@@ -9,6 +9,7 @@
 rules:
   # ── plugin.json ──────────────────────────────────────────
   plugin-json/valid-json: error
+  plugin-json/schema-valid: error
   plugin-json/name-required: error
   plugin-json/name-kebab-case: error
   plugin-json/name-length: error
@@ -110,6 +111,23 @@ rules:
   claude-md/no-absolute-paths: info
   claude-md/no-todo-markers: info
   claude-md/no-trailing-whitespace: info
+
+  # ── .lsp.json ────────────────────────────────────────────
+  # Standalone LSP config files at plugin root. Most common bug:
+  # wrapping content under a top-level "lspServers" key, which only
+  # belongs inline in plugin.json. Claude Code parses with
+  # E.record(E.string(), <per-server>).safeParse — wrapped files
+  # validate as a single (invalid) server entry at session start.
+  lsp-json/valid-json: error
+  lsp-json/no-lsp-servers-wrapper: error
+  lsp-json/schema-valid: error
+
+  # ── monitors/monitors.json ───────────────────────────────
+  # Array of monitor entries. Names must be unique within a plugin
+  # (Claude Code refines this; not expressible in JSON Schema).
+  monitors-json/valid-json: error
+  monitors-json/schema-valid: error
+  monitors-json/unique-names: error
 
   # ── Misplaced files ──────────────────────────────────────
   # Reserved artifact basenames (plugin.json, hooks.json,

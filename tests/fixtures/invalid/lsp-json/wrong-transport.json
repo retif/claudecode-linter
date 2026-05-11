@@ -1,0 +1,7 @@
+{
+	"yaml-language-server": {
+		"command": "yaml-language-server",
+		"extensionToLanguage": { ".yaml": "yaml" },
+		"transport": "websocket"
+	}
+}
