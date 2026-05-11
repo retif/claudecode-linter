@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.138 — extracted 2026-05-09T06:52:55.909Z
+// Claude Code v2.1.139 — extracted 2026-05-11T18:47:04.236Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -234,12 +234,14 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"awsCredentialExport",
 	"blockedMarketplaces",
 	"channelsEnabled",
+	"claudeMd",
 	"claudeMdExcludes",
 	"cleanupPeriodDays",
 	"companyAnnouncements",
 	"daemonColdStart",
 	"defaultShell",
 	"deniedMcpServers",
+	"disableAgentView",
 	"disableAllHooks",
 	"disableAutoMode",
 	"disableBackgroundAgents",
@@ -324,10 +326,15 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"wslInheritsWindowsSettings",
 ]);
 
-export const SETTINGS_PROJECT_FIELDS = new Set<string>(["permissions"]);
+export const SETTINGS_PROJECT_FIELDS = new Set<string>([
+	"permissions",
+]);
 
 // Hand-curated denylist of tools declared in agent frontmatter that never
 // reach plugin-defined subagents at runtime. Source: tracked upstream bugs
 //   https://github.com/anthropics/claude-code/issues/52055
 //   https://github.com/anthropics/claude-code/issues/52004
-export const PLUGIN_SUBAGENT_BLOCKED_TOOLS = new Set<string>(["Glob", "Grep"]);
+export const PLUGIN_SUBAGENT_BLOCKED_TOOLS = new Set<string>([
+	"Glob",
+	"Grep",
+]);

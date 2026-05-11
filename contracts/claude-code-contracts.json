@@ -1,6 +1,6 @@
 {
-	"version": "2.1.138",
-	"extractedAt": "2026-05-09T06:52:55.909Z",
+	"version": "2.1.139",
+	"extractedAt": "2026-05-11T18:47:04.236Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -72,7 +72,12 @@
 			"WorktreeCreate",
 			"WorktreeRemove"
 		],
-		"hookTypes": ["agent", "command", "http", "prompt"],
+		"hookTypes": [
+			"agent",
+			"command",
+			"http",
+			"prompt"
+		],
 		"promptEvents": [
 			"ConfigChange",
 			"Elicitation",
@@ -107,7 +112,12 @@
 			"red",
 			"yellow"
 		],
-		"agentModels": ["haiku", "inherit", "opus", "sonnet"],
+		"agentModels": [
+			"haiku",
+			"inherit",
+			"opus",
+			"sonnet"
+		],
 		"pluginJsonFields": [
 			"$schema",
 			"author",
@@ -213,12 +223,14 @@
 			"awsCredentialExport",
 			"blockedMarketplaces",
 			"channelsEnabled",
+			"claudeMd",
 			"claudeMdExcludes",
 			"cleanupPeriodDays",
 			"companyAnnouncements",
 			"daemonColdStart",
 			"defaultShell",
 			"deniedMcpServers",
+			"disableAgentView",
 			"disableAllHooks",
 			"disableAutoMode",
 			"disableBackgroundAgents",
@@ -302,7 +314,12 @@
 			"worktree",
 			"wslInheritsWindowsSettings"
 		],
-		"settingsProjectFields": ["permissions"],
-		"pluginSubagentBlockedTools": ["Glob", "Grep"]
+		"settingsProjectFields": [
+			"permissions"
+		],
+		"pluginSubagentBlockedTools": [
+			"Glob",
+			"Grep"
+		]
 	}
 }
