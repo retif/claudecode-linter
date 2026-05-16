@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.142 — extracted 2026-05-15T01:01:41.086Z
+// Claude Code v2.1.143 — extracted 2026-05-16T00:58:12.730Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -129,6 +129,7 @@ export const PLUGIN_JSON_FIELDS = new Set<string>([
 	"author",
 	"dependencies",
 	"description",
+	"displayName",
 	"homepage",
 	"keywords",
 	"license",
@@ -172,6 +173,7 @@ export const MCP_SERVER_FIELDS = new Set<string>([
 	"headers",
 	"headersHelper",
 	"oauth",
+	"role",
 	"type",
 	"url",
 ]);

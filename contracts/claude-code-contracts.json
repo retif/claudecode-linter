@@ -1,6 +1,6 @@
 {
-	"version": "2.1.142",
-	"extractedAt": "2026-05-15T01:01:41.086Z",
+	"version": "2.1.143",
+	"extractedAt": "2026-05-16T00:58:12.730Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -123,6 +123,7 @@
 			"author",
 			"dependencies",
 			"description",
+			"displayName",
 			"homepage",
 			"keywords",
 			"license",
@@ -163,6 +164,7 @@
 			"headers",
 			"headersHelper",
 			"oauth",
+			"role",
 			"type",
 			"url"
 		],
