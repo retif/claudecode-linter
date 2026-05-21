@@ -132,30 +132,32 @@ const pkgVersion = JSON.parse(
 sade("claudecode-linter", true)
 	.version(pkgVersion)
 	.describe("Linter for Claude Code plugin artifacts")
-	.option("--lint", "Lint artifacts and report issues (default)")
-	.option("--fix", "Auto-fix lint violations, then report remaining issues")
+	.option("--lint", "Lint artifacts and report issues (default)", false)
+	.option("--fix", "Auto-fix lint violations, then report remaining issues", false)
 	.option(
 		"--format",
 		"Format all artifacts for consistent style (no lint output)",
+		false,
 	)
 	.option("--output", "Output format: human | json", "human")
 	.option("--config", "Config file path")
 	.option("--scope", "Filter by scope: user | project | subdirectory")
 	.option("--ignore", "Comma-separated glob patterns to ignore")
-	.option("--quiet", "Only show errors")
+	.option("--quiet", "Only show errors", false)
 	.option("--enable", "Comma-separated rule IDs to enable")
 	.option("--disable", "Comma-separated rule IDs to disable")
 	.option("--rule", "Run only this single rule ID")
 	.option(
 		"--list-rules",
 		"Print all rules with their default severity and exit",
+		false,
 	)
 	.option(
 		"--detect",
 		"Print detected Claude Code artifact type(s), one per line; exit 0 if any, 1 if none",
 		false,
 	)
-	.option("--fix-dry-run", "Run fixers but print diff instead of writing")
+	.option("--fix-dry-run", "Run fixers but print diff instead of writing", false)
 	.option("--init", "Copy default config to path (default: current directory)")
 	.action(async (opts) => {
 		// sade accepts variadic positional via opts._; default to ["."] when empty.
