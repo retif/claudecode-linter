@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolve } from "node:path";
+import { resolve, relative } from "node:path";
 
 // Test classifyFile indirectly through discoverArtifacts with single file
 import { discoverArtifacts } from "../src/discovery.js";
@@ -26,6 +26,16 @@ describe("discovery", () => {
       expect(types).toContain("hooks-json");
       expect(types).toContain("mcp-json");
       expect(types).toContain("claude-md");
+    });
+
+    it("ignores artifacts inside .claude/worktrees/ copies", () => {
+      // tests/fixtures/valid-plugin/.claude/worktrees/wt-sample/plugin.json
+      // is a stray artifact; the recursive misplaced-file scan must skip it.
+      // Compare fixture-relative paths — the repo's own worktree lives under
+      // .claude/worktrees/, so absolute paths can't be used here.
+      const root = resolve(FIXTURES, "valid-plugin");
+      const rel = discoverArtifacts(root).map((a) => relative(root, a.filePath));
+      expect(rel.some((r) => r.includes(".claude/worktrees/"))).toBe(false);
     });
   });
 

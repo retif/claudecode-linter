@@ -1,0 +1,4 @@
+{
+	"name": "worktree-copy",
+	"description": "A stray artifact inside a .claude/worktrees/ copy — discovery must ignore it."
+}

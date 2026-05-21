@@ -285,8 +285,9 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
  * sitting at a non-canonical location is returned as a
  * `misplaced-file` artifact for the misplaced-file linter to flag.
  *
- * Ignores typical noise dirs (`node_modules`, `.git`, `dist`, the
- * plugin install cache's `.in_use` / `.orphaned_at` markers).
+ * Ignores typical noise dirs (`node_modules`, `.git`, `dist`,
+ * `.claude/worktrees/` worktree copies, the plugin install cache's
+ * `.in_use` / `.orphaned_at` markers).
  */
 function findMisplacedFiles(pluginRoot: string): DiscoveredArtifact[] {
 	const out: DiscoveredArtifact[] = [];
@@ -302,6 +303,10 @@ function findMisplacedFiles(pluginRoot: string): DiscoveredArtifact[] {
 			ignore: [
 				"**/node_modules/**",
 				"**/.git/**",
+				// `.claude/worktrees/` holds transient git-worktree copies
+				// (Claude Code's own EnterWorktree). Linting them re-reports
+				// every artifact once per worktree — pure noise.
+				"**/.claude/worktrees/**",
 				"**/dist/**",
 				"**/.in_use/**",
 				"**/.orphaned_at/**",
