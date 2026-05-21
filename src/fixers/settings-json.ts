@@ -3,6 +3,8 @@ import { formatJson } from "../utils/prettier.js";
 
 const TOP_LEVEL_KEY_ORDER = [
   "permissions",
+  "sandbox",
+  "hooks",
   "env",
   "plugins",
   "skipDangerousModePermissionPrompt",
@@ -36,15 +38,14 @@ export const settingsJsonFixer: Fixer = {
       }
     }
 
-    // Sort permissions.allow and permissions.deny alphabetically
+    // Sort the permissions.allow / deny / ask rule arrays alphabetically
     const permissions = ordered["permissions"];
     if (typeof permissions === "object" && permissions !== null && !Array.isArray(permissions)) {
       const perms = permissions as Record<string, unknown>;
-      if (Array.isArray(perms["allow"])) {
-        perms["allow"] = [...(perms["allow"] as string[])].sort();
-      }
-      if (Array.isArray(perms["deny"])) {
-        perms["deny"] = [...(perms["deny"] as string[])].sort();
+      for (const list of ["allow", "deny", "ask"]) {
+        if (Array.isArray(perms[list])) {
+          perms[list] = [...(perms[list] as string[])].sort();
+        }
       }
     }
 

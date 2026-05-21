@@ -427,23 +427,6 @@ export function extractTopLevelKeys(schema: string): string[] {
 	return keys;
 }
 
-/**
- * Find a Zod I.object({...}) block containing the given anchor string.
- * Returns its top-level keys.
- */
-function extractZodObjectKeys(source: string, anchor: string): string[] {
-	const anchorIdx = source.indexOf(anchor);
-	if (anchorIdx === -1) return [];
-
-	const objStart = source.lastIndexOf("I.object({", anchorIdx);
-	if (objStart === -1) return [];
-	const braceStart = objStart + "I.object(".length;
-
-	const block = extractBalancedBlock(source, braceStart);
-	if (!block) return [];
-	return extractTopLevelKeys(block);
-}
-
 interface ValidationResult {
 	failed: boolean;
 	errors: string[];
@@ -542,12 +525,37 @@ function extractPromptEvents(source: string): string[] {
 	return [...events];
 }
 
-function extractSettingsProjectFields(source: string): string[] {
-	const fields = extractZodObjectKeys(
-		source,
-		'.describe("List of tools the project is allowed to use")',
-	);
-	return fields.length > 0 ? fields : ["permissions"];
+/**
+ * Project-scoped settings sections and the allowed sub-keys of `permissions`
+ * and `sandbox`.
+ *
+ * Anchored on the project-settings validator's per-section key map — a plain
+ * `new Set([...])` literal that survives minification far better than the Zod
+ * `.describe(...)` anchors used elsewhere in this file:
+ *
+ *   _={permissions:new Set([...]),sandbox:new Set([...]),hooks:new Set([...])}
+ *
+ * The three keys are exactly the sections Claude Code accepts in
+ * project-level settings.local.json; the Sets are their allowed sub-keys.
+ */
+function extractSettingsSections(source: string): {
+	projectFields: string[];
+	permissionsFields: string[];
+	sandboxFields: string[];
+} {
+	const re =
+		/permissions:new Set\(\[([^\]]*)\]\),sandbox:new Set\(\[([^\]]*)\]\),hooks:new Set\(\[([^\]]*)\]\)/;
+	const m = re.exec(source);
+	if (!m) {
+		return { projectFields: [], permissionsFields: [], sandboxFields: [] };
+	}
+	const strings = (group: string): string[] =>
+		[...group.matchAll(/"([^"]+)"/g)].map((s) => s[1]);
+	return {
+		projectFields: ["permissions", "sandbox", "hooks"],
+		permissionsFields: strings(m[1]),
+		sandboxFields: strings(m[2]),
+	};
 }
 
 function extractMcpServerFields(source: string): string[] {
@@ -747,8 +755,8 @@ function main() {
 	const hookTypes = extractHookTypes(source);
 	const promptEvents = extractPromptEvents(source);
 
-	// settingsProjectFields: single-value category, keep anchor fallback
-	const settingsProjectFields = extractSettingsProjectFields(source);
+	// settingsProjectFields + permissions/sandbox sub-keys: one stable anchor
+	const settingsSections = extractSettingsSections(source);
 
 	// --- Raw extracted contracts (before merge) ---
 	const rawContracts: Record<string, string[] | undefined> = {
@@ -776,8 +784,16 @@ function main() {
 		settingsUserFields:
 			settingsUserFields.length > 0 ? settingsUserFields.sort() : undefined,
 		settingsProjectFields:
-			settingsProjectFields.length > 0
-				? settingsProjectFields.sort()
+			settingsSections.projectFields.length > 0
+				? settingsSections.projectFields.sort()
+				: undefined,
+		permissionsFields:
+			settingsSections.permissionsFields.length > 0
+				? settingsSections.permissionsFields.sort()
+				: undefined,
+		sandboxFields:
+			settingsSections.sandboxFields.length > 0
+				? settingsSections.sandboxFields.sort()
 				: undefined,
 	};
 
@@ -882,6 +898,18 @@ const FIELDS = [
 	"skillFrontmatter",
 	"settingsUserFields",
 	"settingsProjectFields",
+	"permissionsFields",
+	"sandboxFields",
+	// sandboxNetworkFields / sandboxFilesystemFields: sub-keys of sandbox.network
+	// and sandbox.filesystem. Hand-curated (preserved across extractions via
+	// mergeWithPrevious) — their Zod schemas are reached only through minified
+	// references, so there is no stable anchor.
+	"sandboxNetworkFields",
+	"sandboxFilesystemFields",
+	// permissionModes: valid values for permissions.defaultMode. Hand-curated
+	// (preserved across extractions via mergeWithPrevious) — the runtime enum
+	// reference is renamed by minification, so there is no stable anchor.
+	"permissionModes",
 	// pluginSubagentBlockedTools: hand-curated list of tool names that are
 	// declared in agent frontmatter but never reach the runtime tool schema
 	// of plugin-defined subagents. Tracked upstream:
@@ -907,6 +935,11 @@ const LABELS: Record<string, string> = {
 	skillFrontmatter: "Skill Frontmatter",
 	settingsUserFields: "Settings (User)",
 	settingsProjectFields: "Settings (Project)",
+	permissionsFields: "Permissions Fields",
+	sandboxFields: "Sandbox Fields",
+	sandboxNetworkFields: "Sandbox Network Fields",
+	sandboxFilesystemFields: "Sandbox Filesystem Fields",
+	permissionModes: "Permission Modes",
 	pluginSubagentBlockedTools: "Plugin Subagent Blocked Tools",
 };
 

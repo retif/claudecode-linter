@@ -329,7 +329,68 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 ]);
 
 export const SETTINGS_PROJECT_FIELDS = new Set<string>([
+	"hooks",
 	"permissions",
+	"sandbox",
+]);
+
+// Allowed sub-keys of the settings `permissions` object.
+export const PERMISSIONS_FIELDS = new Set<string>([
+	"additionalDirectories",
+	"allow",
+	"ask",
+	"defaultMode",
+	"deny",
+	"disableAutoMode",
+	"disableBypassPermissionsMode",
+]);
+
+// Allowed sub-keys of the settings `sandbox` object.
+export const SANDBOX_FIELDS = new Set<string>([
+	"allowUnsandboxedCommands",
+	"autoAllowBashIfSandboxed",
+	"bwrapPath",
+	"enableWeakerNestedSandbox",
+	"enableWeakerNetworkIsolation",
+	"enabled",
+	"excludedCommands",
+	"failIfUnavailable",
+	"filesystem",
+	"ignoreViolations",
+	"network",
+	"ripgrep",
+]);
+
+// Allowed sub-keys of `sandbox.network` and `sandbox.filesystem`.
+export const SANDBOX_NETWORK_FIELDS = new Set<string>([
+	"allowAllUnixSockets",
+	"allowLocalBinding",
+	"allowMachLookup",
+	"allowManagedDomainsOnly",
+	"allowUnixSockets",
+	"allowedDomains",
+	"deniedDomains",
+	"httpProxyPort",
+	"socksProxyPort",
+	"tlsTerminate",
+]);
+
+export const SANDBOX_FILESYSTEM_FIELDS = new Set<string>([
+	"allowManagedReadPathsOnly",
+	"allowRead",
+	"allowWrite",
+	"denyRead",
+	"denyWrite",
+]);
+
+// Valid values for `permissions.defaultMode`.
+export const PERMISSION_MODES = new Set<string>([
+	"acceptEdits",
+	"auto",
+	"bypassPermissions",
+	"default",
+	"dontAsk",
+	"plan",
 ]);
 
 // Hand-curated denylist of tools declared in agent frontmatter that never

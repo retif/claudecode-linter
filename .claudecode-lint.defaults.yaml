@@ -72,9 +72,19 @@ rules:
   settings-json/scope-field: warning
   settings-json/no-unknown-fields: warning
   settings-json/permissions-object: error
+  settings-json/permissions-unknown-field: warning
+  settings-json/permissions-default-mode: warning
+  settings-json/permissions-disable-bypass: warning
+  settings-json/permissions-field-type: warning
   settings-json/allow-array: error
   settings-json/allow-known-tools: warning
   settings-json/deny-array: error
+  settings-json/ask-array: error
+  settings-json/permission-rule-syntax: error
+  settings-json/permission-rule-pattern: error
+  settings-json/sandbox-object: error
+  settings-json/sandbox-unknown-field: warning
+  settings-json/sandbox-field-type: warning
   settings-json/env-object: error
   settings-json/env-string-values: warning
   settings-json/plugins-object: error

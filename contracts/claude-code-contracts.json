@@ -317,7 +317,59 @@
 			"wslInheritsWindowsSettings"
 		],
 		"settingsProjectFields": [
-			"permissions"
+			"hooks",
+			"permissions",
+			"sandbox"
+		],
+		"permissionsFields": [
+			"additionalDirectories",
+			"allow",
+			"ask",
+			"defaultMode",
+			"deny",
+			"disableAutoMode",
+			"disableBypassPermissionsMode"
+		],
+		"sandboxFields": [
+			"allowUnsandboxedCommands",
+			"autoAllowBashIfSandboxed",
+			"bwrapPath",
+			"enableWeakerNestedSandbox",
+			"enableWeakerNetworkIsolation",
+			"enabled",
+			"excludedCommands",
+			"failIfUnavailable",
+			"filesystem",
+			"ignoreViolations",
+			"network",
+			"ripgrep"
+		],
+		"sandboxNetworkFields": [
+			"allowAllUnixSockets",
+			"allowLocalBinding",
+			"allowMachLookup",
+			"allowManagedDomainsOnly",
+			"allowUnixSockets",
+			"allowedDomains",
+			"deniedDomains",
+			"httpProxyPort",
+			"socksProxyPort",
+			"tlsTerminate"
+		],
+		"sandboxFilesystemFields": [
+			"allowManagedReadPathsOnly",
+			"allowRead",
+			"allowWrite",
+			"denyRead",
+			"denyWrite"
+		],
+		"permissionModes": [
+			"acceptEdits",
+			"auto",
+			"bypassPermissions",
+			"default",
+			"dontAsk",
+			"plan"
 		],
 		"pluginSubagentBlockedTools": [
 			"Glob",
