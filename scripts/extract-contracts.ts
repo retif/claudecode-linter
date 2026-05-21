@@ -501,7 +501,7 @@ function extractAllToolNames(source: string): string[] {
 
 	// Scan for known tool name string literals
 	const toolLiteralPattern =
-		/["'](Read|Write|Edit|Bash|Glob|Grep|WebFetch|WebSearch|Agent|AskUserQuestion|NotebookEdit|NotebookRead|TodoWrite|EnterPlanMode|ExitPlanMode|Skill|EnterWorktree|SendMessage|TaskCreate|TaskUpdate|TaskGet|TaskList|TaskStop|TaskOutput|TeamCreate|TeamDelete|ToolSearch|LSP)["']/g;
+		/["'](Read|Write|Edit|Bash|Glob|Grep|WebFetch|WebSearch|Agent|AskUserQuestion|NotebookEdit|NotebookRead|TodoWrite|EnterPlanMode|ExitPlanMode|Skill|EnterWorktree|ExitWorktree|SendMessage|TaskCreate|TaskUpdate|TaskGet|TaskList|TaskStop|TaskOutput|TeamCreate|TeamDelete|ToolSearch|LSP|Monitor|PushNotification|CronCreate|CronDelete|CronList|RemoteTrigger)["']/g;
 	for (const m of source.matchAll(toolLiteralPattern)) {
 		candidates.add(m[1]);
 	}

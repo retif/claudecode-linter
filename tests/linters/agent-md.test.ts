@@ -122,6 +122,15 @@ describe("agent-md linter", () => {
 		);
 	});
 
+	it("recognizes Monitor and other late-added built-in tools", () => {
+		const content =
+			"---\nname: ok-tools\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\ntools: Monitor, PushNotification, CronCreate, CronDelete, CronList, RemoteTrigger\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(diags.filter((d) => d.rule === "agent-md/known-tools")).toHaveLength(
+			0,
+		);
+	});
+
 	it("flags bare mcp__server__tool form inside a plugin", async () => {
 		// Plugin fixture with .mcp.json declaring server "gitea" + plugin name "test-plugin".
 		// Build a temp plugin tree on the fly.

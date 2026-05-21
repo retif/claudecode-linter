@@ -84,6 +84,26 @@ describe("mcp-json linter", () => {
     expect(errors).toHaveLength(0);
   });
 
+  it("accepts streamable-http type on a URL server", () => {
+    const diags = lint(JSON.stringify({
+      mcpServers: {
+        "my-server": { type: "streamable-http", url: "https://example.com/mcp" },
+      },
+    }));
+    expect(diags.some((d) => d.rule === "mcp-json/type-matches-transport")).toBe(false);
+    const errors = diags.filter((d) => d.severity === "error");
+    expect(errors).toHaveLength(0);
+  });
+
+  it("still flags a bogus type on a URL server", () => {
+    const diags = lint(JSON.stringify({
+      mcpServers: {
+        "my-server": { type: "stdio", url: "https://example.com/mcp" },
+      },
+    }));
+    expect(diags.some((d) => d.rule === "mcp-json/type-matches-transport")).toBe(true);
+  });
+
   it("accepts valid stdio server", () => {
     const diags = lint(JSON.stringify({
       mcpServers: {

@@ -6,6 +6,11 @@ import { isKebabCase } from "../utils/kebab-case.js";
 
 interface RuleDef { id: string; defaultSeverity: Severity; }
 
+// Valid `type` values for a URL-based HTTP MCP server. Claude Code v2.1.146
+// accepts both — its HTTP transport schema is
+// `enum(["http","streamable-http"]).transform(()=>"http")`.
+const HTTP_TRANSPORT_TYPES = new Set<string>(["http", "streamable-http"]);
+
 const RULES: RuleDef[] = [
   { id: "mcp-json/scope-file-name", defaultSeverity: "warning" },
   { id: "mcp-json/valid-json", defaultSeverity: "error" },
@@ -143,9 +148,12 @@ export const mcpJsonLinter: Linter = {
             `Server "${name}" has invalid URL: "${url}"`, sp?.line, sp?.column));
         }
 
-        if ("type" in server && server.type !== "http") {
+        // A URL-based HTTP server may declare "http" or "streamable-http".
+        // Claude Code v2.1.146 treats them identically — its HTTP transport
+        // schema is `enum(["http","streamable-http"]).transform(()=>"http")`.
+        if ("type" in server && !HTTP_TRANSPORT_TYPES.has(server.type as string)) {
           push(diag(config, filePath, "mcp-json/type-matches-transport", "warning",
-            `Server "${name}" has URL but type is "${server.type}" (expected "http")`, sp?.line, sp?.column));
+            `Server "${name}" has URL but type is "${server.type}" (expected one of ${[...HTTP_TRANSPORT_TYPES].join(", ")})`, sp?.line, sp?.column));
         }
       }
 
