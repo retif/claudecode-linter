@@ -1,3 +1,8 @@
+import {
+  formatAjvError,
+  loadSkillFrontmatterSchema,
+  summarizeErrors,
+} from "../plugin-schema.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
@@ -11,6 +16,7 @@ interface RuleDef { id: string; defaultSeverity: Severity; }
 
 const RULES: RuleDef[] = [
   { id: "skill-md/valid-frontmatter", defaultSeverity: "error" },
+  { id: "skill-md/schema-valid", defaultSeverity: "error" },
   { id: "skill-md/name-required", defaultSeverity: "error" },
   { id: "skill-md/name-kebab-case", defaultSeverity: "error" },
   { id: "skill-md/name-max-length", defaultSeverity: "error" },
@@ -121,6 +127,27 @@ export const skillMdLinter: Linter = {
       push(diag(config, filePath, "skill-md/valid-frontmatter", "error",
         fm.error ?? "Invalid frontmatter"));
       return diagnostics;
+    }
+
+    // schema-valid — structural validation against the JSON Schema
+    // auto-extracted from Claude Code's skill frontmatter Zod validator. The
+    // hand-written rules below add Claude-Code-specific advice the schema
+    // can't express (kebab-case names, trigger phrasing, …). The extracted
+    // schema is intentionally permissive about unknown frontmatter keys
+    // (Claude Code still loads the skill), so those are NOT reported here —
+    // skill-md/no-unknown-frontmatter handles them. Skipped silently if the
+    // schema bundle isn't shipped with this install.
+    if (isRuleEnabled(config, "skill-md/schema-valid")) {
+      const compiled = loadSkillFrontmatterSchema();
+      if (compiled) {
+        const ok = compiled.validate(fm.data);
+        if (!ok && compiled.validate.errors) {
+          for (const err of summarizeErrors(compiled.validate.errors)) {
+            push(diag(config, filePath, "skill-md/schema-valid", "error",
+              formatAjvError(err)));
+          }
+        }
+      }
     }
 
     // name

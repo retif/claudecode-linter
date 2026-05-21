@@ -137,3 +137,57 @@ describe("skill-md linter", () => {
 		).toBe(false);
 	});
 });
+
+// ───────────── auto-extracted JSON Schema rule (schema-valid) ─────────────
+
+describe("skill-md — schema-valid (auto-extracted JSON Schema)", () => {
+	it("does not flag valid skill frontmatter", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when the user asks to do X\ncontext: inline\nallowed-tools: [Read, Write]\n---\n\n## Body",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "skill-md/schema-valid")).toBe(false);
+	});
+
+	it("flags an out-of-enum value on a known field", () => {
+		// `context` is z.enum(["inline","fork"]).nullable() in Claude Code.
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\ncontext: sideways\n---\n\n## Body",
+			CONFIG,
+		);
+		const d = diags.find((x) => x.rule === "skill-md/schema-valid");
+		expect(d).toBeDefined();
+		expect(d?.severity).toBe("error");
+		expect(d?.message).toContain("context");
+	});
+
+	it("flags a structurally-wrong field type", () => {
+		// `allowed-tools` must be a string or string array, never an object.
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\nallowed-tools:\n  foo: bar\n---\n\n## Body",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "skill-md/schema-valid")).toBe(true);
+	});
+
+	it("does not flag unknown frontmatter keys (schema is permissive)", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\ntotallyUnknownKey: 7\n---\n\n## Body",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "skill-md/schema-valid")).toBe(false);
+	});
+
+	it("is silenced when the rule is disabled", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\ncontext: sideways\n---\n\n## Body",
+			{ rules: { "skill-md/schema-valid": false } },
+		);
+		expect(diags.some((d) => d.rule === "skill-md/schema-valid")).toBe(false);
+	});
+});

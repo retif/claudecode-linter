@@ -1,0 +1,182 @@
+{
+	"extractedFromClaudeCodeVersion": "2.1.146",
+	"extractedAt": "2026-05-21T21:04:24.797Z",
+	"schema": {
+		"$schema": "https://json-schema.org/draft/2020-12/schema",
+		"title": "Claude Code SKILL.md frontmatter",
+		"type": "object",
+		"properties": {
+			"name": {
+				"description": "Display name. Defaults to the filename without extension."
+			},
+			"description": {
+				"description": "One-line summary shown in listings and the Skill tool."
+			},
+			"model": {
+				"description": "Model override (`haiku`, `sonnet`, `opus`, or a full ID). Use `inherit` to match the parent conversation."
+			},
+			"allowed-tools": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				],
+				"description": "Tools available to the model while this file is active. Comma-separated string or YAML list."
+			},
+			"argument-hint": {
+				"description": "Placeholder text shown after the slash command name."
+			},
+			"arguments": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				],
+				"description": "@internal — typed variant of argument-hint; argument-hint is the documented form"
+			},
+			"disable-model-invocation": {
+				"description": "If true, the model cannot invoke this via the Skill tool; only users can type the slash command."
+			},
+			"user-invocable": {
+				"description": "If false, hides the slash command from users; only the model can invoke it via the Skill tool."
+			},
+			"effort": {
+				"description": "Thinking effort for the model: `low`, `medium`, `high`, `max`, or an integer."
+			},
+			"shell": {
+				"description": "Shell for `!`-command blocks: `bash` or `powershell`. Defaults to bash regardless of platform."
+			},
+			"version": {
+				"description": "@internal — bookkeeping, not surfaced to users"
+			},
+			"when_to_use": {
+				"description": "Guidance for when the model should reach for this skill. Becomes part of the tool description."
+			},
+			"paths": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				],
+				"description": "Glob patterns this skill applies to. The skill only loads when the model touches matching files."
+			},
+			"hooks": {
+				"description": "Hooks registered while this skill is active. Same shape as settings.json `hooks`."
+			},
+			"context": {
+				"enum": [
+					"inline",
+					"fork",
+					null
+				],
+				"description": "Where the skill runs: `inline` expands into the current conversation; `fork` spawns a subagent."
+			},
+			"agent": {
+				"description": "Agent type to spawn when `context: fork`."
+			},
+			"fallback": {
+				"description": "@internal — interim defense-in-depth for thin-pointer skill stubs. If true, this skill yields to a same-suffix plugin or MCP skill (`<plugin>:<name>` / `<server>:<name>`) when one is loaded. Stubs carrying this should be deleted once their canonical plugin/MCP skill ships, not maintained."
+			},
+			"created_by": {
+				"description": "@internal — provenance marker (e.g. dream-proposal)"
+			},
+			"improved_by": {
+				"description": "@internal — provenance marker (e.g. dream-proposal)"
+			},
+			"mcpServers": {
+				"description": "@internal"
+			},
+			"lspServers": {
+				"description": "@internal"
+			},
+			"agents": {
+				"description": "@internal"
+			},
+			"outputStyles": {
+				"description": "@internal"
+			},
+			"themes": {
+				"description": "@internal"
+			},
+			"workflows": {
+				"description": "@internal"
+			},
+			"channels": {
+				"description": "@internal"
+			},
+			"monitors": {
+				"description": "@internal"
+			},
+			"settings": {
+				"description": "@internal"
+			},
+			"experimental": {
+				"description": "@internal"
+			},
+			"dependencies": {
+				"description": "@internal"
+			},
+			"metadata": {
+				"description": "@internal"
+			}
+		},
+		"description": "Claude Code SKILL.md YAML frontmatter. Validates the structure of known fields; the object is intentionally permissive — unknown frontmatter keys are not schema errors (Claude Code still loads the skill), they are reported by the advisory skill-md/no-unknown-frontmatter rule."
+	}
+}

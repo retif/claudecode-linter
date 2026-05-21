@@ -232,6 +232,17 @@ export function indexDefinitions(source: string): DefinitionIndex {
 	const lazyWrapper = detectLazyWrapper(source, zodAlias);
 	const factoryStarts = [
 		`${lazyWrapper}(()=>`,
+		// Bare arrow-function schema factories — `<name>=()=><alias>.<method>(…)`.
+		// Claude Code declares small reusable validators this way (e.g.
+		// `cFH=()=>y.union([…])`, `z36=()=>y.union([…])`). Indexing them lets
+		// `<name>()` field references resolve to a real schema instead of
+		// degrading to `{}` — a strict improvement, since unresolved refs still
+		// fall back to permissive `{}`.
+		`()=>${zodAlias}.object({`,
+		`()=>${zodAlias}.strictObject({`,
+		`()=>${zodAlias}.union([`,
+		`()=>${zodAlias}.discriminatedUnion(`,
+		`()=>${zodAlias}.lazy(`,
 		`${zodAlias}.object({`,
 		`${zodAlias}.strictObject({`,
 		`${zodAlias}.union([`,
@@ -458,6 +469,13 @@ export function evalZod(expr: string, ctx: EvalContext): JSONSchema {
 		const inner = wrapped.slice(1, -1).replace(/^\(\)=>/, "");
 		return evalZod(inner, ctx);
 	}
+	// Strip a bare arrow-function schema factory: `()=><ZodExpr>`. Claude Code
+	// declares reusable validators as `<name>=()=>y.union([…])`; indexed by
+	// name, their RHS keeps the `()=>` prefix that must be peeled before eval.
+	if (expr.startsWith("()=>")) {
+		return evalZod(expr.slice(4), ctx);
+	}
+
 	// Strip plain (X) wrapping.
 	if (expr.startsWith("(") && extractBalanced(expr, 0, "(", ")") === expr) {
 		return evalZod(expr.slice(1, -1), ctx);
@@ -757,6 +775,12 @@ function isOptional(expr: string, ctx?: EvalContext, depth = 0): boolean {
 		}
 	}
 
+	// Peel a bare arrow-function factory prefix (`()=><ZodExpr>`) — indexed
+	// `<name>=()=>…` defs keep it; the chain after the arrow holds the modifiers.
+	if (expr.startsWith("()=>")) {
+		return isOptional(expr.slice(4), ctx, depth);
+	}
+
 	const chain = splitChain(expr);
 	for (const part of chain) {
 		if (part.startsWith("optional(")) return true;
@@ -833,6 +857,13 @@ function applyMethod(
 				// allow null in addition to the existing type
 				if (schema.type && typeof schema.type === "string") {
 					schema = { ...schema, type: [schema.type as string, "null"] };
+				} else if (Array.isArray(schema.enum)) {
+					// `.nullable()` on a `z.enum([...])` must also admit null —
+					// otherwise a legitimate `null` value becomes a false positive.
+					const vals = schema.enum as unknown[];
+					if (!vals.includes(null)) {
+						schema = { ...schema, enum: [...vals, null] };
+					}
 				}
 			}
 			if (method === "default" && args.length > 0) {
@@ -885,8 +916,16 @@ function applyMethod(
 		case "extend":
 		case "merge": {
 			// Merge another object schema's properties into this one.
+			// `.merge(zodSchema)` takes another schema; `.extend({...})` takes a
+			// bare shape object literal (`{key: zodExpr, ...}`) — not wrapped in
+			// `<alias>.object(...)`. Detect the raw-literal form and evaluate it
+			// directly as an object body so the extended fields survive.
 			if (args.length === 0) return schema;
-			const other = evalZod(args[0], ctx);
+			const arg = args[0].trim();
+			const other =
+				arg.startsWith("{") && arg.endsWith("}")
+					? evalZodObject(arg, ctx, /*strict*/ false)
+					: evalZod(arg, ctx);
 			return mergeObjectSchemas(schema, other);
 		}
 		case "shape":
@@ -1071,6 +1110,99 @@ export function buildSettingsSchema(index: DefinitionIndex): JSONSchema | null {
 		description:
 			"Claude Code settings.json / settings.local.json. Validates the structure of known fields; the top level is intentionally permissive (Claude Code's validator uses .passthrough()), so unknown top-level keys are not schema errors — the advisory settings-json/no-unknown-fields rule reports those separately.",
 	};
+}
+
+/**
+ * Resolve a markdown-frontmatter Zod object by anchor and emit a permissive
+ * JSON Schema. Claude Code's frontmatter validators are `<sym>=SH(()=>y.object(
+ * {...}))` definitions; `findSymbolByAnchor` walks back from a stable describe
+ * string to the enclosing `=<lazyWrapper>(()=>` and returns `<sym>`.
+ *
+ * CRITICAL: `additionalProperties` must stay permissive. Although Claude Code
+ * applies `.strict()` to the *parse-time* variant (`Q8_.skill`/`Q8_.agent`),
+ * an unknown frontmatter key still loads the file — Claude Code only logs a
+ * `tengu_frontmatter_shadow_unknown_key` telemetry event, never rejects. The
+ * advisory `<artifact>/no-unknown-frontmatter` rules own unknown keys; this
+ * schema must never turn them into errors. We anchor on the base (non-strict)
+ * symbol and defensively strip any `additionalProperties:false` the walker
+ * might emit.
+ */
+function buildFrontmatterSchema(
+	index: DefinitionIndex,
+	anchor: string,
+	title: string,
+	description: string,
+): JSONSchema | null {
+	const sym = findSymbolByAnchor(index, anchor);
+	if (!sym) return null;
+	const def = index.defs.get(sym);
+	if (!def) return null;
+	const schema = evalZod(def, { index, resolving: new Set() });
+	if (schema.type !== "object") return null;
+	// Safety: never reject unknown frontmatter keys — that is the advisory
+	// no-unknown-frontmatter rule's job.
+	if (schema.additionalProperties === false) {
+		delete (schema as Record<string, unknown>).additionalProperties;
+	}
+	return {
+		$schema: "https://json-schema.org/draft/2020-12/schema",
+		title,
+		...schema,
+		description,
+	};
+}
+
+/**
+ * Build the SKILL.md frontmatter schema. Claude Code's skill frontmatter is
+ * `Y36 = SH(()=>p8_().extend({...}))` — the base command shape (`p8_`) plus
+ * skill-only fields (`when_to_use`, `paths`, `hooks`, `context`, `agent`, …).
+ * We anchor on the `when_to_use` field's describe string, which is unique to
+ * the skill `.extend(...)` body.
+ */
+export function buildSkillFrontmatterSchema(
+	index: DefinitionIndex,
+): JSONSchema | null {
+	return buildFrontmatterSchema(
+		index,
+		"Guidance for when the model should reach for this skill.",
+		"Claude Code SKILL.md frontmatter",
+		"Claude Code SKILL.md YAML frontmatter. Validates the structure of known fields; the object is intentionally permissive — unknown frontmatter keys are not schema errors (Claude Code still loads the skill), they are reported by the advisory skill-md/no-unknown-frontmatter rule.",
+	);
+}
+
+/**
+ * Build the agent `.md` frontmatter schema. Claude Code's agent frontmatter is
+ * `U8_ = SH(()=>y.object({name, description, model, tools, …, permissionMode,
+ * …}))`. We anchor on `permissionMode`'s describe string ("Permission mode the
+ * agent runs in.") — unique to the agent object.
+ */
+export function buildAgentFrontmatterSchema(
+	index: DefinitionIndex,
+): JSONSchema | null {
+	return buildFrontmatterSchema(
+		index,
+		"Permission mode the agent runs in.",
+		"Claude Code agent .md frontmatter",
+		"Claude Code agent .md YAML frontmatter. Validates the structure of known fields; the object is intentionally permissive — unknown frontmatter keys are not schema errors (Claude Code still loads the agent), they are reported by the advisory agent-md/no-unknown-frontmatter rule.",
+	);
+}
+
+/**
+ * Build the command `.md` frontmatter schema. Claude Code uses a single base
+ * frontmatter shape (`p8_`) for slash commands: `name`, `description`, `model`,
+ * `allowed-tools`, `argument-hint`, `disable-model-invocation`, etc. (the skill
+ * schema `Y36` is this shape `.extend(...)`-ed). We anchor on the
+ * `disable-model-invocation` field's describe string, which lives in `p8_`.
+ */
+export function buildCommandFrontmatterSchema(
+	index: DefinitionIndex,
+): JSONSchema | null {
+	return buildFrontmatterSchema(
+		index,
+		"If true, the model cannot invoke this via the Skill tool; only users can type the slash command.",
+		"Claude Code command .md frontmatter",
+		"Claude Code slash-command .md YAML frontmatter. Validates the structure of known fields; the object is intentionally permissive — unknown frontmatter keys are not schema errors (Claude Code still loads the command), they are reported by the advisory command-md/no-unknown-frontmatter rule.",
+	);
 }
 
 export function buildPluginSchema(index: DefinitionIndex): JSONSchema {
@@ -1277,6 +1409,59 @@ function main() {
 				"  ⚠ Could not locate settings schema ($schema describe anchor)",
 			),
 		);
+	}
+
+	// Markdown frontmatter schemas (SKILL.md / agent .md / command .md).
+	const frontmatterTargets: Array<{
+		label: string;
+		file: string;
+		build: (i: DefinitionIndex) => JSONSchema | null;
+	}> = [
+		{
+			label: "Skill frontmatter",
+			file: "skill-frontmatter.schema.json",
+			build: buildSkillFrontmatterSchema,
+		},
+		{
+			label: "Agent frontmatter",
+			file: "agent-frontmatter.schema.json",
+			build: buildAgentFrontmatterSchema,
+		},
+		{
+			label: "Command frontmatter",
+			file: "command-frontmatter.schema.json",
+			build: buildCommandFrontmatterSchema,
+		},
+	];
+	for (const target of frontmatterTargets) {
+		const fmSchema = target.build(index);
+		if (fmSchema) {
+			const fmPath = join(rootDir, "contracts", target.file);
+			const fmFieldCount = Object.keys(
+				(fmSchema.properties as object) ?? {},
+			).length;
+			writeFileSync(
+				fmPath,
+				JSON.stringify(
+					{
+						extractedFromClaudeCodeVersion: version,
+						extractedAt: new Date().toISOString(),
+						schema: fmSchema,
+					},
+					null,
+					"\t",
+				) + "\n",
+			);
+			console.log(
+				pc.cyan(
+					`▸ ${target.label} schema written to ${fmPath} (${fmFieldCount} fields)`,
+				),
+			);
+		} else {
+			console.log(
+				pc.yellow(`  ⚠ Could not locate ${target.label} schema`),
+			);
+		}
 	}
 }
 

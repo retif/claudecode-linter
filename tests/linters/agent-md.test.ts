@@ -330,3 +330,57 @@ describe("agent-md linter", () => {
 		).toHaveLength(0);
 	});
 });
+
+// ───────────── auto-extracted JSON Schema rule (schema-valid) ─────────────
+
+describe("agent-md — schema-valid (auto-extracted JSON Schema)", () => {
+	it("does not flag valid agent frontmatter", () => {
+		const diags = agentMdLinter.lint(
+			"agent.md",
+			"---\nname: my-agent\ndescription: Use this for X\nmodel: sonnet\ncolor: blue\ntools: Bash, Read\n---\n\nYou are an agent.",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "agent-md/schema-valid")).toBe(false);
+	});
+
+	it("flags a structurally-wrong field type", () => {
+		// `tools` must be a string or string array, never an object.
+		const diags = agentMdLinter.lint(
+			"agent.md",
+			"---\nname: my-agent\ndescription: Use this for X\nmodel: sonnet\ncolor: blue\ntools:\n  a: b\n---\n\nYou are an agent.",
+			CONFIG,
+		);
+		const d = diags.find((x) => x.rule === "agent-md/schema-valid");
+		expect(d).toBeDefined();
+		expect(d?.severity).toBe("error");
+		expect(d?.message).toContain("tools");
+	});
+
+	it("flags a missing schema-required field", () => {
+		// Claude Code's agent schema requires `name`.
+		const diags = agentMdLinter.lint(
+			"agent.md",
+			"---\ndescription: Use this for X\nmodel: sonnet\ncolor: blue\n---\n\nYou are an agent.",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "agent-md/schema-valid")).toBe(true);
+	});
+
+	it("does not flag unknown frontmatter keys (schema is permissive)", () => {
+		const diags = agentMdLinter.lint(
+			"agent.md",
+			"---\nname: my-agent\ndescription: Use this for X\nmodel: sonnet\ncolor: blue\ntotallyUnknownKey: 7\n---\n\nYou are an agent.",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "agent-md/schema-valid")).toBe(false);
+	});
+
+	it("is silenced when the rule is disabled", () => {
+		const diags = agentMdLinter.lint(
+			"agent.md",
+			"---\nname: my-agent\ndescription: Use this for X\nmodel: sonnet\ncolor: blue\ntools:\n  a: b\n---\n\nYou are an agent.",
+			{ rules: { "agent-md/schema-valid": false } },
+		);
+		expect(diags.some((d) => d.rule === "agent-md/schema-valid")).toBe(false);
+	});
+});

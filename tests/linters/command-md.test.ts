@@ -65,3 +65,47 @@ describe("command-md linter", () => {
     expect(diags.filter((d) => d.rule === "command-md/no-unknown-frontmatter")).toHaveLength(0);
   });
 });
+
+// ───────────── auto-extracted JSON Schema rule (schema-valid) ─────────────
+
+describe("command-md — schema-valid (auto-extracted JSON Schema)", () => {
+  it("does not flag valid command frontmatter", () => {
+    const diags = commandMdLinter.lint(
+      "cmd.md",
+      "---\ndescription: Does a thing\nargument-hint: <file>\nallowed-tools: [Read]\n---\n\nRun the thing.",
+      CONFIG,
+    );
+    expect(diags.some((d) => d.rule === "command-md/schema-valid")).toBe(false);
+  });
+
+  it("flags a structurally-wrong field type", () => {
+    // `allowed-tools` must be a string or string array, never an object.
+    const diags = commandMdLinter.lint(
+      "cmd.md",
+      "---\ndescription: Does a thing\nallowed-tools:\n  a: b\n---\n\nRun the thing.",
+      CONFIG,
+    );
+    const d = diags.find((x) => x.rule === "command-md/schema-valid");
+    expect(d).toBeDefined();
+    expect(d?.severity).toBe("error");
+    expect(d?.message).toContain("allowed-tools");
+  });
+
+  it("does not flag unknown frontmatter keys (schema is permissive)", () => {
+    const diags = commandMdLinter.lint(
+      "cmd.md",
+      "---\ndescription: Does a thing\ntotallyUnknownKey: 7\n---\n\nRun the thing.",
+      CONFIG,
+    );
+    expect(diags.some((d) => d.rule === "command-md/schema-valid")).toBe(false);
+  });
+
+  it("is silenced when the rule is disabled", () => {
+    const diags = commandMdLinter.lint(
+      "cmd.md",
+      "---\ndescription: Does a thing\nallowed-tools:\n  a: b\n---\n\nRun the thing.",
+      { rules: { "command-md/schema-valid": false } },
+    );
+    expect(diags.some((d) => d.rule === "command-md/schema-valid")).toBe(false);
+  });
+});

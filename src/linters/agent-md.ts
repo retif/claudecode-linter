@@ -6,6 +6,11 @@ import {
 	TOOLS,
 	PLUGIN_SUBAGENT_BLOCKED_TOOLS,
 } from "../contracts.js";
+import {
+	formatAjvError,
+	loadAgentFrontmatterSchema,
+	summarizeErrors,
+} from "../plugin-schema.js";
 import type {
 	Linter,
 	LintDiagnostic,
@@ -82,6 +87,7 @@ interface RuleDef {
 
 const RULES: RuleDef[] = [
 	{ id: "agent-md/valid-frontmatter", defaultSeverity: "error" },
+	{ id: "agent-md/schema-valid", defaultSeverity: "error" },
 	{ id: "agent-md/name-required", defaultSeverity: "error" },
 	{ id: "agent-md/name-format", defaultSeverity: "error" },
 	{ id: "agent-md/description-required", defaultSeverity: "error" },
@@ -145,6 +151,35 @@ export const agentMdLinter: Linter = {
 				),
 			);
 			return diagnostics;
+		}
+
+		// schema-valid — structural validation against the JSON Schema
+		// auto-extracted from Claude Code's agent frontmatter Zod validator.
+		// The hand-written rules below add Claude-Code-specific advice with
+		// friendlier messages (model-valid / color-valid re-check fields the
+		// schema also covers — that minimal double-reporting is acceptable).
+		// The extracted schema is intentionally permissive about unknown
+		// frontmatter keys (Claude Code still loads the agent), so those are
+		// NOT reported here — agent-md/no-unknown-frontmatter handles them.
+		// Skipped silently if the schema bundle isn't shipped with this install.
+		if (isRuleEnabled(config, "agent-md/schema-valid")) {
+			const compiled = loadAgentFrontmatterSchema();
+			if (compiled) {
+				const ok = compiled.validate(fm.data);
+				if (!ok && compiled.validate.errors) {
+					for (const err of summarizeErrors(compiled.validate.errors)) {
+						push(
+							diag(
+								config,
+								filePath,
+								"agent-md/schema-valid",
+								"error",
+								formatAjvError(err),
+							),
+						);
+					}
+				}
+			}
 		}
 
 		// name

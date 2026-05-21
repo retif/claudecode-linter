@@ -1,0 +1,147 @@
+{
+	"extractedFromClaudeCodeVersion": "2.1.146",
+	"extractedAt": "2026-05-21T21:04:24.810Z",
+	"schema": {
+		"$schema": "https://json-schema.org/draft/2020-12/schema",
+		"title": "Claude Code agent .md frontmatter",
+		"type": "object",
+		"properties": {
+			"name": {
+				"description": "Agent identifier. Required — this is how the Agent tool and `--agent` flag address it."
+			},
+			"description": {
+				"description": "When to use this agent. Required — shown in the Agent tool listing."
+			},
+			"model": {
+				"description": "Model override for this agent. Use `inherit` to match the spawning conversation."
+			},
+			"tools": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				],
+				"description": "Tools available to this agent. Replaces the default set."
+			},
+			"disallowedTools": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				],
+				"description": "Tools removed from the default set. Ignored if `tools` is set."
+			},
+			"color": {
+				"description": "@internal — display color in the agents UI"
+			},
+			"effort": {
+				"description": "Thinking effort: `low`, `medium`, `high`, `max`, or an integer."
+			},
+			"permissionMode": {
+				"description": "Permission mode the agent runs in."
+			},
+			"mcpServers": {
+				"description": "MCP servers to connect when this agent runs."
+			},
+			"hooks": {
+				"description": "Hooks registered while this agent runs."
+			},
+			"maxTurns": {
+				"anyOf": [
+					{
+						"type": "number"
+					},
+					{
+						"type": "string"
+					},
+					{
+						"type": "null"
+					}
+				],
+				"description": "Maximum conversation turns before the agent stops."
+			},
+			"skills": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				],
+				"description": "Skills preloaded for this agent."
+			},
+			"initialPrompt": {
+				"description": "Auto-submitted first message when this agent runs as the main session (via `--agent` or settings). Not read when spawned as a subagent."
+			},
+			"memory": {
+				"description": "Memory scope: `user`, `project`, or `local`."
+			},
+			"background": {
+				"description": "If true, the agent runs in the background by default."
+			},
+			"isolation": {
+				"description": "Filesystem isolation: `worktree` runs in a temporary git worktree."
+			}
+		},
+		"required": [
+			"name",
+			"description"
+		],
+		"description": "Claude Code agent .md YAML frontmatter. Validates the structure of known fields; the object is intentionally permissive — unknown frontmatter keys are not schema errors (Claude Code still loads the agent), they are reported by the advisory agent-md/no-unknown-frontmatter rule."
+	}
+}

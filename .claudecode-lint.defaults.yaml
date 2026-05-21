@@ -24,6 +24,7 @@ rules:
 
   # ── SKILL.md ─────────────────────────────────────────────
   skill-md/valid-frontmatter: error
+  skill-md/schema-valid: error
   skill-md/name-required: error
   skill-md/name-kebab-case: error
   skill-md/name-max-length: error
@@ -37,6 +38,7 @@ rules:
 
   # ── Agent .md ────────────────────────────────────────────
   agent-md/valid-frontmatter: error
+  agent-md/schema-valid: error
   agent-md/name-required: error
   agent-md/name-format: error
   agent-md/description-required: error
@@ -51,6 +53,7 @@ rules:
 
   # ── Command .md ──────────────────────────────────────────
   command-md/valid-frontmatter: error
+  command-md/schema-valid: error
   command-md/description-required: error
   command-md/allowed-tools-valid: warning
   command-md/body-present: warning

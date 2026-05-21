@@ -92,6 +92,18 @@ export function loadSettingsSchema(): CompiledSchema | null {
 	return loadCompiledSchema("settings.schema.json");
 }
 
+export function loadSkillFrontmatterSchema(): CompiledSchema | null {
+	return loadCompiledSchema("skill-frontmatter.schema.json");
+}
+
+export function loadAgentFrontmatterSchema(): CompiledSchema | null {
+	return loadCompiledSchema("agent-frontmatter.schema.json");
+}
+
+export function loadCommandFrontmatterSchema(): CompiledSchema | null {
+	return loadCompiledSchema("command-frontmatter.schema.json");
+}
+
 export function loadPluginSchema(): PluginSchemaContext | null {
 	if (cached) return cached;
 

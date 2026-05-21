@@ -1,0 +1,93 @@
+{
+	"extractedFromClaudeCodeVersion": "2.1.146",
+	"extractedAt": "2026-05-21T21:04:24.812Z",
+	"schema": {
+		"$schema": "https://json-schema.org/draft/2020-12/schema",
+		"title": "Claude Code command .md frontmatter",
+		"type": "object",
+		"properties": {
+			"name": {
+				"description": "Display name. Defaults to the filename without extension."
+			},
+			"description": {
+				"description": "One-line summary shown in listings and the Skill tool."
+			},
+			"model": {
+				"description": "Model override (`haiku`, `sonnet`, `opus`, or a full ID). Use `inherit` to match the parent conversation."
+			},
+			"allowed-tools": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				],
+				"description": "Tools available to the model while this file is active. Comma-separated string or YAML list."
+			},
+			"argument-hint": {
+				"description": "Placeholder text shown after the slash command name."
+			},
+			"arguments": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				],
+				"description": "@internal — typed variant of argument-hint; argument-hint is the documented form"
+			},
+			"disable-model-invocation": {
+				"description": "If true, the model cannot invoke this via the Skill tool; only users can type the slash command."
+			},
+			"user-invocable": {
+				"description": "If false, hides the slash command from users; only the model can invoke it via the Skill tool."
+			},
+			"effort": {
+				"description": "Thinking effort for the model: `low`, `medium`, `high`, `max`, or an integer."
+			},
+			"shell": {
+				"description": "Shell for `!`-command blocks: `bash` or `powershell`. Defaults to bash regardless of platform."
+			},
+			"version": {
+				"description": "@internal — bookkeeping, not surfaced to users"
+			}
+		},
+		"description": "Claude Code slash-command .md YAML frontmatter. Validates the structure of known fields; the object is intentionally permissive — unknown frontmatter keys are not schema errors (Claude Code still loads the command), they are reported by the advisory command-md/no-unknown-frontmatter rule."
+	}
+}

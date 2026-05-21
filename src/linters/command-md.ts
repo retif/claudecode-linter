@@ -1,4 +1,9 @@
 import { TOOLS } from "../contracts.js";
+import {
+  formatAjvError,
+  loadCommandFrontmatterSchema,
+  summarizeErrors,
+} from "../plugin-schema.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
@@ -11,6 +16,7 @@ interface RuleDef { id: string; defaultSeverity: Severity; }
 
 const RULES: RuleDef[] = [
   { id: "command-md/valid-frontmatter", defaultSeverity: "error" },
+  { id: "command-md/schema-valid", defaultSeverity: "error" },
   { id: "command-md/description-required", defaultSeverity: "error" },
   { id: "command-md/allowed-tools-valid", defaultSeverity: "warning" },
   { id: "command-md/body-present", defaultSeverity: "warning" },
@@ -50,6 +56,27 @@ export const commandMdLinter: Linter = {
       push(diag(config, filePath, "command-md/valid-frontmatter", "error",
         fm.error ?? "Invalid frontmatter"));
       return diagnostics;
+    }
+
+    // schema-valid — structural validation against the JSON Schema
+    // auto-extracted from Claude Code's command frontmatter Zod validator.
+    // The hand-written rules below add Claude-Code-specific advice (known
+    // tool names, body presence). The extracted schema is intentionally
+    // permissive about unknown frontmatter keys (Claude Code still loads the
+    // command), so those are NOT reported here — command-md/no-unknown-
+    // frontmatter handles them. Skipped silently if the schema bundle isn't
+    // shipped with this install.
+    if (isRuleEnabled(config, "command-md/schema-valid")) {
+      const compiled = loadCommandFrontmatterSchema();
+      if (compiled) {
+        const ok = compiled.validate(fm.data);
+        if (!ok && compiled.validate.errors) {
+          for (const err of summarizeErrors(compiled.validate.errors)) {
+            push(diag(config, filePath, "command-md/schema-valid", "error",
+              formatAjvError(err)));
+          }
+        }
+      }
     }
 
     // description

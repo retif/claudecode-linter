@@ -26,6 +26,10 @@
 		"contracts/plugin.schema.json",
 		"contracts/lsp.schema.json",
 		"contracts/monitors.schema.json",
+		"contracts/settings.schema.json",
+		"contracts/skill-frontmatter.schema.json",
+		"contracts/agent-frontmatter.schema.json",
+		"contracts/command-frontmatter.schema.json",
 		".claudecode-lint.defaults.yaml",
 		"README.md"
 	],
