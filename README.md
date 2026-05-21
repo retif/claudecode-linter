@@ -7,7 +7,7 @@
 
 Standalone linter for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugins and configuration files.
 
-Validates `plugin.json`, `SKILL.md`, agent/command markdown, `hooks.json`, `mcp.json`, `settings.json`, `CLAUDE.md`, `.lsp.json`, and `monitors/monitors.json` files. plugin.json/lsp.json/monitors.json are checked against JSON Schemas auto-extracted from Claude Code's runtime Zod validators — failures the linter reports are the same failures Claude Code would raise at session start.
+Validates `plugin.json`, `SKILL.md`, agent/command markdown, `hooks.json`, `mcp.json`, `settings.json`, `CLAUDE.md`, `.lsp.json`, and `monitors/monitors.json` files. plugin.json, settings.json, the agent/skill/command frontmatter, .lsp.json and monitors.json are checked against JSON Schemas auto-extracted from Claude Code's runtime Zod validators — failures the linter reports are the same failures Claude Code would raise at session start.
 
 ![demo](assets/demo.gif)
 
@@ -130,11 +130,11 @@ No issues found.
 | Type | Files | Rules |
 |------|-------|-------|
 | plugin-json | `.claude-plugin/plugin.json` | 13 |
-| skill-md | `skills/*/SKILL.md` | 11 |
-| agent-md | `agents/*.md` | 13 |
-| command-md | `commands/*.md` | 5 |
+| skill-md | `skills/*/SKILL.md` | 12 |
+| agent-md | `agents/*.md` | 17 |
+| command-md | `commands/*.md` | 6 |
 | hooks-json | `hooks/hooks.json` | 9 |
-| settings-json | `.claude-plugin/settings.json` | 24 |
+| settings-json | `.claude-plugin/settings.json` | 25 |
 | mcp-json | `.claude-plugin/mcp.json` | 16 |
 | claude-md | `CLAUDE.md` | 10 |
 | lsp-json | `.lsp.json` | 3 |
@@ -142,7 +142,7 @@ No issues found.
 
 ## Schema-derived rules
 
-`plugin-json/schema-valid`, `lsp-json/schema-valid`, and `monitors-json/schema-valid` validate against JSON Schemas that are *auto-extracted from Claude Code's cli.js bundle* — same Zod schemas that the runtime calls `.safeParse(content)` on. This catches:
+Seven `*/schema-valid` rules — for `plugin-json`, `settings-json`, `skill-md`, `agent-md`, `command-md`, `lsp-json` and `monitors-json` — validate against JSON Schemas that are *auto-extracted from Claude Code's cli.js bundle* — the same Zod schemas the runtime calls `.safeParse(content)` on. This catches:
 
 - **Missing required fields** (e.g., LSP server without `extensionToLanguage`)
 - **Wrong field types** (e.g., `name: 42` instead of a string)
