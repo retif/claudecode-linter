@@ -74,6 +74,24 @@ claudecode-linter --fix path/to/plugin/
 claudecode-linter --fix-dry-run path/to/plugin/
 ```
 
+### Detect
+
+Print which Claude Code artifact types a path contains — one machine-readable
+type per line — and set the exit code (`0` if any found, `1` if none). Intended
+for a generic git hook that gates the linter on "is this repo a Claude Code
+plugin?":
+
+```bash
+# one artifact type per line
+claudecode-linter --detect path/to/repo/
+
+# JSON array
+claudecode-linter --detect --output json path/to/repo/
+
+# git hook: only lint repos that actually contain Claude Code artifacts
+claudecode-linter --detect . >/dev/null 2>&1 && claudecode-linter .
+```
+
 ### Example Output
 
 ```

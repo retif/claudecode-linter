@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import sade from "sade";
 import pc from "picocolors";
 import { loadConfig, mergeCliRules } from "./config.js";
-import { discoverArtifacts } from "./discovery.js";
+import { discoverArtifacts, detectArtifactTypes } from "./discovery.js";
 import { formatHuman } from "./formatters/human.js";
 import { formatJson } from "./formatters/json.js";
 import { pluginJsonLinter } from "./linters/plugin-json.js";
@@ -150,6 +150,11 @@ sade("claudecode-linter", true)
 		"--list-rules",
 		"Print all rules with their default severity and exit",
 	)
+	.option(
+		"--detect",
+		"Print detected Claude Code artifact type(s), one per line; exit 0 if any, 1 if none",
+		false,
+	)
 	.option("--fix-dry-run", "Run fixers but print diff instead of writing")
 	.option("--init", "Copy default config to path (default: current directory)")
 	.action(async (opts) => {
@@ -183,6 +188,21 @@ sade("claudecode-linter", true)
 					process.stdout.write(`${rule.id}\t${color(rule.defaultSeverity)}\n`);
 				}
 				process.exit(0);
+			}
+
+			if (opts.detect) {
+				const ignoreD: string[] =
+					(opts.ignore as string | undefined)
+						?.split(",")
+						.map((p: string) => p.trim())
+						.filter(Boolean) ?? [];
+				const types = detectArtifactTypes(paths, ignoreD);
+				if (opts.output === "json") {
+					process.stdout.write(`${JSON.stringify(types)}\n`);
+				} else {
+					for (const t of types) process.stdout.write(`${t}\n`);
+				}
+				process.exit(types.length > 0 ? 0 : 1);
 			}
 
 			const enableList = opts.enable

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { resolve, relative } from "node:path";
 
 // Test classifyFile indirectly through discoverArtifacts with single file
-import { discoverArtifacts } from "../src/discovery.js";
+import { discoverArtifacts, detectArtifactTypes } from "../src/discovery.js";
 
 const FIXTURES = resolve(import.meta.dirname, "fixtures");
 
@@ -62,5 +62,20 @@ describe("discovery", () => {
       const withEmpty = discoverArtifacts(resolve(FIXTURES, "valid-plugin"), { ignore: [] });
       expect(all.length).toBe(withEmpty.length);
     });
+  });
+});
+
+describe("detectArtifactTypes", () => {
+  it("returns the distinct artifact types of a plugin, sorted", () => {
+    const types = detectArtifactTypes([resolve(FIXTURES, "valid-plugin")]);
+    expect(types).toContain("plugin-json");
+    expect(types).toContain("skill-md");
+    expect([...types]).toEqual([...types].sort());
+    expect(types).not.toContain("misplaced-file");
+  });
+
+  it("returns [] when the path holds no Claude Code artifacts", () => {
+    const here = resolve(import.meta.dirname, "discovery.test.ts");
+    expect(detectArtifactTypes([here])).toEqual([]);
   });
 });

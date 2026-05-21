@@ -95,6 +95,28 @@ export function discoverArtifacts(
 	return artifacts;
 }
 
+/**
+ * Detect which Claude Code artifact types are present under the given paths.
+ * Returns the distinct types, sorted; excludes the `misplaced-file` diagnostic
+ * category (it marks a misplacement, not a kind of artifact a project owns).
+ * An empty result means the path holds no recognizable Claude Code artifacts.
+ *
+ * Powers the `--detect` CLI mode: a generic git hook can call it to decide
+ * whether a repository is a Claude Code plugin / config tree before linting.
+ */
+export function detectArtifactTypes(
+	paths: string[],
+	ignore: string[] = [],
+): ArtifactType[] {
+	const found = new Set<ArtifactType>();
+	for (const targetPath of paths) {
+		for (const a of discoverArtifacts(targetPath, { ignore })) {
+			if (a.artifactType !== "misplaced-file") found.add(a.artifactType);
+		}
+	}
+	return [...found].sort();
+}
+
 function detectScope(filePath: string): ConfigScope | undefined {
 	const resolved = resolve(filePath);
 
