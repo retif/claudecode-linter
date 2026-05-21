@@ -42,13 +42,40 @@ describe("agent-md linter", () => {
 		expect(diags.some((d) => d.rule === "agent-md/model-valid")).toBe(false);
 	});
 
-	it("reports missing examples in description", () => {
+	it("reports a description with no routing guidance", () => {
 		const diags = lintFile(
 			resolve(FIXTURES, "invalid/agent-md/no-examples.md"),
 		);
-		expect(diags.some((d) => d.rule === "agent-md/description-examples")).toBe(
-			true,
-		);
+		expect(
+			diags.some((d) => d.rule === "agent-md/description-routing-guidance"),
+		).toBe(true);
+	});
+
+	it("accepts a routing-triggers block as routing guidance", () => {
+		const content =
+			'---\nname: routed-agent\ndescription: Cluster ops agent. Trigger on <!-- BEGIN ROUTING TRIGGERS -->"deploy", "is it broken"<!-- END ROUTING TRIGGERS -->.\nmodel: sonnet\ncolor: blue\n---\n\nYou are a test agent.';
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(
+			diags.some((d) => d.rule === "agent-md/description-routing-guidance"),
+		).toBe(false);
+	});
+
+	it("accepts <example> blocks as routing guidance", () => {
+		const content =
+			"---\nname: ex-agent\ndescription: |\n  A cluster ops agent.\n  <example>user: deploy this\nassistant: delegating</example>\nmodel: sonnet\ncolor: blue\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(
+			diags.some((d) => d.rule === "agent-md/description-routing-guidance"),
+		).toBe(false);
+	});
+
+	it("accepts trigger prose as routing guidance", () => {
+		const content =
+			"---\nname: prose-agent\ndescription: Use this agent for cluster diagnostics when the user reports an outage.\nmodel: sonnet\ncolor: blue\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(
+			diags.some((d) => d.rule === "agent-md/description-routing-guidance"),
+		).toBe(false);
 	});
 
 	it("reports empty system prompt", () => {
@@ -83,16 +110,27 @@ describe("agent-md linter", () => {
 		expect(diags.some((d) => d.rule === "agent-md/color-valid")).toBe(true);
 	});
 
-	it("reports unknown frontmatter fields", () => {
+	it("reports a cross-artifact frontmatter key as info", () => {
+		// `when_to_use` is skill frontmatter — misplaced on an agent.
 		const content =
-			"---\nname: test-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\ncustom-field: hello\nanother: world\n---\n\nYou are a test agent.";
+			"---\nname: test-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\nwhen_to_use: stuff\n---\n\nYou are a test agent.";
 		const diags = agentMdLinter.lint("test.md", content, CONFIG);
 		const unknowns = diags.filter(
 			(d) => d.rule === "agent-md/no-unknown-frontmatter",
 		);
-		expect(unknowns).toHaveLength(2);
-		expect(unknowns[0].message).toContain("custom-field");
-		expect(unknowns[1].message).toContain("another");
+		expect(unknowns).toHaveLength(1);
+		expect(unknowns[0].severity).toBe("info");
+		expect(unknowns[0].message).toContain("when_to_use");
+		expect(unknowns[0].message).toContain("skill");
+	});
+
+	it("stays silent on made-up frontmatter keys", () => {
+		const content =
+			"---\nname: test-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\ncustom-field: hello\nanother: world\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(
+			diags.filter((d) => d.rule === "agent-md/no-unknown-frontmatter"),
+		).toHaveLength(0);
 	});
 
 	it("does not report known frontmatter fields as unknown", () => {

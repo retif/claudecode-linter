@@ -42,12 +42,21 @@ describe("command-md linter", () => {
     expect(diags.some((d) => d.rule === "command-md/valid-frontmatter")).toBe(true);
   });
 
-  it("reports unknown frontmatter fields", () => {
-    const content = "---\ndescription: A command\ncustom-field: hello\n---\n\nDo the thing.";
+  it("reports a cross-artifact frontmatter key as info", () => {
+    // `effort` is agent frontmatter — misplaced on a command.
+    const content = "---\ndescription: A command\neffort: high\n---\n\nDo the thing.";
     const diags = commandMdLinter.lint("test.md", content, CONFIG);
     const unknowns = diags.filter((d) => d.rule === "command-md/no-unknown-frontmatter");
     expect(unknowns).toHaveLength(1);
-    expect(unknowns[0].message).toContain("custom-field");
+    expect(unknowns[0].severity).toBe("info");
+    expect(unknowns[0].message).toContain("effort");
+    expect(unknowns[0].message).toContain("agent");
+  });
+
+  it("stays silent on a made-up frontmatter key", () => {
+    const content = "---\ndescription: A command\ncustom-field: hello\n---\n\nDo the thing.";
+    const diags = commandMdLinter.lint("test.md", content, CONFIG);
+    expect(diags.filter((d) => d.rule === "command-md/no-unknown-frontmatter")).toHaveLength(0);
   });
 
   it("does not report allowed-tools or argument-hint as unknown", () => {

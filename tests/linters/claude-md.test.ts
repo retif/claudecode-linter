@@ -94,4 +94,11 @@ describe("claude-md linter", () => {
     const diags = claudeMdLinter.lint("CLAUDE.md", "# Project\n\n## Project Overview\n\nThis is a tool.\n", CONFIG, "project");
     expect(diags.some((d) => d.rule === "claude-md/project-has-overview")).toBe(false);
   });
+
+  it("accepts descriptive opening prose in place of an Overview heading", () => {
+    const content =
+      "# rust-craft Plugin\n\nRust development knowledge for NixOS environments — toolchain management and pitfalls.\n\n## Skills\n\n- rust-nix-toolchain\n";
+    const diags = claudeMdLinter.lint("CLAUDE.md", content, CONFIG, "project");
+    expect(diags.some((d) => d.rule === "claude-md/project-has-overview")).toBe(false);
+  });
 });

@@ -54,15 +54,28 @@ describe("skill-md linter", () => {
 		).toBe(true);
 	});
 
-	it("reports unknown frontmatter keys", () => {
+	it("reports a cross-artifact frontmatter key as info, ignores unknown-everywhere keys", () => {
 		const diags = lintFile(
 			resolve(FIXTURES, "invalid/skill-md/unknown-frontmatter.md"),
 		);
 		const unknowns = diags.filter(
 			(d) => d.rule === "skill-md/no-unknown-frontmatter",
 		);
-		expect(unknowns).toHaveLength(2);
-		expect(unknowns[0].message).toContain("foo");
+		// `effort` is an agent key → one info; `xyzzy` is valid nowhere → silent.
+		expect(unknowns).toHaveLength(1);
+		expect(unknowns[0].severity).toBe("info");
+		expect(unknowns[0].message).toContain("effort");
+		expect(unknowns[0].message).toContain("agent");
+	});
+
+	it("stays silent on a made-up frontmatter key", () => {
+		const diags = lint(
+			"---\nname: test\ndescription: Use this skill when testing.\nxyzzy: 1\n---\n\n## H\n\n" +
+				"body ".repeat(200),
+		);
+		expect(
+			diags.some((d) => d.rule === "skill-md/no-unknown-frontmatter"),
+		).toBe(false);
 	});
 
 	it("reports short body", () => {

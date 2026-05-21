@@ -71,11 +71,24 @@ export const claudeMdLinter: Linter = {
         `User-level CLAUDE.md is ${lines.length} lines — keep global rules concise, put project-specific content in project CLAUDE.md files`));
     }
     if (scope === "project") {
-      // Project CLAUDE.md should have a project description
-      const hasProjectOverview = lines.some((l) => /^#+ .*(overview|project|about|description|what this is|introduction|summary)/i.test(l));
+      // Project CLAUDE.md should describe the project. This is satisfied by
+      // either an explicit overview-style heading OR descriptive prose near
+      // the top — a CLAUDE.md that opens with a title followed by a sentence
+      // of project description does not need a literal "Overview" heading.
+      const hasOverviewHeading = lines.some((l) =>
+        /^#+ .*(overview|project|about|description|what this is|introduction|summary)/i.test(l));
+      // Descriptive opening prose: a non-heading, non-list, non-blank line
+      // of reasonable length appearing before the first H2 section.
+      const firstH2 = lines.findIndex((l) => /^## /.test(l));
+      const preambleEnd = firstH2 >= 0 ? firstH2 : lines.length;
+      const hasOpeningProse = lines.slice(0, preambleEnd).some((l) => {
+        const t = l.trim();
+        return t.length >= 25 && !t.startsWith("#") && !/^[-*>|]/.test(t);
+      });
+      const hasProjectOverview = hasOverviewHeading || hasOpeningProse;
       if (!hasProjectOverview && h2Count > 0) {
         push(diag(config, filePath, "claude-md/project-has-overview", "info",
-          "Project CLAUDE.md should include a project overview section"));
+          "Project CLAUDE.md should include a project overview — an \"Overview\" section or descriptive opening prose"));
       }
     }
 

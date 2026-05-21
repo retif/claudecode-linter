@@ -1,7 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
-	AGENT_FRONTMATTER,
 	AGENT_MODELS,
 	AGENT_COLORS,
 	TOOLS,
@@ -15,6 +14,10 @@ import type {
 } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
+import {
+	artifactLabel,
+	classifyUnknownFrontmatterKey,
+} from "../utils/frontmatter-keys.js";
 
 function findPluginRoot(agentFilePath: string): string | null {
 	let dir = dirname(agentFilePath);
@@ -82,7 +85,7 @@ const RULES: RuleDef[] = [
 	{ id: "agent-md/name-required", defaultSeverity: "error" },
 	{ id: "agent-md/name-format", defaultSeverity: "error" },
 	{ id: "agent-md/description-required", defaultSeverity: "error" },
-	{ id: "agent-md/description-examples", defaultSeverity: "warning" },
+	{ id: "agent-md/description-routing-guidance", defaultSeverity: "warning" },
 	{ id: "agent-md/model-required", defaultSeverity: "error" },
 	{ id: "agent-md/model-valid", defaultSeverity: "warning" },
 	{ id: "agent-md/color-required", defaultSeverity: "warning" },
@@ -189,14 +192,25 @@ export const agentMdLinter: Linter = {
 				),
 			);
 		} else {
-			if (!/<example>/i.test(fm.data.description)) {
+			// An agent description must convey *when to route to it*. Three
+			// forms satisfy that: <example> blocks (the upstream few-shot
+			// convention), an explicit routing-triggers block, or prose that
+			// states the triggers. Warn only when the description does none.
+			const desc = fm.data.description;
+			const hasExamples = /<example>/i.test(desc);
+			const hasRoutingTriggers = /ROUTING TRIGGERS/i.test(desc);
+			const hasTriggerProse =
+				/\b(use (it |this )?(for|when|to)\b|use this (agent|skill)|trigger(s|ed)? (on|by|when)|when the user|for any (task|request|work)|invoke (this|when))/i.test(
+					desc,
+				);
+			if (!hasExamples && !hasRoutingTriggers && !hasTriggerProse) {
 				push(
 					diag(
 						config,
 						filePath,
-						"agent-md/description-examples",
+						"agent-md/description-routing-guidance",
 						"warning",
-						"Description should include <example> blocks for triggering",
+						"Description should convey when to route to this agent — via <example> blocks, a routing-triggers block (<!-- BEGIN ROUTING TRIGGERS -->…<!-- END ROUTING TRIGGERS -->), or prose stating the triggers",
 					),
 				);
 			}
@@ -251,17 +265,21 @@ export const agentMdLinter: Linter = {
 			);
 		}
 
-		// unknown frontmatter fields
-		const knownFields = new Set([...AGENT_FRONTMATTER, "name", "color"]);
+		// Frontmatter keys: only flag cross-artifact misplacement. A key valid
+		// for a *different* markdown artifact (e.g. a skill-only key on an
+		// agent) gets an info; a key valid for no artifact stays silent.
+		// "name"/"color" are agent-valid but absent from the contract set.
+		const extraKnown = new Set(["name", "color"]);
 		for (const key of Object.keys(fm.data)) {
-			if (!knownFields.has(key)) {
+			const cls = classifyUnknownFrontmatterKey(key, "agent", extraKnown);
+			if (cls?.kind === "owned-by-other" && cls.owner) {
 				push(
 					diag(
 						config,
 						filePath,
 						"agent-md/no-unknown-frontmatter",
 						"info",
-						`Unknown frontmatter field "${key}"`,
+						`"${key}" is ${artifactLabel(cls.owner)} frontmatter — Claude Code ignores it on an agent`,
 					),
 				);
 			}

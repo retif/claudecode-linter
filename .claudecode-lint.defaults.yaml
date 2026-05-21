@@ -40,7 +40,7 @@ rules:
   agent-md/name-required: error
   agent-md/name-format: error
   agent-md/description-required: error
-  agent-md/description-examples: warning
+  agent-md/description-routing-guidance: warning
   agent-md/model-required: error
   agent-md/model-valid: warning
   agent-md/color-required: error

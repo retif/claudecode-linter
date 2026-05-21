@@ -1,7 +1,10 @@
-import { SKILL_FRONTMATTER } from "../contracts.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
+import {
+  artifactLabel,
+  classifyUnknownFrontmatterKey,
+} from "../utils/frontmatter-keys.js";
 import { isKebabCase } from "../utils/kebab-case.js";
 
 interface RuleDef { id: string; defaultSeverity: Severity; }
@@ -15,10 +18,75 @@ const RULES: RuleDef[] = [
   { id: "skill-md/description-max-length", defaultSeverity: "error" },
   { id: "skill-md/description-no-angle-brackets", defaultSeverity: "error" },
   { id: "skill-md/description-trigger-phrases", defaultSeverity: "warning" },
-  { id: "skill-md/no-unknown-frontmatter", defaultSeverity: "warning" },
-  { id: "skill-md/body-word-count", defaultSeverity: "warning" },
+  { id: "skill-md/no-unknown-frontmatter", defaultSeverity: "info" },
+  { id: "skill-md/body-word-count", defaultSeverity: "info" },
   { id: "skill-md/body-has-headers", defaultSeverity: "info" },
 ];
+
+/**
+ * Decide whether a SKILL.md `description` communicates *when* the skill
+ * applies. A description that gives Claude Code any concrete applicability
+ * cue is fine — only purely declarative descriptions (a flat statement of
+ * what the skill is, with no routing signal at all) should be flagged.
+ *
+ * Recognized signals, in rough order of how common they are in real skills:
+ *  - explicit trigger sections: "Trigger on …", "Trigger when/whenever …",
+ *    "Triggers: …", "TRIGGER when:", routing-marker comments
+ *  - "use when / use for / use whenever / use this skill when / use to"
+ *  - "should be used when …", "applies when …", "invoke when …"
+ *  - "when the user asks/wants/mentions/needs …" and bare "when <verb>ing"
+ *  - imperative-verb openers ("Diagnose …", "Deploy …", "Author …") — an
+ *    imperative description states the task the skill performs, which is
+ *    itself an applicability cue
+ *  - gerund openers ("Building …", "Searching …")
+ */
+function hasTriggerSignal(desc: string): boolean {
+  const d = desc.trim();
+  if (!d) return false;
+
+  // Routing-marker comments authors drop in to delimit trigger lists.
+  if (/BEGIN ROUTING TRIGGERS|ROUTING TRIGGERS/i.test(d)) return true;
+
+  // Explicit trigger / use-when phrasing anywhere in the description.
+  // "Trigger" only counts as a routing cue when used as a directive verb
+  // ("Trigger on …", "Trigger when/whenever/if …", "Triggers: …", "TRIGGER
+  // when:") — not when "trigger" merely appears as a noun (e.g. the phrase
+  // "no trigger phrases").
+  const triggerPhrases =
+    /\btrigger(s)?\b\s*(on|when|whenever|if|upon|for)\b|\btriggers?\s*:|\buse (this skill |it )?(when|whenever|for|to|on|if)\b|\bshould be used (when|whenever|for|to|if)\b|\b(applies|invoke|reach for|call this|run this|use this) (when|whenever|if|to|for)\b|\bwhen (the user|you|asked|working|debugging|diagnosing|investigating|reviewing|writing|building|creating|editing|setting up|deploying|the task|a request|a question|you need|there|something|anything)\b|\bwhen [a-z]+ing\b|\bfor (debugging|diagnosing|tasks|requests|questions|when|any)\b/i;
+  if (triggerPhrases.test(d)) return true;
+
+  // First "sentence-ish" chunk — used to detect imperative / gerund openers.
+  const opener = d.split(/[.\n—:(]/, 1)[0].trim();
+  const firstWord = opener.split(/\s+/, 1)[0].replace(/[^A-Za-z-]/g, "");
+
+  // Gerund opener ("Building a …", "Searching the …").
+  if (/^[A-Z][a-z]+ing\b/.test(opener)) return true;
+
+  // Imperative-verb opener. A skill description that starts with a bare
+  // verb is describing the action the skill performs, which signals when
+  // to route to it. Accept a curated set of common imperative verbs so we
+  // don't accidentally pass a noun-opener declarative description.
+  const imperativeVerbs = new Set([
+    "add", "analyze", "audit", "author", "automate", "build", "check",
+    "clean", "configure", "convert", "create", "debug", "delete", "deploy",
+    "diagnose", "drive", "edit", "enforce", "ensure", "estimate",
+    "evaluate", "execute", "extract", "fetch", "find", "fix", "format",
+    "generate", "guide", "handle", "help", "identify", "implement",
+    "initialize", "inspect", "install", "investigate", "lint", "list",
+    "manage", "migrate", "mint", "monitor", "open", "optimize", "parse",
+    "perform", "pin", "plan", "prepare", "preview", "produce", "profile",
+    "publish", "pull", "push", "query", "reclaim", "refactor", "render",
+    "report", "resolve", "restore", "review", "rollout", "run", "scaffold",
+    "scan", "search", "set", "ship", "size", "summarize", "sweep", "sync",
+    "test", "trace", "track", "transform", "transition", "translate",
+    "troubleshoot", "tune", "update", "upgrade", "validate", "verify",
+    "watch", "write",
+  ]);
+  if (imperativeVerbs.has(firstWord.toLowerCase())) return true;
+
+  return false;
+}
 
 function diag(
   config: LinterConfig,
@@ -85,30 +153,37 @@ export const skillMdLinter: Linter = {
         push(diag(config, filePath, "skill-md/description-no-angle-brackets", "error",
           "\"description\" must not contain angle brackets (< or >)"));
       }
-      if (!/when the user|should be used when/i.test(desc)) {
+      if (!hasTriggerSignal(desc)) {
         push(diag(config, filePath, "skill-md/description-trigger-phrases", "warning",
-          "Description should contain trigger phrases (e.g., \"when the user asks to...\")"));
+          "Description has no applicability signal — say when the skill applies " +
+          "(e.g., \"Use when…\", \"Trigger on…\", \"when the user asks to…\", or an imperative verb)"));
       }
     }
 
-    // unknown frontmatter keys
+    // Frontmatter keys: only flag cross-artifact misplacement. A key that is
+    // valid for a *different* markdown artifact (e.g. agent's "effort" on a
+    // skill) gets an info; a key valid for no artifact stays silent.
     for (const key of Object.keys(fm.data)) {
-      if (!SKILL_FRONTMATTER.has(key)) {
-        push(diag(config, filePath, "skill-md/no-unknown-frontmatter", "warning",
-          `Unknown frontmatter key "${key}" (known: ${[...SKILL_FRONTMATTER].join(", ")})`));
+      const cls = classifyUnknownFrontmatterKey(key, "skill");
+      if (cls?.kind === "owned-by-other" && cls.owner) {
+        push(diag(config, filePath, "skill-md/no-unknown-frontmatter", "info",
+          `"${key}" is ${artifactLabel(cls.owner)} frontmatter — Claude Code ignores it on a skill`));
       }
     }
 
     // body checks
     const body = fm.body.trim();
     if (body) {
+      // Word-count is a soft style hint: a concise, well-scoped skill body is
+      // legitimate. Only flag genuinely thin bodies (< 150 words) or very
+      // large ones (> 5000) that likely belong split into references/.
       const words = body.split(/\s+/).length;
-      if (words < 500) {
-        push(diag(config, filePath, "skill-md/body-word-count", "warning",
-          `Body has ${words} words (recommended: 500-5000)`, fm.bodyStartLine));
+      if (words < 150) {
+        push(diag(config, filePath, "skill-md/body-word-count", "info",
+          `Body has ${words} words — consider adding more detail (recommended: 150-5000)`, fm.bodyStartLine));
       } else if (words > 5000) {
-        push(diag(config, filePath, "skill-md/body-word-count", "warning",
-          `Body has ${words} words — consider moving detail to references/ (recommended: 500-5000)`, fm.bodyStartLine));
+        push(diag(config, filePath, "skill-md/body-word-count", "info",
+          `Body has ${words} words — consider moving detail to references/ (recommended: 150-5000)`, fm.bodyStartLine));
       }
 
       if (!/^##\s/m.test(body)) {

@@ -1,8 +1,8 @@
 ---
 name: no-examples
-description: Use this agent for testing, it lacks example blocks.
+description: A testing agent. It validates plugin configuration files.
 model: sonnet
 color: green
 ---
 
-You are a test agent that is missing example blocks in its description.
+You are a test agent whose description states no routing guidance.

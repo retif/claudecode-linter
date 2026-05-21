@@ -1,7 +1,11 @@
-import { COMMAND_FRONTMATTER, TOOLS } from "../contracts.js";
+import { TOOLS } from "../contracts.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
+import {
+  artifactLabel,
+  classifyUnknownFrontmatterKey,
+} from "../utils/frontmatter-keys.js";
 
 interface RuleDef { id: string; defaultSeverity: Severity; }
 
@@ -67,12 +71,16 @@ export const commandMdLinter: Linter = {
       }
     }
 
-    // unknown frontmatter fields
-    const knownFields = new Set([...COMMAND_FRONTMATTER, "allowed-tools", "argument-hint"]);
+    // Frontmatter keys: only flag cross-artifact misplacement. A key valid
+    // for a *different* markdown artifact gets an info; a key valid for no
+    // artifact stays silent. The hyphenated "allowed-tools"/"argument-hint"
+    // are command-valid aliases of the camelCase contract keys.
+    const extraKnown = new Set(["allowed-tools", "argument-hint"]);
     for (const key of Object.keys(fm.data)) {
-      if (!knownFields.has(key)) {
+      const cls = classifyUnknownFrontmatterKey(key, "command", extraKnown);
+      if (cls?.kind === "owned-by-other" && cls.owner) {
         push(diag(config, filePath, "command-md/no-unknown-frontmatter", "info",
-          `Unknown frontmatter field "${key}"`));
+          `"${key}" is ${artifactLabel(cls.owner)} frontmatter — Claude Code ignores it on a command`));
       }
     }
 
