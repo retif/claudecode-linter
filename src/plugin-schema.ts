@@ -88,6 +88,10 @@ export function loadMonitorsSchema(): CompiledSchema | null {
 	return loadCompiledSchema("monitors.schema.json");
 }
 
+export function loadSettingsSchema(): CompiledSchema | null {
+	return loadCompiledSchema("settings.schema.json");
+}
+
 export function loadPluginSchema(): PluginSchemaContext | null {
 	if (cached) return cached;
 

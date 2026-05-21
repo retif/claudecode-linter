@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { settingsJsonLinter, SETTINGS_JSON_RULES } from "../src/linters/settings-json.js";
 import {
   PERMISSIONS_FIELDS,
@@ -283,7 +285,84 @@ describe("settings-json — combined scenarios", () => {
       "settings-json/ask-array",
       "settings-json/sandbox-field-type",
       "settings-json/sandbox-unknown-field",
+      // The extracted JSON Schema also flags the same structural problems
+      // (ask must be an array, sandbox.enabled must be a boolean).
+      "settings-json/schema-valid",
     ]));
+  });
+});
+
+// ───────────────────── auto-extracted JSON Schema rule ─────────────────────
+
+describe("settings-json — schema-valid (auto-extracted JSON Schema)", () => {
+  it("does not flag a valid settings object", () => {
+    const r = rules({
+      cleanupPeriodDays: 30,
+      env: { FOO: "bar" },
+      model: "claude-opus-4-7",
+      verbose: true,
+      theme: "dark",
+      permissions: { allow: ["Read"], defaultMode: "default" },
+      sandbox: { enabled: true, network: { allowedDomains: ["example.com"] } },
+      enabledPlugins: { "x@y": true },
+    });
+    expect(r).not.toContain("settings-json/schema-valid");
+  });
+
+  it("flags a structurally-unchecked field with the wrong value type", () => {
+    // cleanupPeriodDays must be a number per Claude Code's Zod schema; no
+    // hand-written rule covers it, so only schema-valid catches the string.
+    const d = find({ cleanupPeriodDays: "thirty" }, "settings-json/schema-valid");
+    expect(d).toBeDefined();
+    expect(d?.severity).toBe("error");
+    expect(d?.message).toContain("cleanupPeriodDays");
+  });
+
+  it("flags a non-boolean where a boolean is expected", () => {
+    const r = rules({ verbose: "yes" });
+    expect(r).toContain("settings-json/schema-valid");
+  });
+
+  it("does not flag unknown top-level keys (schema top level is permissive)", () => {
+    // .passthrough() means unknown keys are not schema errors — the advisory
+    // no-unknown-fields rule reports them instead.
+    const d = find({ someBrandNewSetting: 42 }, "settings-json/schema-valid");
+    expect(d).toBeUndefined();
+  });
+
+  it("flags an invalid enum value on a known field", () => {
+    const r = rules({ effortLevel: "ludicrous" });
+    expect(r).toContain("settings-json/schema-valid");
+  });
+
+  it("flags malformed value types from a fixture file", () => {
+    const path = resolve(
+      import.meta.dirname,
+      "fixtures/invalid/settings-json/bad-schema-types.json",
+    );
+    const diags = settingsJsonLinter.lint(
+      path,
+      readFileSync(path, "utf-8"),
+      clean,
+      "user",
+    );
+    expect(diags.some((d) => d.rule === "settings-json/schema-valid")).toBe(true);
+  });
+
+  it("is silenced when the rule is disabled", () => {
+    const r = rules(
+      { cleanupPeriodDays: "thirty" },
+      "user",
+    );
+    // sanity: fires by default
+    expect(r).toContain("settings-json/schema-valid");
+    const disabled = settingsJsonLinter.lint(
+      "settings.json",
+      JSON.stringify({ cleanupPeriodDays: "thirty" }),
+      { rules: { "settings-json/schema-valid": false } },
+      "user",
+    );
+    expect(disabled.some((d) => d.rule === "settings-json/schema-valid")).toBe(false);
   });
 });
 

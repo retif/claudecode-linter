@@ -716,7 +716,7 @@ function evalZodObject(
 		const { key, value } = parsed;
 		const valueSchema = evalZod(value, ctx);
 		props[key] = valueSchema;
-		if (!isOptional(value)) required.push(key);
+		if (!isOptional(value, ctx)) required.push(key);
 	}
 
 	const out: JSONSchema = { type: "object", properties: props };
@@ -725,13 +725,53 @@ function evalZodObject(
 	return out;
 }
 
-/** Detect `.optional()` or `.nullish()` in a Zod expression's chain. */
-function isOptional(expr: string): boolean {
+/**
+ * Detect whether a Zod object-field value expression is optional.
+ *
+ * Checks the literal chain for `.optional()` / `.nullish()` / `.default()`,
+ * and — when `ctx` is supplied — follows bare identifier references
+ * (`Zp9()`, `CH(()=>...)` aliases) into their definitions. A field whose
+ * value is a reference to a schema that is itself `.optional()` (e.g.
+ * `network:Zp9()` where `Zp9 = SH(()=>y.object({...}).optional())`) must NOT
+ * be treated as required. Following references can only *relax*
+ * required-ness — the safe direction for a linter that must never
+ * over-validate.
+ */
+function isOptional(expr: string, ctx?: EvalContext, depth = 0): boolean {
+	expr = expr.trim();
+
+	// Peel the lazy wrapper, e.g. `SH(()=>X)`, so the inner chain is visible.
+	if (ctx) {
+		const lazyPrefix = `${ctx.index.lazyWrapper}(()=>`;
+		if (expr.startsWith(lazyPrefix)) {
+			const wrapped = extractBalanced(
+				expr,
+				ctx.index.lazyWrapper.length,
+				"(",
+				")",
+			);
+			if (wrapped) {
+				const inner = wrapped.slice(1, -1).replace(/^\(\)=>/, "");
+				return isOptional(inner, ctx, depth);
+			}
+		}
+	}
+
 	const chain = splitChain(expr);
 	for (const part of chain) {
 		if (part.startsWith("optional(")) return true;
 		if (part.startsWith("nullish(")) return true;
 		if (part.startsWith("default(")) return true;
+	}
+
+	// Follow a bare `<ident>()` reference into its definition.
+	if (ctx && depth < 8) {
+		const head = chain[0]?.trim() ?? "";
+		const idCall = head.match(/^([\w$]+)\(\)$/);
+		if (idCall && idCall[1] !== ctx.index.zodAlias) {
+			const def = ctx.index.defs.get(idCall[1]);
+			if (def) return isOptional(def, ctx, depth + 1);
+		}
 	}
 	return false;
 }
@@ -948,6 +988,91 @@ export function buildMonitorsSchema(index: DefinitionIndex): JSONSchema | null {
 	};
 }
 
+/**
+ * Build the `settings.json` schema. Claude Code's settings validator is a
+ * function (`QU8(H)`-shaped) that returns `y.object({$schema, apiKeyHelper,
+ * ...}).passthrough()`. We anchor on the `$schema` field's stable describe
+ * string ("JSON Schema reference for Claude Code settings"), locate the
+ * enclosing `<alias>.object({...})` call, and evaluate the whole chain
+ * (including the trailing `.passthrough()`).
+ *
+ * CRITICAL: this schema is NOT `.strict()` — it is passthrough. The emitted
+ * JSON Schema MUST keep `additionalProperties` permissive so unknown
+ * top-level keys never become schema errors (the advisory
+ * `settings-json/no-unknown-fields` rule covers those). The trailing
+ * `.passthrough()` in the source sets `additionalProperties: true`; we also
+ * defensively strip a `false` value if extraction ever produced one.
+ *
+ * Several spreads in the source (`...hLq(H)` plugin-contributed extensions,
+ * `...mH(env)&&{xaaIdp:...}` feature-flag-gated fields, `...!1` no-ops) do not
+ * resolve statically — the walker degrades them to `{}` and drops them, which
+ * is correct: under-validation is the safe failure mode.
+ */
+export function buildSettingsSchema(index: DefinitionIndex): JSONSchema | null {
+	const { source, zodAlias } = index;
+	const anchor = "JSON Schema reference for Claude Code settings";
+	// Prefer the last occurrence — the bundle embeds the describe string twice
+	// (once in a metadata table, once in the actual schema source).
+	let anchorIdx = source.lastIndexOf(anchor);
+	if (anchorIdx === -1) return null;
+
+	// Walk back to the nearest `<alias>.object(` that encloses this anchor.
+	const objMarker = `${zodAlias}.object(`;
+	let objIdx = -1;
+	for (;;) {
+		const cand = source.lastIndexOf(objMarker, anchorIdx);
+		if (cand === -1) return null;
+		const block = extractBalanced(
+			source,
+			cand + `${zodAlias}.object`.length,
+			"(",
+			")",
+		);
+		if (block && cand + `${zodAlias}.object`.length + block.length > anchorIdx) {
+			objIdx = cand;
+			break;
+		}
+		anchorIdx = cand - 1;
+		if (anchorIdx < 0) return null;
+	}
+
+	// Capture the full method chain: `<alias>.object({...}).passthrough()` etc.
+	const headStart = objIdx;
+	let exprEnd = objIdx + `${zodAlias}.object`.length;
+	const parenBlock = extractBalanced(source, exprEnd, "(", ")");
+	if (!parenBlock) return null;
+	exprEnd += parenBlock.length;
+	// Fold trailing `.method(...)` chain steps into the expression.
+	while (source[exprEnd] === ".") {
+		const m = /^\.[\w$]+/.exec(source.slice(exprEnd));
+		if (!m) break;
+		let stepEnd = exprEnd + m[0].length;
+		if (source[stepEnd] === "(") {
+			const argBlock = extractBalanced(source, stepEnd, "(", ")");
+			if (!argBlock) break;
+			stepEnd += argBlock.length;
+		}
+		exprEnd = stepEnd;
+	}
+
+	const expr = source.slice(headStart, exprEnd);
+	const schema = evalZod(expr, { index, resolving: new Set() });
+
+	if (schema.type !== "object") return null;
+	// Safety: the settings schema must never reject unknown top-level keys.
+	if (schema.additionalProperties === false) {
+		delete (schema as Record<string, unknown>).additionalProperties;
+	}
+
+	return {
+		$schema: "https://json-schema.org/draft/2020-12/schema",
+		title: "Claude Code settings.json",
+		...schema,
+		description:
+			"Claude Code settings.json / settings.local.json. Validates the structure of known fields; the top level is intentionally permissive (Claude Code's validator uses .passthrough()), so unknown top-level keys are not schema errors — the advisory settings-json/no-unknown-fields rule reports those separately.",
+	};
+}
+
 export function buildPluginSchema(index: DefinitionIndex): JSONSchema {
 	const masterName = findMasterSchemaName(index);
 	if (!masterName) {
@@ -1118,6 +1243,38 @@ function main() {
 		console.log(
 			pc.yellow(
 				"  ⚠ Could not locate monitors schema (unique-name anchor)",
+			),
+		);
+	}
+
+	// Settings schema (y.object({...}).passthrough())
+	const settingsSchema = buildSettingsSchema(index);
+	if (settingsSchema) {
+		const settingsPath = join(rootDir, "contracts", "settings.schema.json");
+		const settingsPropCount = Object.keys(
+			(settingsSchema.properties as object) ?? {},
+		).length;
+		writeFileSync(
+			settingsPath,
+			JSON.stringify(
+				{
+					extractedFromClaudeCodeVersion: version,
+					extractedAt: new Date().toISOString(),
+					schema: settingsSchema,
+				},
+				null,
+				"\t",
+			) + "\n",
+		);
+		console.log(
+			pc.cyan(
+				`▸ Settings schema written to ${settingsPath} (${settingsPropCount} top-level fields)`,
+			),
+		);
+	} else {
+		console.log(
+			pc.yellow(
+				"  ⚠ Could not locate settings schema ($schema describe anchor)",
 			),
 		);
 	}

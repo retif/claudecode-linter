@@ -9,6 +9,11 @@ import {
 	SANDBOX_NETWORK_FIELDS,
 	SANDBOX_FILESYSTEM_FIELDS,
 } from "../contracts.js";
+import {
+	formatAjvError,
+	loadSettingsSchema,
+	summarizeErrors,
+} from "../plugin-schema.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity, ConfigScope } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 
@@ -16,6 +21,7 @@ interface RuleDef { id: string; defaultSeverity: Severity; }
 
 const RULES: RuleDef[] = [
   { id: "settings-json/valid-json", defaultSeverity: "error" },
+  { id: "settings-json/schema-valid", defaultSeverity: "error" },
   { id: "settings-json/scope-file-name", defaultSeverity: "error" },
   { id: "settings-json/scope-field", defaultSeverity: "warning" },
   { id: "settings-json/no-unknown-fields", defaultSeverity: "warning" },
@@ -254,6 +260,30 @@ export const settingsJsonLinter: Linter = {
       push(diag(config, filePath, "settings-json/valid-json", "error",
         "settings.json must be a JSON object"));
       return diagnostics;
+    }
+
+    // schema-valid — defer to the JSON Schema auto-extracted from Claude Code's
+    // settings validator for the ~113 structurally-unchecked top-level fields.
+    // The hand-written rules below cover Claude-Code-specific advice the schema
+    // can't express (permission-rule syntax, scope semantics, …) with friendlier
+    // messages. The extracted schema is intentionally permissive at the top
+    // level (Claude Code uses .passthrough()), so unknown keys are NOT reported
+    // here — settings-json/no-unknown-fields handles those. Skipped silently if
+    // the schema bundle isn't shipped with this install.
+    if (isRuleEnabled(config, "settings-json/schema-valid")) {
+      const compiled = loadSettingsSchema();
+      if (compiled) {
+        const ok = compiled.validate(parsed);
+        if (!ok && compiled.validate.errors) {
+          const filtered = summarizeErrors(compiled.validate.errors);
+          for (const err of filtered) {
+            const firstSeg = err.instancePath.split("/").filter(Boolean)[0];
+            const p = firstSeg ? findKeyPosition(content, firstSeg) : undefined;
+            push(diag(config, filePath, "settings-json/schema-valid", "error",
+              formatAjvError(err), p?.line, p?.column));
+          }
+        }
+      }
     }
 
     // Scope-aware: settings.json (non-local) should only be at user level
