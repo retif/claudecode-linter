@@ -1,11 +1,19 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync, copyFileSync, existsSync } from "node:fs";
+import {
+	readFileSync,
+	writeFileSync,
+	copyFileSync,
+	existsSync,
+	statSync,
+} from "node:fs";
 import { resolve, relative, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import sade from "sade";
 import pc from "picocolors";
 import { loadConfig, mergeCliRules } from "./config.js";
+import { writeBlockedReason } from "./utils/safe-write.js";
+import { sanitizeForTerminal } from "./utils/terminal.js";
 import { discoverArtifacts, detectArtifactTypes } from "./discovery.js";
 import { formatHuman } from "./formatters/human.js";
 import { formatJson } from "./formatters/json.js";
@@ -85,6 +93,13 @@ const ALL_RULES = [
 	...MONITORS_JSON_RULES,
 	...MISPLACED_FILE_RULES,
 ];
+
+/**
+ * Hard cap on artifact file size. Real Claude Code artifacts are KB-scale;
+ * this only exists to reject pathological / malicious inputs (e.g. a
+ * multi-gigabyte file crafted to exhaust memory).
+ */
+const MAX_ARTIFACT_BYTES = 5 * 1024 * 1024;
 
 function simpleDiff(
 	oldContent: string,
@@ -243,12 +258,41 @@ sade("claudecode-linter", true)
 
 				if (artifacts.length === 0) {
 					process.stderr.write(
-						pc.yellow(`No plugin artifacts found in ${targetPath}\n`),
+						pc.yellow(
+							`No plugin artifacts found in ${sanitizeForTerminal(targetPath)}\n`,
+						),
 					);
 					continue;
 				}
 
+				// All --fix / --format writes for this target must stay inside
+				// rootDir. If targetPath is a file, rootDir is its parent dir.
+				const resolvedTarget = resolve(targetPath);
+				let rootDir = resolvedTarget;
+				try {
+					if (!statSync(resolvedTarget).isDirectory()) {
+						rootDir = dirname(resolvedTarget);
+					}
+				} catch {
+					rootDir = dirname(resolvedTarget);
+				}
+
 				for (const artifact of artifacts) {
+					let sizeBytes: number;
+					try {
+						sizeBytes = statSync(artifact.filePath).size;
+					} catch {
+						sizeBytes = 0;
+					}
+					if (sizeBytes > MAX_ARTIFACT_BYTES) {
+						process.stderr.write(
+							pc.yellow(
+								`Skipping ${sanitizeForTerminal(artifact.filePath)}: file exceeds ${MAX_ARTIFACT_BYTES}-byte limit (${sizeBytes} bytes)\n`,
+							),
+						);
+						continue;
+					}
+
 					let content = readFileSync(artifact.filePath, "utf-8");
 					const relPath = relative(process.cwd(), artifact.filePath);
 
@@ -261,8 +305,20 @@ sade("claudecode-linter", true)
 								config,
 							);
 							if (fixedContent !== content) {
-								writeFileSync(artifact.filePath, fixedContent);
-								formatted.push(relPath);
+								const blocked = writeBlockedReason(
+									artifact.filePath,
+									rootDir,
+								);
+								if (blocked) {
+									process.stderr.write(
+										pc.red(
+											`Refusing to write ${sanitizeForTerminal(artifact.filePath)}: ${blocked}\n`,
+										),
+									);
+								} else {
+									writeFileSync(artifact.filePath, fixedContent);
+									formatted.push(relPath);
+								}
 							}
 						}
 						continue;
@@ -280,9 +336,21 @@ sade("claudecode-linter", true)
 								config,
 							);
 							if (fixedContent !== content) {
-								writeFileSync(artifact.filePath, fixedContent);
-								content = fixedContent;
-								fixed = 1;
+								const blocked = writeBlockedReason(
+									artifact.filePath,
+									rootDir,
+								);
+								if (blocked) {
+									process.stderr.write(
+										pc.red(
+											`Refusing to write ${sanitizeForTerminal(artifact.filePath)}: ${blocked}\n`,
+										),
+									);
+								} else {
+									writeFileSync(artifact.filePath, fixedContent);
+									content = fixedContent;
+									fixed = 1;
+								}
 							}
 						}
 					} else if (fixDryRun) {
@@ -299,7 +367,7 @@ sade("claudecode-linter", true)
 									fixedContent,
 									artifact.filePath,
 								);
-								process.stdout.write(diff + "\n");
+								process.stdout.write(sanitizeForTerminal(diff) + "\n");
 							}
 						}
 					}

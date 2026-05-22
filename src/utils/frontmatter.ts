@@ -47,7 +47,7 @@ export function parseFrontmatter(content: string): ParsedFrontmatter {
   const bodyStartLine = closingIndex + 2; // 1-based
 
   try {
-    const data = parseYaml(frontmatterRaw);
+    const data = parseYaml(frontmatterRaw, { maxAliasCount: 100 });
     if (typeof data !== "object" || data === null || Array.isArray(data)) {
       return {
         data: {},

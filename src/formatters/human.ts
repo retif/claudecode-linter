@@ -1,5 +1,6 @@
 import pc from "picocolors";
 import type { LintResult, Severity } from "../types.js";
+import { sanitizeForTerminal } from "../utils/terminal.js";
 
 const SEVERITY_ICONS: Record<Severity, string> = {
 	error: pc.red("error"),
@@ -21,14 +22,14 @@ export function formatHuman(results: LintResult[], quiet: boolean): string {
 		if (filtered.length === 0) continue;
 
 		lines.push("");
-		lines.push(pc.underline(result.file));
+		lines.push(pc.underline(sanitizeForTerminal(result.file)));
 
 		for (const d of filtered) {
 			const loc = d.line
 				? pc.dim(`:${d.line}${d.column ? `:${d.column}` : ""}`)
 				: "";
 			lines.push(
-				`  ${SEVERITY_ICONS[d.severity]}  ${d.message}  ${pc.dim(d.rule)}${loc}`,
+				`  ${SEVERITY_ICONS[d.severity]}  ${sanitizeForTerminal(d.message)}  ${pc.dim(d.rule)}${loc}`,
 			);
 
 			if (d.severity === "error") errorCount++;

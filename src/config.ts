@@ -17,7 +17,7 @@ export function loadConfig(configPath?: string): LinterConfig {
 
   try {
     const content = readFileSync(path, "utf-8");
-    const parsed = parseYaml(content);
+    const parsed = parseYaml(content, { maxAliasCount: 100 });
     if (!parsed || typeof parsed !== "object") return DEFAULT_CONFIG;
 
     const config: LinterConfig = { rules: {} };
