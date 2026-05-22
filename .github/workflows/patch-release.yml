@@ -14,6 +14,8 @@ permissions:
 jobs:
   patch-release:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -100,3 +102,13 @@ jobs:
             --notes "$BODY" \
             --latest \
             "${{ env.tarball }}"
+
+  docker:
+    name: Docker images
+    needs: patch-release
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker-images.yml
+    with:
+      version: ${{ needs.patch-release.outputs.version }}

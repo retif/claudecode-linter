@@ -1,17 +1,29 @@
-name: Docker publish
+name: Docker images
 
+# Reusable: called as the final step of the release / patch-release workflows
+# so image publishing is part of the same run, not a separate event-triggered
+# process. Also dispatchable on its own for a manual rebuild.
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      version:
+        description: "Version tag to apply alongside :latest (empty = :latest only)"
+        required: false
+        type: string
+        default: ""
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag to apply alongside :latest (empty = :latest only)"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
   packages: write
 
-# The docker/* actions still bundle Node.js 20 (deprecated on GitHub-hosted
-# runners). Run them on the runner's Node.js 24 ahead of the June 2026 forced
-# cutover — they are at their latest major versions, so there is nothing to bump.
+# The docker/* actions still bundle Node.js 20 (deprecated on GitHub runners).
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -23,17 +35,19 @@ jobs:
       fail-fast: false
       matrix:
         variant:
-          # Default image — node:24-alpine.
           - name: node
             dockerfile: Dockerfile
             image: ghcr.io/retif/node-claudecode-linter
-          # Smaller variant — single executable via `bun build --compile`.
           - name: bun
             dockerfile: Dockerfile.compile
             image: ghcr.io/retif/bun-claudecode-linter
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          # The caller pushes a version-bump commit before this runs; build the
+          # current main, not the pre-bump SHA the caller started from.
+          ref: main
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -54,8 +68,8 @@ jobs:
         with:
           images: ${{ matrix.variant.image }}
           tags: |
-            type=semver,pattern={{version}}
             type=raw,value=latest
+            type=raw,value=${{ inputs.version }},enable=${{ inputs.version != '' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
