@@ -211,6 +211,55 @@ Formatting is powered by [prettier](https://prettier.io/) for consistent JSON an
 | 1 | Lint errors found |
 | 2 | Fatal error |
 
+## Running on untrusted plugins
+
+claudecode-linter is a **static analyzer** — it parses and validates the artifacts it inspects, it never executes them. There is no `eval`, no `child_process`, no declared hooks are run, and no MCP servers are spawned. Linting **trusted** code needs no special isolation.
+
+For **untrusted** plugins — especially with `--fix`, which writes files back to disk — run the linter sandboxed. claudecode-linter is verified to run correctly fully confined: no network, a read-only root filesystem, all Linux capabilities dropped, `no-new-privileges`, a non-root UID, and only the target directory mounted. The recipes below are verified to lint correctly under that boundary.
+
+**Docker — read-only lint:**
+
+```bash
+docker run --rm --network none --read-only --tmpfs /tmp \
+  --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
+  -v "$PWD":/work:ro -w /work  ghcr.io/retif/claudecode-linter  /work
+```
+
+**Docker — `--fix`:** the mount must be read-write so fixes can be written back. Otherwise identical, plus the `--fix` flag:
+
+```bash
+docker run --rm --network none --read-only --tmpfs /tmp \
+  --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
+  -v "$PWD":/work -w /work  ghcr.io/retif/claudecode-linter  --fix /work
+```
+
+The Docker recipes above are verified. On Linux without Docker, [bubblewrap](https://github.com/containers/bubblewrap) (`bwrap`) gives the equivalent boundary: `--unshare-all` removes network and other namespaces, and nothing is writable except — for `--fix` — the target directory.
+
+**bwrap — read-only (lint):**
+
+```bash
+bwrap \
+  --ro-bind / / --dev /dev --proc /proc --tmpfs /tmp \
+  --unshare-all --die-with-parent \
+  --chdir "$PWD" \
+  claudecode-linter "$PWD"
+```
+
+**bwrap — read-write (`--fix`):** the later `--bind` overrides the read-only root for just the target directory:
+
+```bash
+bwrap \
+  --ro-bind / / --bind "$PWD" "$PWD" \
+  --dev /dev --proc /proc --tmpfs /tmp \
+  --unshare-all --die-with-parent \
+  --chdir "$PWD" \
+  claudecode-linter --fix "$PWD"
+```
+
+`--ro-bind / /` can be replaced with explicit per-path `--ro-bind` entries (e.g. just `/usr`, `/nix`, and the target) for least-read-authority.
+
+See [`SECURITY.md`](SECURITY.md) for the full security model, the audited input-handling hardening, and how to report a vulnerability.
+
 ## Versioning
 
 This linter's version tracks the Claude Code version it was extracted from:
