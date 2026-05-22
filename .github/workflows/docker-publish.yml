@@ -11,8 +11,22 @@ permissions:
 
 jobs:
   docker:
-    name: Build and push image
+    name: Build and push (${{ matrix.variant.name }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          # Default image — node:24-alpine.
+          - name: default
+            dockerfile: Dockerfile
+            suffix: ""
+            rolling: latest
+          # Smaller variant — single executable via `bun build --compile`.
+          - name: compile
+            dockerfile: Dockerfile.compile
+            suffix: "-compile"
+            rolling: compile
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -36,13 +50,14 @@ jobs:
         with:
           images: ghcr.io/retif/claudecode-linter
           tags: |
-            type=semver,pattern={{version}}
-            type=raw,value=latest
+            type=semver,pattern={{version}}${{ matrix.variant.suffix }}
+            type=raw,value=${{ matrix.variant.rolling }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ${{ matrix.variant.dockerfile }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

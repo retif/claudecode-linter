@@ -215,7 +215,34 @@ Formatting is powered by [prettier](https://prettier.io/) for consistent JSON an
 
 claudecode-linter is a **static analyzer** — it parses and validates the artifacts it inspects, it never executes them. There is no `eval`, no `child_process`, no declared hooks are run, and no MCP servers are spawned. Linting **trusted** code needs no special isolation.
 
-For **untrusted** plugins — especially with `--fix`, which writes files back to disk — run the linter sandboxed. claudecode-linter is verified to run correctly fully confined: no network, a read-only root filesystem, all Linux capabilities dropped, `no-new-privileges`, a non-root UID, and only the target directory mounted. The recipes below are verified to lint correctly under that boundary.
+For **untrusted** plugins — especially with `--fix`, which writes files back to disk — run the linter sandboxed. claudecode-linter is verified to run correctly fully confined: no network, a read-only root filesystem, all Linux capabilities dropped, `no-new-privileges`, a non-root UID, and only the target directory mounted.
+
+### The Docker image
+
+Two multi-arch (`linux/amd64`, `linux/arm64`) images are published to the GitHub Container Registry on every release:
+
+| Image | Built from | Notes |
+|-------|-----------|-------|
+| `ghcr.io/retif/claudecode-linter` (`:latest`) | `Dockerfile` — `node:24-alpine` | default |
+| `ghcr.io/retif/claudecode-linter:compile` | `Dockerfile.compile` — `bun build --compile` single executable | smaller variant (~44 MB compressed) |
+
+**Pull a published image:**
+
+```bash
+docker pull ghcr.io/retif/claudecode-linter           # default
+docker pull ghcr.io/retif/claudecode-linter:compile   # smaller variant
+```
+
+**Or build it locally** from a checkout of this repo:
+
+```bash
+docker build -t claudecode-linter .                                # default (Dockerfile)
+docker build -f Dockerfile.compile -t claudecode-linter:compile .  # smaller variant
+```
+
+Both images behave identically. The `docker run` recipes below use `ghcr.io/retif/claudecode-linter`; substitute your locally-built tag (`claudecode-linter`) or the `:compile` variant as you prefer.
+
+### Sandboxed invocation
 
 **Docker — read-only lint:**
 
@@ -234,14 +261,6 @@ docker run --rm --network none --read-only --tmpfs /tmp \
 ```
 
 The Docker recipes above are verified. On Linux without Docker, [bubblewrap](https://github.com/containers/bubblewrap) (`bwrap`) gives the equivalent boundary: `--unshare-all` removes network and other namespaces, and nothing is writable except — for `--fix` — the target directory.
-
-**Optional smaller image (`Dockerfile.compile`):** the default image is built from `Dockerfile` (`node:24-alpine`). A second, smaller variant builds a single-executable with `bun build --compile`:
-
-```bash
-docker build -f Dockerfile.compile -t claudecode-linter:compile .
-```
-
-It runs identically under all the sandbox recipes above — just swap the image name. Measured size: ~111 MB on disk uncompressed (~44 MB compressed), versus the `node:24-alpine` default. Use whichever fits your registry/runtime; the default `Dockerfile` remains `node:24-alpine`.
 
 **bwrap — read-only (lint):**
 
