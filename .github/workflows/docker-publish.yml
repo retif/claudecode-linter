@@ -9,6 +9,12 @@ permissions:
   contents: read
   packages: write
 
+# The docker/* actions still bundle Node.js 20 (deprecated on GitHub-hosted
+# runners). Run them on the runner's Node.js 24 ahead of the June 2026 forced
+# cutover — they are at their latest major versions, so there is nothing to bump.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   docker:
     name: Build and push (${{ matrix.variant.name }})
