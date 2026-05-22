@@ -366,6 +366,36 @@ describe("agent-md — schema-valid (auto-extracted JSON Schema)", () => {
 		expect(diags.some((d) => d.rule === "agent-md/schema-valid")).toBe(true);
 	});
 
+	it("flags a malformed `description` field (previously-hollow, now typed)", () => {
+		// `description` is `LW()` — z.union([string,number,boolean,null]). Before
+		// the LW/z36 walker fix this resolved to a bare `{}` placeholder and any
+		// shape passed; a YAML mapping value must now be rejected.
+		const diags = agentMdLinter.lint(
+			"agent.md",
+			"---\nname: my-agent\ndescription:\n  nested: map\nmodel: sonnet\n---\n\nYou are an agent.",
+			CONFIG,
+		);
+		const d = diags.find((x) => x.rule === "agent-md/schema-valid");
+		expect(d).toBeDefined();
+		expect(d?.message).toContain("description");
+	});
+
+	it("still accepts a scalar `effort` (LW union permits string and number)", () => {
+		// `effort` is `LW()` — "low/medium/high/max, or an integer". Both a
+		// string keyword and an integer must pass; the union must not be
+		// resolved to anything stricter.
+		for (const val of ["high", "3"]) {
+			const diags = agentMdLinter.lint(
+				"agent.md",
+				`---\nname: my-agent\ndescription: Use this for X\neffort: ${val}\n---\n\nYou are an agent.`,
+				CONFIG,
+			);
+			expect(
+				diags.some((d) => d.rule === "agent-md/schema-valid"),
+			).toBe(false);
+		}
+	});
+
 	it("does not flag unknown frontmatter keys (schema is permissive)", () => {
 		const diags = agentMdLinter.lint(
 			"agent.md",

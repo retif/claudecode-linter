@@ -91,6 +91,31 @@ describe("command-md — schema-valid (auto-extracted JSON Schema)", () => {
     expect(d?.message).toContain("allowed-tools");
   });
 
+  it("flags a malformed `argument-hint` field (previously-hollow, now typed)", () => {
+    // `argument-hint` is `LW()` — z.union([string,number,boolean,null]). Before
+    // the LW/z36 walker fix this was a bare `{}` placeholder; a YAML list value
+    // must now be rejected.
+    const diags = commandMdLinter.lint(
+      "cmd.md",
+      "---\ndescription: Does a thing\nargument-hint:\n  - a\n  - b\n---\n\nRun the thing.",
+      CONFIG,
+    );
+    const d = diags.find((x) => x.rule === "command-md/schema-valid");
+    expect(d).toBeDefined();
+    expect(d?.message).toContain("argument-hint");
+  });
+
+  it("still accepts a boolean `disable-model-invocation` (LW union permits boolean)", () => {
+    // `disable-model-invocation` is `lFH()` — the same string/number/boolean/
+    // null union. A real boolean value must not be flagged.
+    const diags = commandMdLinter.lint(
+      "cmd.md",
+      "---\ndescription: Does a thing\ndisable-model-invocation: true\n---\n\nRun the thing.",
+      CONFIG,
+    );
+    expect(diags.some((d) => d.rule === "command-md/schema-valid")).toBe(false);
+  });
+
   it("does not flag unknown frontmatter keys (schema is permissive)", () => {
     const diags = commandMdLinter.lint(
       "cmd.md",

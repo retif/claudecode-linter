@@ -70,17 +70,60 @@ export function fetchBundle(requestedVersion?: string): BundleResult {
 		}).trim();
 		execSync(`tar xzf "${ptgz}"`, { cwd: platformDir, stdio: "pipe" });
 		const binary = readFileSync(join(platformDir, "package", "claude"));
-		const versionMarker = Buffer.from(`// Version: ${pkg.version}`);
-		const versionIdx = binary.indexOf(versionMarker);
-		const bunMarker = Buffer.from("// @bun @bytecode @bun-cjs");
-		const bundleStart = binary.lastIndexOf(bunMarker, versionIdx);
-		const slice = binary
-			.subarray(bundleStart, Math.min(bundleStart + 60_000_000, binary.length))
-			.toString("utf8");
-		return { source: slice, version: pkg.version };
+		return {
+			source: sliceBundleBinary(binary, pkg.version),
+			version: pkg.version,
+		};
 	} finally {
 		rmSync(tmp, { recursive: true, force: true });
 	}
+}
+
+/**
+ * Slice the JavaScript bundle out of a Bun-compiled `claude` binary.
+ *
+ * The binary embeds the JS source after a `// @bun @bytecode @bun-cjs` marker
+ * (interleaved with bytecode); we anchor on `// Version: <ver>` and walk back to
+ * the nearest bun marker, then take a generous window. Shared by `fetchBundle`
+ * (npm-tarball path) and `loadLocalBundle` (local on-disk bundle path).
+ */
+export function sliceBundleBinary(binary: Buffer, version: string): string {
+	const versionMarker = Buffer.from(`// Version: ${version}`);
+	const versionIdx = binary.indexOf(versionMarker);
+	const bunMarker = Buffer.from("// @bun @bytecode @bun-cjs");
+	const bundleStart = binary.lastIndexOf(bunMarker, versionIdx);
+	return binary
+		.subarray(bundleStart, Math.min(bundleStart + 60_000_000, binary.length))
+		.toString("utf8");
+}
+
+/**
+ * Load a Claude Code bundle from a local on-disk install instead of npm.
+ *
+ * Claude Code's native installer keeps each version's `claude` binary under
+ * `~/.local/share/claude/versions/<version>`. When the npm extractor path is
+ * unavailable (recent releases ship platform binaries only, and `npm pack` of
+ * the platform package can fail in CI), this reads the local binary directly.
+ *
+ * `pathOrVersion` is either a full path to the binary or a bare version string
+ * resolved against the default versions directory.
+ */
+export function loadLocalBundle(pathOrVersion: string): BundleResult {
+	const versionsDir = join(
+		process.env.HOME ?? "",
+		".local",
+		"share",
+		"claude",
+		"versions",
+	);
+	const binPath = existsSync(pathOrVersion)
+		? pathOrVersion
+		: join(versionsDir, pathOrVersion);
+	const binary = readFileSync(binPath);
+	// Derive the version from the trailing path segment (the versions-dir
+	// layout names each binary after its version).
+	const version = binPath.split(/[\\/]/).pop() ?? pathOrVersion;
+	return { source: sliceBundleBinary(binary, version), version };
 }
 
 // ---------------------------------------------------------------------------
@@ -307,6 +350,48 @@ export function indexDefinitions(source: string): DefinitionIndex {
 				(p.startsWith("'") && p.endsWith("'")),
 		);
 		if (allStrings) arrays.set(name, arr);
+	}
+
+	// Index bare alias assignments — `<name>=<ident>` where `<ident>` is itself
+	// an already-indexed schema-factory symbol. Claude Code's frontmatter is
+	// typed through such aliases: `z36=()=>y.union([…]),LW,lFH,…` followed by
+	// `LW=z36,lFH=z36` — `name:LW().optional()`, `model:LW()`, etc. all bottom
+	// out in `z36`. Without this pass `LW()`/`lFH()` resolve to nothing and the
+	// field degrades to a `{}` placeholder.
+	//
+	// We record the alias as `<target>()` so the chain evaluator follows
+	// `LW -> z36() -> ()=>y.union([…])`. Alias chains (`A=B,B=z36`) are resolved
+	// to a fixpoint. Only aliases whose ultimate target is an indexed factory
+	// are recorded — a stricter check than a raw `<name>=<ident>` scan, so an
+	// unrelated `X=Y` assignment is never mistaken for a schema and the worst
+	// case stays the permissive `{}` fallback.
+	//
+	// Scanned identifier value must be a single bare identifier (no method
+	// chain, no call) so we only catch genuine `LW=z36`-style aliases.
+	const aliasRe =
+		/(?:^|[;,{(\s])([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)(?=[;,)}\s]|$)/g;
+	const aliasPairs = new Map<string, string>();
+	let alm: RegExpExecArray | null;
+	while ((alm = aliasRe.exec(source)) !== null) {
+		const name = alm[1];
+		const target = alm[2];
+		if (name === target) continue;
+		if (defs.has(name) || arrays.has(name)) continue;
+		if (!aliasPairs.has(name)) aliasPairs.set(name, target);
+	}
+	// Resolve each alias to a factory-backed target, following alias chains.
+	for (const [name] of aliasPairs) {
+		const seen = new Set<string>([name]);
+		let target: string | undefined = aliasPairs.get(name);
+		while (target !== undefined && !seen.has(target)) {
+			if (defs.has(target)) {
+				// `LW()` is `target()` — calling the aliased factory.
+				defs.set(name, `${target}()`);
+				break;
+			}
+			seen.add(target);
+			target = aliasPairs.get(target);
+		}
 	}
 
 	return { source, defs, zodAlias, lazyWrapper, arrays };
@@ -1596,9 +1681,38 @@ function main() {
 	const versionIdx = process.argv.indexOf("--version");
 	const requestedVersion =
 		versionIdx !== -1 ? process.argv[versionIdx + 1] : undefined;
-	const label = requestedVersion ? `v${requestedVersion}` : "latest";
-	console.log(pc.cyan(`▸ Fetching @anthropic-ai/claude-code (${label})...`));
-	const { source, version } = fetchBundle(requestedVersion);
+	const localIdx = process.argv.indexOf("--local");
+	const localBundle = localIdx !== -1 ? process.argv[localIdx + 1] : undefined;
+	// `--only <comma-list>` restricts which schemas are (re)generated. Targets:
+	// plugin, lsp, monitors, settings, frontmatter, mcp, hooks. Absent → all.
+	// Used to regenerate just the frontmatter schemas from a local bundle whose
+	// minification differs from the npm tarball the other schemas anchor on.
+	const onlyIdx = process.argv.indexOf("--only");
+	const onlySet =
+		onlyIdx !== -1
+			? new Set(
+					process.argv[onlyIdx + 1]
+						.split(",")
+						.map((s) => s.trim())
+						.filter(Boolean),
+				)
+			: null;
+	const shouldBuild = (target: string): boolean =>
+		onlySet === null || onlySet.has(target);
+	let source: string;
+	let version: string;
+	if (localBundle) {
+		console.log(
+			pc.cyan(`▸ Loading local Claude Code bundle (${localBundle})...`),
+		);
+		({ source, version } = loadLocalBundle(localBundle));
+	} else {
+		const label = requestedVersion ? `v${requestedVersion}` : "latest";
+		console.log(
+			pc.cyan(`▸ Fetching @anthropic-ai/claude-code (${label})...`),
+		);
+		({ source, version } = fetchBundle(requestedVersion));
+	}
 	console.log(
 		pc.cyan("▸ Indexing definitions"),
 		pc.dim(`(v${version}, ${(source.length / 1e6).toFixed(1)}MB)`),
@@ -1609,67 +1723,76 @@ function main() {
 		pc.dim(`  ${index.defs.size} definitions, Zod alias = ${index.zodAlias}`),
 	);
 
-	const masterName = findMasterSchemaName(index);
-	console.log(pc.cyan(`▸ Master schema: ${masterName ?? "<not found>"}`));
-
-	const schema = buildPluginSchema(index);
-	const propCount = Object.keys(schema.properties as object).length;
-	const reqCount = ((schema.required as string[]) ?? []).length;
-	console.log(
-		pc.cyan(
-			`▸ Composed schema: ${propCount} properties, ${reqCount} required`,
-		),
-	);
-
 	const rootDir = join(import.meta.dirname!, "..");
-	const outPath = join(rootDir, "contracts", "plugin.schema.json");
 
-	// Drift gate: compare the new property set to the previous extraction and
-	// fail loudly if we lost >30% of the fields. Mirrors extract-contracts.ts.
-	// Override with FORCE_SCHEMA=1 if the loss is intentional (e.g., upstream
-	// removed an experimental field).
-	let prevSchema: { properties?: Record<string, unknown> } | null = null;
-	try {
-		const prev = JSON.parse(readFileSync(outPath, "utf8")) as {
-			schema?: { properties?: Record<string, unknown> };
-		};
-		prevSchema = prev.schema ?? null;
-	} catch {
-		// no previous file — first run
-	}
-	if (prevSchema) {
-		const prevKeys = new Set(Object.keys(prevSchema.properties ?? {}));
-		const nowKeys = new Set(
-			Object.keys(schema.properties as Record<string, unknown>),
+	if (shouldBuild("plugin")) {
+		const masterName = findMasterSchemaName(index);
+		console.log(pc.cyan(`▸ Master schema: ${masterName ?? "<not found>"}`));
+
+		const schema = buildPluginSchema(index);
+		const propCount = Object.keys(schema.properties as object).length;
+		const reqCount = ((schema.required as string[]) ?? []).length;
+		console.log(
+			pc.cyan(
+				`▸ Composed schema: ${propCount} properties, ${reqCount} required`,
+			),
 		);
-		const lost = [...prevKeys].filter((k) => !nowKeys.has(k));
-		const gained = [...nowKeys].filter((k) => !prevKeys.has(k));
-		if (gained.length > 0) {
-			console.log(
-				pc.green(`  + Schema gained: ${gained.sort().join(", ")}`),
+
+		const outPath = join(rootDir, "contracts", "plugin.schema.json");
+
+		// Drift gate: compare the new property set to the previous extraction
+		// and fail loudly if we lost >30% of the fields. Mirrors
+		// extract-contracts.ts. Override with FORCE_SCHEMA=1 if the loss is
+		// intentional (e.g., upstream removed an experimental field).
+		let prevSchema: { properties?: Record<string, unknown> } | null = null;
+		try {
+			const prev = JSON.parse(readFileSync(outPath, "utf8")) as {
+				schema?: { properties?: Record<string, unknown> };
+			};
+			prevSchema = prev.schema ?? null;
+		} catch {
+			// no previous file — first run
+		}
+		if (prevSchema) {
+			const prevKeys = new Set(Object.keys(prevSchema.properties ?? {}));
+			const nowKeys = new Set(
+				Object.keys(schema.properties as Record<string, unknown>),
 			);
-		}
-		if (lost.length > 0) {
-			const dropRate = lost.length / prevKeys.size;
-			const msg = `Schema lost ${lost.length}/${prevKeys.size} top-level fields (${(dropRate * 100).toFixed(0)}%): ${lost.sort().join(", ")}`;
-			if (dropRate > 0.3 && process.env.FORCE_SCHEMA !== "1") {
-				console.log(pc.red(`  ✗ ${msg}`));
-				console.log(pc.red("    Set FORCE_SCHEMA=1 to override."));
-				process.exit(1);
+			const lost = [...prevKeys].filter((k) => !nowKeys.has(k));
+			const gained = [...nowKeys].filter((k) => !prevKeys.has(k));
+			if (gained.length > 0) {
+				console.log(
+					pc.green(`  + Schema gained: ${gained.sort().join(", ")}`),
+				);
 			}
-			console.log(pc.yellow(`  ⚠ ${msg}`));
+			if (lost.length > 0) {
+				const dropRate = lost.length / prevKeys.size;
+				const msg = `Schema lost ${lost.length}/${prevKeys.size} top-level fields (${(dropRate * 100).toFixed(0)}%): ${lost.sort().join(", ")}`;
+				if (dropRate > 0.3 && process.env.FORCE_SCHEMA !== "1") {
+					console.log(pc.red(`  ✗ ${msg}`));
+					console.log(pc.red("    Set FORCE_SCHEMA=1 to override."));
+					process.exit(1);
+				}
+				console.log(pc.yellow(`  ⚠ ${msg}`));
+			}
 		}
+		writeFileSync(
+			outPath,
+			JSON.stringify(
+				{
+					extractedFromClaudeCodeVersion: version,
+					extractedAt: new Date().toISOString(),
+					schema,
+				},
+				null,
+				"\t",
+			) + "\n",
+		);
+		console.log(pc.dim(`  Written to ${outPath}`));
 	}
-	const wrapped = {
-		extractedFromClaudeCodeVersion: version,
-		extractedAt: new Date().toISOString(),
-		schema,
-	};
-	writeFileSync(outPath, JSON.stringify(wrapped, null, "\t") + "\n");
-	console.log(pc.dim(`  Written to ${outPath}`));
 
 	// LSP schema (record of server-name → RSH)
-	const lspSchema = buildLspSchema(index);
+	const lspSchema = shouldBuild("lsp") ? buildLspSchema(index) : null;
 	if (lspSchema) {
 		const lspPath = join(rootDir, "contracts", "lsp.schema.json");
 		writeFileSync(
@@ -1685,7 +1808,7 @@ function main() {
 			) + "\n",
 		);
 		console.log(pc.cyan(`▸ LSP schema written to ${lspPath}`));
-	} else {
+	} else if (shouldBuild("lsp")) {
 		console.log(
 			pc.yellow(
 				"  ⚠ Could not locate LSP per-server schema (extensionToLanguage anchor)",
@@ -1694,7 +1817,9 @@ function main() {
 	}
 
 	// Monitors schema (array of M09)
-	const monitorsSchema = buildMonitorsSchema(index);
+	const monitorsSchema = shouldBuild("monitors")
+		? buildMonitorsSchema(index)
+		: null;
 	if (monitorsSchema) {
 		const monPath = join(rootDir, "contracts", "monitors.schema.json");
 		writeFileSync(
@@ -1710,7 +1835,7 @@ function main() {
 			) + "\n",
 		);
 		console.log(pc.cyan(`▸ Monitors schema written to ${monPath}`));
-	} else {
+	} else if (shouldBuild("monitors")) {
 		console.log(
 			pc.yellow(
 				"  ⚠ Could not locate monitors schema (unique-name anchor)",
@@ -1719,7 +1844,9 @@ function main() {
 	}
 
 	// Settings schema (y.object({...}).passthrough())
-	const settingsSchema = buildSettingsSchema(index);
+	const settingsSchema = shouldBuild("settings")
+		? buildSettingsSchema(index)
+		: null;
 	if (settingsSchema) {
 		const settingsPath = join(rootDir, "contracts", "settings.schema.json");
 		const settingsPropCount = Object.keys(
@@ -1742,7 +1869,7 @@ function main() {
 				`▸ Settings schema written to ${settingsPath} (${settingsPropCount} top-level fields)`,
 			),
 		);
-	} else {
+	} else if (shouldBuild("settings")) {
 		console.log(
 			pc.yellow(
 				"  ⚠ Could not locate settings schema ($schema describe anchor)",
@@ -1753,37 +1880,44 @@ function main() {
 	// Markdown frontmatter schemas (SKILL.md / agent .md / command .md) plus the
 	// standalone JSON config schemas (mcp.json / hooks.json).
 	const frontmatterTargets: Array<{
+		key: string;
 		label: string;
 		file: string;
 		build: (i: DefinitionIndex) => JSONSchema | null;
 	}> = [
 		{
+			key: "frontmatter",
 			label: "Skill frontmatter",
 			file: "skill-frontmatter.schema.json",
 			build: buildSkillFrontmatterSchema,
 		},
 		{
+			key: "frontmatter",
 			label: "Agent frontmatter",
 			file: "agent-frontmatter.schema.json",
 			build: buildAgentFrontmatterSchema,
 		},
 		{
+			key: "frontmatter",
 			label: "Command frontmatter",
 			file: "command-frontmatter.schema.json",
 			build: buildCommandFrontmatterSchema,
 		},
 		{
+			key: "mcp",
 			label: "MCP config",
 			file: "mcp.schema.json",
 			build: buildMcpJsonSchema,
 		},
 		{
+			key: "hooks",
 			label: "Hooks config",
 			file: "hooks.schema.json",
 			build: buildHooksJsonSchema,
 		},
 	];
 	for (const target of frontmatterTargets) {
+		if (!shouldBuild(target.key)) continue;
 		const fmSchema = target.build(index);
 		if (fmSchema) {
 			const fmPath = join(rootDir, "contracts", target.file);

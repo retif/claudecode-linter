@@ -173,6 +173,43 @@ describe("skill-md — schema-valid (auto-extracted JSON Schema)", () => {
 		expect(diags.some((d) => d.rule === "skill-md/schema-valid")).toBe(true);
 	});
 
+	it("flags a malformed `name` field (previously-hollow, now typed)", () => {
+		// `name` is `LW()` — z.union([string,number,boolean,null]). Before the
+		// LW/z36 walker fix this field was a bare `{}` placeholder and a mapping
+		// value slipped through; it must now be rejected.
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname:\n  nested: map\ndescription: Use when X\n---\n\n## Body",
+			CONFIG,
+		);
+		const d = diags.find((x) => x.rule === "skill-md/schema-valid");
+		expect(d).toBeDefined();
+		expect(d?.message).toContain("name");
+	});
+
+	it("flags a malformed `description` field (previously-hollow, now typed)", () => {
+		// `description` is `LW()` too — a YAML list is not a string/scalar.
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription:\n  - a\n  - b\n---\n\n## Body",
+			CONFIG,
+		);
+		const d = diags.find((x) => x.rule === "skill-md/schema-valid");
+		expect(d).toBeDefined();
+		expect(d?.message).toContain("description");
+	});
+
+	it("still accepts a scalar `name`/`model` (LW union permits string)", () => {
+		// The LW union is permissive — a plain string name/model must not be
+		// flagged. Guards against resolving z36 too strictly.
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\nmodel: opus\n---\n\n## Body",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "skill-md/schema-valid")).toBe(false);
+	});
+
 	it("does not flag unknown frontmatter keys (schema is permissive)", () => {
 		const diags = skillMdLinter.lint(
 			"SKILL.md",

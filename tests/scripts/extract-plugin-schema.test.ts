@@ -263,6 +263,77 @@ describe("evalZod primitives", () => {
 		expect((out.oneOf as object[]).length).toBe(2);
 	});
 
+	it("resolves bare-alias factories (LW/lFH -> z36) to the real schema", () => {
+		// Claude Code's frontmatter fields are typed through alias chains:
+		//   z36=()=>y.union([y.string(),y.number(),y.boolean(),y.null()]),LW,lFH
+		//   ...later... LW=z36,lFH=z36
+		// `name:LW().optional()` must resolve to z36's union, not a `{}` stub.
+		const bundle =
+			"z36=()=>E.union([E.string(),E.number(),E.boolean(),E.null()]),LW,lFH," +
+			"fmSchema=CH(()=>E.object({" +
+			'name:LW().optional().describe("display name"),' +
+			'flag:lFH().optional().describe("a boolean-ish field")}))' +
+			",LW=z36,lFH=z36";
+		const local = {
+			index: indexDefinitions(bundle),
+			resolving: new Set<string>(),
+		};
+		// The alias pass records `LW`/`lFH` as `z36()` so the chain follows
+		// `LW -> z36() -> ()=>E.union([...])`.
+		expect(local.index.defs.get("LW")).toBe("z36()");
+		expect(local.index.defs.get("lFH")).toBe("z36()");
+		const def = local.index.defs.get("fmSchema");
+		expect(def).toBeDefined();
+		const out = evalZod(def as string, local);
+		const props = out.properties as Record<string, object>;
+		const union = [
+			{ type: "string" },
+			{ type: "number" },
+			{ type: "boolean" },
+			{ type: "null" },
+		];
+		expect(props.name).toEqual({
+			anyOf: union,
+			description: "display name",
+		});
+		expect(props.flag).toEqual({
+			anyOf: union,
+			description: "a boolean-ish field",
+		});
+		// All fields are `.optional()` — none required.
+		expect(out.required).toBeUndefined();
+	});
+
+	it("follows multi-hop alias chains to the backing factory", () => {
+		// `A=B,B=z36` — the alias pass walks the chain to the first symbol that
+		// is an indexed factory and records the alias as a direct call to it.
+		const bundle =
+			"z36=()=>E.union([E.string(),E.null()]),A,B," +
+			"fmSchema=CH(()=>E.object({x:A()}));" +
+			"B=z36;A=B;";
+		const local = {
+			index: indexDefinitions(bundle),
+			resolving: new Set<string>(),
+		};
+		// Both aliases are registered and bottom out in the `z36` factory —
+		// either as a direct `z36()` call or via the chained `B()` indirection,
+		// both of which the chain evaluator resolves identically.
+		expect(local.index.defs.get("B")).toBe("z36()");
+		expect(local.index.defs.get("A")).toMatch(/^(z36|B)\(\)$/);
+		const out = evalZod(local.index.defs.get("fmSchema") as string, local);
+		expect((out.properties as Record<string, object>).x).toEqual({
+			anyOf: [{ type: "string" }, { type: "null" }],
+		});
+	});
+
+	it("does not mistake a non-factory `<name>=<ident>` for a schema", () => {
+		// `Q=process` is not a Zod alias — it must not become a resolvable def.
+		const bundle =
+			"z36=()=>E.string(),Q=process,fmSchema=CH(()=>E.object({y:E.number()}))";
+		const idx = indexDefinitions(bundle);
+		expect(idx.defs.has("Q")).toBe(false);
+	});
+
 	it("handles spread inside object body", () => {
 		const out = evalZod(
 			"E.object({...authorSchema().shape,extra:E.boolean()})",

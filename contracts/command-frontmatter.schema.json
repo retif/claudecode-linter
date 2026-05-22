@@ -1,18 +1,60 @@
 {
 	"extractedFromClaudeCodeVersion": "2.1.146",
-	"extractedAt": "2026-05-21T21:04:24.812Z",
+	"extractedAt": "2026-05-22T08:49:59.767Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code command .md frontmatter",
 		"type": "object",
 		"properties": {
 			"name": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
 				"description": "Display name. Defaults to the filename without extension."
 			},
 			"description": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
 				"description": "One-line summary shown in listings and the Skill tool."
 			},
 			"model": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
 				"description": "Model override (`haiku`, `sonnet`, `opus`, or a full ID). Use `inherit` to match the parent conversation."
 			},
 			"allowed-tools": {
@@ -43,6 +85,20 @@
 				"description": "Tools available to the model while this file is active. Comma-separated string or YAML list."
 			},
 			"argument-hint": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
 				"description": "Placeholder text shown after the slash command name."
 			},
 			"arguments": {
@@ -73,18 +129,88 @@
 				"description": "@internal — typed variant of argument-hint; argument-hint is the documented form"
 			},
 			"disable-model-invocation": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
 				"description": "If true, the model cannot invoke this via the Skill tool; only users can type the slash command."
 			},
 			"user-invocable": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
 				"description": "If false, hides the slash command from users; only the model can invoke it via the Skill tool."
 			},
 			"effort": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
 				"description": "Thinking effort for the model: `low`, `medium`, `high`, `max`, or an integer."
 			},
 			"shell": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
 				"description": "Shell for `!`-command blocks: `bash` or `powershell`. Defaults to bash regardless of platform."
 			},
 			"version": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
 				"description": "@internal — bookkeeping, not surfaced to users"
 			}
 		},
