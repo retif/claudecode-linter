@@ -230,28 +230,28 @@ For **untrusted** plugins — especially with `--fix`, which writes files back t
 
 ### The Docker image
 
-Two multi-arch (`linux/amd64`, `linux/arm64`) images are published to the GitHub Container Registry on every release:
+Two multi-arch (`linux/amd64`, `linux/arm64`) images are published to the GitHub Container Registry — two separate packages, each with its own `:latest` rolling tag and `:<version>` tag:
 
 | Image | Built from | Notes |
 |-------|-----------|-------|
-| `ghcr.io/retif/claudecode-linter` (`:latest`) | `Dockerfile` — `node:24-alpine` | default |
-| `ghcr.io/retif/claudecode-linter:compile` | `Dockerfile.compile` — `bun build --compile` single executable | smaller variant (~44 MB compressed) |
+| `ghcr.io/retif/node-claudecode-linter` | `Dockerfile` — `node:24-alpine` | default |
+| `ghcr.io/retif/bun-claudecode-linter` | `Dockerfile.compile` — `bun build --compile` single executable | smaller (~44 MB compressed) |
 
 **Pull a published image:**
 
 ```bash
-docker pull ghcr.io/retif/claudecode-linter           # default
-docker pull ghcr.io/retif/claudecode-linter:compile   # smaller variant
+docker pull ghcr.io/retif/node-claudecode-linter   # default (node:24-alpine)
+docker pull ghcr.io/retif/bun-claudecode-linter    # smaller (bun --compile)
 ```
 
 **Or build it locally** from a checkout of this repo:
 
 ```bash
-docker build -t claudecode-linter .                                # default (Dockerfile)
-docker build -f Dockerfile.compile -t claudecode-linter:compile .  # smaller variant
+docker build -t node-claudecode-linter .                       # default (Dockerfile)
+docker build -f Dockerfile.compile -t bun-claudecode-linter .   # smaller variant
 ```
 
-Both images behave identically. The `docker run` recipes below use `ghcr.io/retif/claudecode-linter`; substitute your locally-built tag (`claudecode-linter`) or the `:compile` variant as you prefer.
+Both images behave identically. The `docker run` recipes below use `ghcr.io/retif/node-claudecode-linter`; substitute `ghcr.io/retif/bun-claudecode-linter` or a locally-built tag as you prefer.
 
 ### Sandboxed invocation
 
@@ -260,7 +260,7 @@ Both images behave identically. The `docker run` recipes below use `ghcr.io/reti
 ```bash
 docker run --rm --network none --read-only --tmpfs /tmp \
   --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
-  -v "$PWD":/work:ro -w /work  ghcr.io/retif/claudecode-linter  /work
+  -v "$PWD":/work:ro -w /work  ghcr.io/retif/node-claudecode-linter  /work
 ```
 
 **Docker — `--fix`:** the mount must be read-write so fixes can be written back. Otherwise identical, plus the `--fix` flag:
@@ -268,7 +268,7 @@ docker run --rm --network none --read-only --tmpfs /tmp \
 ```bash
 docker run --rm --network none --read-only --tmpfs /tmp \
   --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
-  -v "$PWD":/work -w /work  ghcr.io/retif/claudecode-linter  --fix /work
+  -v "$PWD":/work -w /work  ghcr.io/retif/node-claudecode-linter  --fix /work
 ```
 
 All four recipes here are verified. On Linux without Docker, [bubblewrap](https://github.com/containers/bubblewrap) (`bwrap`) gives the equivalent boundary: `--unshare-all` cuts network (confirmed: `ECONNREFUSED` inside the sandbox), and nothing is writable except — for `--fix` — the target directory (confirmed: a write outside it is refused).

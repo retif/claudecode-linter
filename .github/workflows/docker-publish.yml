@@ -24,15 +24,13 @@ jobs:
       matrix:
         variant:
           # Default image — node:24-alpine.
-          - name: default
+          - name: node
             dockerfile: Dockerfile
-            suffix: ""
-            rolling: latest
+            image: ghcr.io/retif/node-claudecode-linter
           # Smaller variant — single executable via `bun build --compile`.
-          - name: compile
+          - name: bun
             dockerfile: Dockerfile.compile
-            suffix: "-compile"
-            rolling: compile
+            image: ghcr.io/retif/bun-claudecode-linter
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -54,10 +52,10 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/retif/claudecode-linter
+          images: ${{ matrix.variant.image }}
           tags: |
-            type=semver,pattern={{version}}${{ matrix.variant.suffix }}
-            type=raw,value=${{ matrix.variant.rolling }}
+            type=semver,pattern={{version}}
+            type=raw,value=latest
 
       - name: Build and push
         uses: docker/build-push-action@v6

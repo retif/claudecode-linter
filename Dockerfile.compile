@@ -3,7 +3,7 @@
 # Optional smaller image variant: a single-executable build via
 # `bun build --compile`. The default image remains `Dockerfile` (node:24-alpine).
 #
-#   docker build -f Dockerfile.compile -t cc-linter:compile .
+#   docker build -f Dockerfile.compile -t bun-claudecode-linter .
 #
 # Asset note: inside the compiled binary `import.meta.url` points into Bun's
 # virtual FS, so `contracts/` and `.claudecode-lint.defaults.yaml` are shipped
