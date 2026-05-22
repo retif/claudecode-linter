@@ -408,3 +408,17 @@ export const PLUGIN_SUBAGENT_BLOCKED_TOOLS = new Set<string>([
 	"Glob",
 	"Grep",
 ]);
+
+// Hand-curated named values for the frontmatter `effort` field. The Zod
+// schema types `effort` as a permissive scalar; the field's own describe()
+// string in the Claude Code bundle reads: "Thinking effort for the model:
+// `low`, `medium`, `high`, `max`, or an integer." — so a string `effort`
+// must be one of these, and a numeric `effort` must be an integer. (The
+// runtime effortLevel enum also has `xhigh`, but the frontmatter describe
+// string deliberately omits it; we follow the frontmatter contract.)
+export const EFFORT_LEVELS = new Set<string>([
+	"low",
+	"medium",
+	"high",
+	"max",
+]);

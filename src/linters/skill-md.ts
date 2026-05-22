@@ -1,3 +1,4 @@
+import { AGENT_MODELS, TOOLS } from "../contracts.js";
 import {
   formatAjvError,
   loadSkillFrontmatterSchema,
@@ -5,6 +6,7 @@ import {
 } from "../plugin-schema.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
+import { invalidEffortReason } from "../utils/effort.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
 import {
   artifactLabel,
@@ -24,6 +26,10 @@ const RULES: RuleDef[] = [
   { id: "skill-md/description-max-length", defaultSeverity: "error" },
   { id: "skill-md/description-no-angle-brackets", defaultSeverity: "error" },
   { id: "skill-md/description-trigger-phrases", defaultSeverity: "warning" },
+  { id: "skill-md/model-valid", defaultSeverity: "warning" },
+  { id: "skill-md/effort-valid", defaultSeverity: "warning" },
+  { id: "skill-md/allowed-tools-valid", defaultSeverity: "warning" },
+  { id: "skill-md/frontmatter-field-type", defaultSeverity: "warning" },
   { id: "skill-md/no-unknown-frontmatter", defaultSeverity: "info" },
   { id: "skill-md/body-word-count", defaultSeverity: "info" },
   { id: "skill-md/body-has-headers", defaultSeverity: "info" },
@@ -184,6 +190,48 @@ export const skillMdLinter: Linter = {
         push(diag(config, filePath, "skill-md/description-trigger-phrases", "warning",
           "Description has no applicability signal — say when the skill applies " +
           "(e.g., \"Use when…\", \"Trigger on…\", \"when the user asks to…\", or an imperative verb)"));
+      }
+    }
+
+    // model — Zod types it as a permissive scalar; accept a named alias or a
+    // versioned claude-* model id. Mirrors agent-md/model-valid.
+    if ("model" in fm.data && typeof fm.data.model === "string") {
+      const model = fm.data.model;
+      if (!AGENT_MODELS.has(model) && !model.startsWith("claude-")) {
+        push(diag(config, filePath, "skill-md/model-valid", "warning",
+          `"model" must be one of: ${[...AGENT_MODELS].join(", ")} or a versioned claude-* model ID (got "${model}")`));
+      }
+    }
+
+    // effort — Zod types it as a permissive scalar; the field's describe()
+    // string restricts it to a named level or an integer.
+    if ("effort" in fm.data) {
+      const reason = invalidEffortReason(fm.data.effort);
+      if (reason) {
+        push(diag(config, filePath, "skill-md/effort-valid", "warning", reason));
+      }
+    }
+
+    // allowed-tools — validate built-in tool names. mcp__* patterns are
+    // dynamic (resolved at runtime); accept them. Mirrors command-md.
+    if ("allowed-tools" in fm.data) {
+      const tools = fm.data["allowed-tools"];
+      if (Array.isArray(tools)) {
+        for (const t of tools) {
+          if (typeof t === "string" && !t.startsWith("mcp__") && !TOOLS.has(t)) {
+            push(diag(config, filePath, "skill-md/allowed-tools-valid", "warning",
+              `Unknown tool "${t}" in allowed-tools`));
+          }
+        }
+      }
+    }
+
+    // boolean fields — the Zod schema accepts the string "true"; only a real
+    // boolean behaves as expected.
+    for (const field of ["disable-model-invocation", "user-invocable"]) {
+      if (field in fm.data && typeof fm.data[field] !== "boolean") {
+        push(diag(config, filePath, "skill-md/frontmatter-field-type", "warning",
+          `"${field}" must be a boolean (got ${JSON.stringify(fm.data[field])})`));
       }
     }
 

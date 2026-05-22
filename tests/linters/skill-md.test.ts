@@ -136,6 +136,136 @@ describe("skill-md linter", () => {
 			diags.some((d) => d.rule === "skill-md/description-trigger-phrases"),
 		).toBe(false);
 	});
+
+	// ── model-valid ───────────────────────────────────────────
+	it("does not warn on a valid model alias or claude-* id", () => {
+		for (const m of ["opus", "claude-sonnet-4-6-20250514"]) {
+			const diags = skillMdLinter.lint(
+				"SKILL.md",
+				`---\nname: my-skill\ndescription: Use when X\nmodel: ${m}\n---\n\n## Body`,
+				CONFIG,
+			);
+			expect(diags.some((d) => d.rule === "skill-md/model-valid")).toBe(false);
+		}
+	});
+
+	it("warns on an unknown model value", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\nmodel: gpt-4\n---\n\n## Body",
+			CONFIG,
+		);
+		const d = diags.filter((x) => x.rule === "skill-md/model-valid");
+		expect(d).toHaveLength(1);
+		expect(d[0].message).toContain("gpt-4");
+	});
+
+	it("does not warn on model-valid when model absent", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\n---\n\n## Body",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "skill-md/model-valid")).toBe(false);
+	});
+
+	// ── effort-valid ──────────────────────────────────────────
+	it("does not warn on a valid effort (named or integer)", () => {
+		for (const e of ["high", "2"]) {
+			const diags = skillMdLinter.lint(
+				"SKILL.md",
+				`---\nname: my-skill\ndescription: Use when X\neffort: ${e}\n---\n\n## Body`,
+				CONFIG,
+			);
+			expect(diags.some((d) => d.rule === "skill-md/effort-valid")).toBe(false);
+		}
+	});
+
+	it("warns on an invalid effort value", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\neffort: turbo\n---\n\n## Body",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "skill-md/effort-valid")).toBe(true);
+	});
+
+	it("does not warn on effort-valid when effort absent", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\n---\n\n## Body",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "skill-md/effort-valid")).toBe(false);
+	});
+
+	// ── allowed-tools-valid ───────────────────────────────────
+	it("does not warn on valid tools or mcp__ patterns in allowed-tools", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\nallowed-tools:\n  - Bash\n  - Read\n  - mcp__gitea__list_my_repos\n---\n\n## Body",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "skill-md/allowed-tools-valid")).toBe(
+			false,
+		);
+	});
+
+	it("warns on an unknown tool in allowed-tools", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\nallowed-tools:\n  - Bashh\n---\n\n## Body",
+			CONFIG,
+		);
+		const d = diags.filter((x) => x.rule === "skill-md/allowed-tools-valid");
+		expect(d).toHaveLength(1);
+		expect(d[0].message).toContain("Bashh");
+	});
+
+	it("does not warn on allowed-tools-valid when absent", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\n---\n\n## Body",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "skill-md/allowed-tools-valid")).toBe(
+			false,
+		);
+	});
+
+	// ── frontmatter-field-type ────────────────────────────────
+	it("does not warn on real boolean disable-model-invocation / user-invocable", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\ndisable-model-invocation: true\nuser-invocable: false\n---\n\n## Body",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "skill-md/frontmatter-field-type")).toBe(
+			false,
+		);
+	});
+
+	it("warns when a boolean field is given a string value", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			'---\nname: my-skill\ndescription: Use when X\ndisable-model-invocation: "true"\n---\n\n## Body',
+			CONFIG,
+		);
+		const d = diags.filter((x) => x.rule === "skill-md/frontmatter-field-type");
+		expect(d).toHaveLength(1);
+		expect(d[0].message).toContain("disable-model-invocation");
+	});
+
+	it("does not warn on frontmatter-field-type when both fields absent", () => {
+		const diags = skillMdLinter.lint(
+			"SKILL.md",
+			"---\nname: my-skill\ndescription: Use when X\n---\n\n## Body",
+			CONFIG,
+		);
+		expect(diags.some((d) => d.rule === "skill-md/frontmatter-field-type")).toBe(
+			false,
+		);
+	});
 });
 
 // ───────────── auto-extracted JSON Schema rule (schema-valid) ─────────────

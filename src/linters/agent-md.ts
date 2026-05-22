@@ -4,8 +4,10 @@ import {
 	AGENT_MODELS,
 	AGENT_COLORS,
 	TOOLS,
+	PERMISSION_MODES,
 	PLUGIN_SUBAGENT_BLOCKED_TOOLS,
 } from "../contracts.js";
+import { invalidEffortReason } from "../utils/effort.js";
 import {
 	formatAjvError,
 	loadAgentFrontmatterSchema,
@@ -94,6 +96,9 @@ const RULES: RuleDef[] = [
 	{ id: "agent-md/description-routing-guidance", defaultSeverity: "warning" },
 	{ id: "agent-md/model-required", defaultSeverity: "error" },
 	{ id: "agent-md/model-valid", defaultSeverity: "warning" },
+	{ id: "agent-md/permission-mode-valid", defaultSeverity: "warning" },
+	{ id: "agent-md/effort-valid", defaultSeverity: "warning" },
+	{ id: "agent-md/max-turns-valid", defaultSeverity: "warning" },
 	{ id: "agent-md/color-required", defaultSeverity: "warning" },
 	{ id: "agent-md/color-valid", defaultSeverity: "warning" },
 	{ id: "agent-md/system-prompt-present", defaultSeverity: "error" },
@@ -275,6 +280,51 @@ export const agentMdLinter: Linter = {
 					`"model" must be one of: ${[...AGENT_MODELS].join(", ")} or a versioned claude-* model ID (got "${fm.data.model}")`,
 				),
 			);
+		}
+
+		// permissionMode — typed as a permissive scalar by the Zod schema;
+		// at runtime only the PERMISSION_MODES values take effect.
+		if ("permissionMode" in fm.data) {
+			const pm = fm.data.permissionMode;
+			if (typeof pm !== "string" || !PERMISSION_MODES.has(pm)) {
+				push(
+					diag(
+						config,
+						filePath,
+						"agent-md/permission-mode-valid",
+						"warning",
+						`"permissionMode" must be one of: ${[...PERMISSION_MODES].join(", ")} (got ${JSON.stringify(pm)})`,
+					),
+				);
+			}
+		}
+
+		// effort — Zod types it as a permissive scalar; the field's describe()
+		// string restricts it to a named level or an integer.
+		if ("effort" in fm.data) {
+			const reason = invalidEffortReason(fm.data.effort);
+			if (reason) {
+				push(
+					diag(config, filePath, "agent-md/effort-valid", "warning", reason),
+				);
+			}
+		}
+
+		// maxTurns — Zod accepts a string / float; only a positive integer
+		// is a meaningful turn budget.
+		if ("maxTurns" in fm.data) {
+			const mt = fm.data.maxTurns;
+			if (typeof mt !== "number" || !Number.isInteger(mt) || mt <= 0) {
+				push(
+					diag(
+						config,
+						filePath,
+						"agent-md/max-turns-valid",
+						"warning",
+						`"maxTurns" must be a positive integer (got ${JSON.stringify(mt)})`,
+					),
+				);
+			}
 		}
 
 		// color

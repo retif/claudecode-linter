@@ -32,6 +32,10 @@ rules:
   skill-md/description-max-length: error
   skill-md/description-no-angle-brackets: error
   skill-md/description-trigger-phrases: warning
+  skill-md/model-valid: warning
+  skill-md/effort-valid: warning
+  skill-md/allowed-tools-valid: warning
+  skill-md/frontmatter-field-type: warning
   skill-md/no-unknown-frontmatter: warning
   skill-md/body-word-count: warning
   skill-md/body-has-headers: info
@@ -45,6 +49,9 @@ rules:
   agent-md/description-routing-guidance: warning
   agent-md/model-required: error
   agent-md/model-valid: warning
+  agent-md/permission-mode-valid: warning
+  agent-md/effort-valid: warning
+  agent-md/max-turns-valid: warning
   agent-md/color-required: error
   agent-md/color-valid: warning
   agent-md/system-prompt-present: error
@@ -55,6 +62,10 @@ rules:
   command-md/valid-frontmatter: error
   command-md/schema-valid: error
   command-md/description-required: error
+  command-md/name-format: warning
+  command-md/model-valid: warning
+  command-md/effort-valid: warning
+  command-md/frontmatter-field-type: warning
   command-md/allowed-tools-valid: warning
   command-md/body-present: warning
 

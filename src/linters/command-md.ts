@@ -1,4 +1,4 @@
-import { TOOLS } from "../contracts.js";
+import { AGENT_MODELS, TOOLS } from "../contracts.js";
 import {
   formatAjvError,
   loadCommandFrontmatterSchema,
@@ -6,6 +6,7 @@ import {
 } from "../plugin-schema.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
+import { invalidEffortReason } from "../utils/effort.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
 import {
   artifactLabel,
@@ -18,6 +19,10 @@ const RULES: RuleDef[] = [
   { id: "command-md/valid-frontmatter", defaultSeverity: "error" },
   { id: "command-md/schema-valid", defaultSeverity: "error" },
   { id: "command-md/description-required", defaultSeverity: "error" },
+  { id: "command-md/name-format", defaultSeverity: "warning" },
+  { id: "command-md/model-valid", defaultSeverity: "warning" },
+  { id: "command-md/effort-valid", defaultSeverity: "warning" },
+  { id: "command-md/frontmatter-field-type", defaultSeverity: "warning" },
   { id: "command-md/allowed-tools-valid", defaultSeverity: "warning" },
   { id: "command-md/body-present", defaultSeverity: "warning" },
   { id: "command-md/no-unknown-frontmatter", defaultSeverity: "info" },
@@ -83,6 +88,44 @@ export const commandMdLinter: Linter = {
     if (!("description" in fm.data) || typeof fm.data.description !== "string") {
       push(diag(config, filePath, "command-md/description-required", "error",
         "\"description\" is required in frontmatter"));
+    }
+
+    // name — optional display-name override. Zod types it as a permissive
+    // scalar; if present it must be a non-empty string.
+    if ("name" in fm.data) {
+      const name = fm.data.name;
+      if (typeof name !== "string" || name.trim() === "") {
+        push(diag(config, filePath, "command-md/name-format", "warning",
+          `"name" must be a non-empty string (got ${JSON.stringify(name)})`));
+      }
+    }
+
+    // model — Zod types it as a permissive scalar; accept a named alias or a
+    // versioned claude-* model id. Mirrors agent-md/model-valid.
+    if ("model" in fm.data && typeof fm.data.model === "string") {
+      const model = fm.data.model;
+      if (!AGENT_MODELS.has(model) && !model.startsWith("claude-")) {
+        push(diag(config, filePath, "command-md/model-valid", "warning",
+          `"model" must be one of: ${[...AGENT_MODELS].join(", ")} or a versioned claude-* model ID (got "${model}")`));
+      }
+    }
+
+    // effort — Zod types it as a permissive scalar; the field's describe()
+    // string restricts it to a named level or an integer.
+    if ("effort" in fm.data) {
+      const reason = invalidEffortReason(fm.data.effort);
+      if (reason) {
+        push(diag(config, filePath, "command-md/effort-valid", "warning", reason));
+      }
+    }
+
+    // boolean fields — the Zod schema accepts the string "true"; only a real
+    // boolean behaves as expected.
+    for (const field of ["disable-model-invocation", "user-invocable"]) {
+      if (field in fm.data && typeof fm.data[field] !== "boolean") {
+        push(diag(config, filePath, "command-md/frontmatter-field-type", "warning",
+          `"${field}" must be a boolean (got ${JSON.stringify(fm.data[field])})`));
+      }
     }
 
     // allowed-tools

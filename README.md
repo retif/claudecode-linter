@@ -130,9 +130,9 @@ No issues found.
 | Type | Files | Rules |
 |------|-------|-------|
 | plugin-json | `.claude-plugin/plugin.json` | 13 |
-| skill-md | `skills/*/SKILL.md` | 12 |
-| agent-md | `agents/*.md` | 17 |
-| command-md | `commands/*.md` | 6 |
+| skill-md | `skills/*/SKILL.md` | 16 |
+| agent-md | `agents/*.md` | 20 |
+| command-md | `commands/*.md` | 10 |
 | hooks-json | `hooks/hooks.json` | 9 |
 | settings-json | `.claude-plugin/settings.json` | 25 |
 | mcp-json | `.claude-plugin/mcp.json` | 16 |

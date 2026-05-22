@@ -301,6 +301,98 @@ describe("agent-md linter", () => {
 		).toHaveLength(0);
 	});
 
+	// ── permissionMode-valid ──────────────────────────────────
+	it("warns on an invalid permissionMode value", () => {
+		const content =
+			"---\nname: pm-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\npermissionMode: yolo\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		const d = diags.filter((x) => x.rule === "agent-md/permission-mode-valid");
+		expect(d).toHaveLength(1);
+		expect(d[0].severity).toBe("warning");
+		expect(d[0].message).toContain("yolo");
+	});
+
+	it("does not warn on a valid permissionMode value", () => {
+		const content =
+			"---\nname: pm-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\npermissionMode: acceptEdits\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(
+			diags.some((d) => d.rule === "agent-md/permission-mode-valid"),
+		).toBe(false);
+	});
+
+	it("does not warn on permission-mode-valid when permissionMode absent", () => {
+		const content =
+			"---\nname: pm-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(
+			diags.some((d) => d.rule === "agent-md/permission-mode-valid"),
+		).toBe(false);
+	});
+
+	// ── effort-valid ──────────────────────────────────────────
+	it("does not warn on a valid named effort level", () => {
+		const content =
+			"---\nname: ef-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\neffort: high\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(diags.some((d) => d.rule === "agent-md/effort-valid")).toBe(false);
+	});
+
+	it("does not warn on an integer effort value", () => {
+		const content =
+			"---\nname: ef-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\neffort: 3\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(diags.some((d) => d.rule === "agent-md/effort-valid")).toBe(false);
+	});
+
+	it("warns on an unknown effort string", () => {
+		const content =
+			"---\nname: ef-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\neffort: xhigh\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		const d = diags.filter((x) => x.rule === "agent-md/effort-valid");
+		expect(d).toHaveLength(1);
+		expect(d[0].message).toContain("xhigh");
+	});
+
+	it("warns on a non-integer effort number", () => {
+		const content =
+			"---\nname: ef-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\neffort: 2.5\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(diags.some((d) => d.rule === "agent-md/effort-valid")).toBe(true);
+	});
+
+	it("does not warn on effort-valid when effort absent", () => {
+		const content =
+			"---\nname: ef-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(diags.some((d) => d.rule === "agent-md/effort-valid")).toBe(false);
+	});
+
+	// ── max-turns-valid ───────────────────────────────────────
+	it("does not warn on a positive integer maxTurns", () => {
+		const content =
+			"---\nname: mt-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\nmaxTurns: 12\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(diags.some((d) => d.rule === "agent-md/max-turns-valid")).toBe(false);
+	});
+
+	it("warns on a non-integer / zero / string maxTurns", () => {
+		for (const val of ["2.5", "0", '"10"', "-3"]) {
+			const content = `---\nname: mt-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\nmaxTurns: ${val}\n---\n\nYou are a test agent.`;
+			const diags = agentMdLinter.lint("test.md", content, CONFIG);
+			expect(diags.some((d) => d.rule === "agent-md/max-turns-valid")).toBe(
+				true,
+			);
+		}
+	});
+
+	it("does not warn on max-turns-valid when maxTurns absent", () => {
+		const content =
+			"---\nname: mt-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\n---\n\nYou are a test agent.";
+		const diags = agentMdLinter.lint("test.md", content, CONFIG);
+		expect(diags.some((d) => d.rule === "agent-md/max-turns-valid")).toBe(false);
+	});
+
 	it("accepts properly-namespaced plugin MCP tools", async () => {
 		const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
 		const { tmpdir } = await import("node:os");

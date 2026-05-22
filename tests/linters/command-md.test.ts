@@ -64,6 +64,132 @@ describe("command-md linter", () => {
     const diags = commandMdLinter.lint("test.md", content, CONFIG);
     expect(diags.filter((d) => d.rule === "command-md/no-unknown-frontmatter")).toHaveLength(0);
   });
+
+  // ── name-format ──────────────────────────────────────────
+  it("does not warn on a non-empty string name", () => {
+    const diags = commandMdLinter.lint(
+      "test.md",
+      "---\ndescription: A command\nname: My Command\n---\n\nDo the thing.",
+      CONFIG,
+    );
+    expect(diags.some((d) => d.rule === "command-md/name-format")).toBe(false);
+  });
+
+  it("warns on an empty or non-string name", () => {
+    for (const val of ['""', "123"]) {
+      const diags = commandMdLinter.lint(
+        "test.md",
+        `---\ndescription: A command\nname: ${val}\n---\n\nDo the thing.`,
+        CONFIG,
+      );
+      expect(diags.some((d) => d.rule === "command-md/name-format")).toBe(true);
+    }
+  });
+
+  it("does not warn on name-format when name absent", () => {
+    const diags = commandMdLinter.lint(
+      "test.md",
+      "---\ndescription: A command\n---\n\nDo the thing.",
+      CONFIG,
+    );
+    expect(diags.some((d) => d.rule === "command-md/name-format")).toBe(false);
+  });
+
+  // ── model-valid ──────────────────────────────────────────
+  it("does not warn on a valid model alias or claude-* id", () => {
+    for (const m of ["haiku", "claude-opus-4-7"]) {
+      const diags = commandMdLinter.lint(
+        "test.md",
+        `---\ndescription: A command\nmodel: ${m}\n---\n\nDo the thing.`,
+        CONFIG,
+      );
+      expect(diags.some((d) => d.rule === "command-md/model-valid")).toBe(false);
+    }
+  });
+
+  it("warns on an unknown model value", () => {
+    const diags = commandMdLinter.lint(
+      "test.md",
+      "---\ndescription: A command\nmodel: gpt-4\n---\n\nDo the thing.",
+      CONFIG,
+    );
+    const d = diags.filter((x) => x.rule === "command-md/model-valid");
+    expect(d).toHaveLength(1);
+    expect(d[0].message).toContain("gpt-4");
+  });
+
+  it("does not warn on model-valid when model absent", () => {
+    const diags = commandMdLinter.lint(
+      "test.md",
+      "---\ndescription: A command\n---\n\nDo the thing.",
+      CONFIG,
+    );
+    expect(diags.some((d) => d.rule === "command-md/model-valid")).toBe(false);
+  });
+
+  // ── effort-valid ─────────────────────────────────────────
+  it("does not warn on a valid effort (named or integer)", () => {
+    for (const e of ["medium", "5"]) {
+      const diags = commandMdLinter.lint(
+        "test.md",
+        `---\ndescription: A command\neffort: ${e}\n---\n\nDo the thing.`,
+        CONFIG,
+      );
+      expect(diags.some((d) => d.rule === "command-md/effort-valid")).toBe(false);
+    }
+  });
+
+  it("warns on an invalid effort value", () => {
+    const diags = commandMdLinter.lint(
+      "test.md",
+      "---\ndescription: A command\neffort: xhigh\n---\n\nDo the thing.",
+      CONFIG,
+    );
+    expect(diags.some((d) => d.rule === "command-md/effort-valid")).toBe(true);
+  });
+
+  it("does not warn on effort-valid when effort absent", () => {
+    const diags = commandMdLinter.lint(
+      "test.md",
+      "---\ndescription: A command\n---\n\nDo the thing.",
+      CONFIG,
+    );
+    expect(diags.some((d) => d.rule === "command-md/effort-valid")).toBe(false);
+  });
+
+  // ── frontmatter-field-type ───────────────────────────────
+  it("does not warn on real boolean disable-model-invocation / user-invocable", () => {
+    const diags = commandMdLinter.lint(
+      "test.md",
+      "---\ndescription: A command\ndisable-model-invocation: true\nuser-invocable: false\n---\n\nDo the thing.",
+      CONFIG,
+    );
+    expect(
+      diags.some((d) => d.rule === "command-md/frontmatter-field-type"),
+    ).toBe(false);
+  });
+
+  it("warns when a boolean field is given a string value", () => {
+    const diags = commandMdLinter.lint(
+      "test.md",
+      '---\ndescription: A command\nuser-invocable: "false"\n---\n\nDo the thing.',
+      CONFIG,
+    );
+    const d = diags.filter((x) => x.rule === "command-md/frontmatter-field-type");
+    expect(d).toHaveLength(1);
+    expect(d[0].message).toContain("user-invocable");
+  });
+
+  it("does not warn on frontmatter-field-type when both fields absent", () => {
+    const diags = commandMdLinter.lint(
+      "test.md",
+      "---\ndescription: A command\n---\n\nDo the thing.",
+      CONFIG,
+    );
+    expect(
+      diags.some((d) => d.rule === "command-md/frontmatter-field-type"),
+    ).toBe(false);
+  });
 });
 
 // ───────────── auto-extracted JSON Schema rule (schema-valid) ─────────────
