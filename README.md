@@ -260,7 +260,7 @@ docker run --rm --network none --read-only --tmpfs /tmp \
   -v "$PWD":/work -w /work  ghcr.io/retif/claudecode-linter  --fix /work
 ```
 
-The Docker recipes above are verified. On Linux without Docker, [bubblewrap](https://github.com/containers/bubblewrap) (`bwrap`) gives the equivalent boundary: `--unshare-all` removes network and other namespaces, and nothing is writable except — for `--fix` — the target directory.
+All four recipes here are verified. On Linux without Docker, [bubblewrap](https://github.com/containers/bubblewrap) (`bwrap`) gives the equivalent boundary: `--unshare-all` cuts network (confirmed: `ECONNREFUSED` inside the sandbox), and nothing is writable except — for `--fix` — the target directory (confirmed: a write outside it is refused).
 
 **bwrap — read-only (lint):**
 
