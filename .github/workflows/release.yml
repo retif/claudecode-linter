@@ -36,14 +36,15 @@ jobs:
         run: |
           LATEST=$(npm view @anthropic-ai/claude-code version)
           echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
-          echo "Latest npm: $LATEST"
-          # Check if we already have a git tag for this version
-          if git rev-parse "v$LATEST" >/dev/null 2>&1; then
+          echo "Latest Claude Code: $LATEST"
+          # Skip only if this version is already published to npm. Keying on the
+          # git tag strands a release whenever publish fails after the tag push.
+          if [ "$(npm view "claudecode-linter@$LATEST" version 2>/dev/null)" = "$LATEST" ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "Tag v$LATEST already exists — nothing to do."
+            echo "claudecode-linter@$LATEST already on npm — nothing to do."
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
-            echo "No tag v$LATEST — will create release."
+            echo "claudecode-linter@$LATEST not on npm — will release."
           fi
 
       - name: Extract contracts
@@ -74,8 +75,10 @@ jobs:
           " "$VERSION"
           npm install --package-lock-only
 
-          # Prepend changelog entry
-          if [ -f CHANGELOG.md ]; then
+          # Prepend changelog entry (idempotent — skip if v$VERSION already on top)
+          if grep -q "^## $VERSION " CHANGELOG.md 2>/dev/null; then
+            echo "CHANGELOG.md already documents v$VERSION — skipping prepend."
+          elif [ -f CHANGELOG.md ]; then
             tail -n +2 CHANGELOG.md > CHANGELOG_OLD.md
             echo "# Changelog" > CHANGELOG.md
             echo "" >> CHANGELOG.md
@@ -99,9 +102,10 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "release: sync with Claude Code v$VERSION"
-          git tag -a "v$VERSION" -m "v$VERSION"
-          git push origin HEAD --tags
+          git diff --cached --quiet || git commit -m "release: sync with Claude Code v$VERSION"
+          git tag -a "v$VERSION" -m "v$VERSION" 2>/dev/null || echo "tag v$VERSION already exists"
+          git push origin HEAD || true
+          git push origin "v$VERSION" || true
 
       - name: Publish to npm
         if: steps.check.outputs.skip == 'false'
@@ -132,9 +136,13 @@ jobs:
             process.stdout.write(install + changelog);
           ")
 
-          gh release create "v$VERSION" \
-            --title "v$VERSION" \
-            --notes "$BODY" \
-            "${{ env.tarball }}"
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "Release v$VERSION already exists — skipping."
+          else
+            gh release create "v$VERSION" \
+              --title "v$VERSION" \
+              --notes "$BODY" \
+              "${{ env.tarball }}"
+          fi
 
           rm -f CHANGELOG_ENTRY.md *.tgz
