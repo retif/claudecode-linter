@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "stdio-bad": {
+      "type": "stdio",
+      "command": 12345,
+      "args": ["--flag"]
+    }
+  }
+}

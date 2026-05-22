@@ -1,6 +1,6 @@
 {
 	"extractedFromClaudeCodeVersion": "2.1.146",
-	"extractedAt": "2026-05-21T20:50:34.861Z",
+	"extractedAt": "2026-05-22T08:16:43.683Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -225,6 +225,264 @@
 				"description": "Enterprise denylist of MCP servers that are explicitly blocked. If a server is on the denylist, it will be blocked across all scopes including enterprise. Denylist takes precedence over allowlist - if a server is on both lists, it is denied."
 			},
 			"hooks": {
+				"type": "object",
+				"additionalProperties": {
+					"type": "array",
+					"items": {
+						"type": "object",
+						"properties": {
+							"matcher": {
+								"type": "string",
+								"description": "String pattern to match (e.g. tool names like \"Write\")"
+							},
+							"hooks": {
+								"type": "array",
+								"items": {
+									"oneOf": [
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "command",
+													"description": "Shell command hook type"
+												},
+												"command": {
+													"type": "string",
+													"description": "Shell command to execute"
+												},
+												"args": {
+													"type": "array",
+													"items": {
+														"type": "string"
+													},
+													"description": "Argument list for exec form. When present, `command` is resolved as \"+\"an executable and spawned directly with these arguments \\u2014 no shell. \"+\"Path placeholders like ${CLAUDE_PLUGIN_ROOT} are substituted per-element as plain strings, so paths with quotes, $, or backticks never reach a shell parser. When absent, `command` runs through a shell (bash on POSIX, PowerShell on Windows without Git Bash)."
+												},
+												"if": {
+													"type": "string",
+													"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+												},
+												"shell": {
+													"enum": [
+														"bash",
+														"powershell"
+													],
+													"description": "Shell interpreter. 'bash' uses your $SHELL (bash/zsh/sh); 'powershell' uses pwsh. Defaults to bash (powershell on Windows without Git Bash)."
+												},
+												"timeout": {
+													"type": "number",
+													"description": "Timeout in seconds for this specific command"
+												},
+												"statusMessage": {
+													"type": "string",
+													"description": "Custom status message to display in spinner while hook runs"
+												},
+												"once": {
+													"type": "boolean",
+													"description": "If true, hook runs once and is removed after execution"
+												},
+												"async": {
+													"type": "boolean",
+													"description": "If true, hook runs in background without blocking"
+												},
+												"asyncRewake": {
+													"type": "boolean",
+													"description": "If true, hook runs in background and wakes the model on exit code 2 (blocking error). Implies async."
+												},
+												"rewakeMessage": {
+													"type": "string",
+													"minLength": 1,
+													"description": "@internal Custom prefix for the system-reminder shown to the model when an asyncRewake hook exits with code 2. The hook output is appended after this prefix."
+												},
+												"rewakeSummary": {
+													"type": "string",
+													"minLength": 1,
+													"description": "@internal One-line summary shown to the user in the terminal when an asyncRewake hook exits with code 2. Defaults to \"Stop hook feedback\"."
+												}
+											},
+											"required": [
+												"type",
+												"command"
+											]
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "prompt",
+													"description": "LLM prompt hook type"
+												},
+												"prompt": {
+													"type": "string",
+													"description": "Prompt to evaluate with LLM. Use $ARGUMENTS placeholder for hook input JSON."
+												},
+												"if": {
+													"type": "string",
+													"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+												},
+												"timeout": {
+													"type": "number",
+													"description": "Timeout in seconds for this specific prompt evaluation"
+												},
+												"model": {
+													"type": "string",
+													"description": "Model to use for this prompt hook (e.g., \"claude-sonnet-4-6\"). If not specified, uses the default small fast model."
+												},
+												"continueOnBlock": {
+													"type": "boolean",
+													"description": "`Sets the continue value for the decision:\"block\" produced when ok is false. Default false (turn ends). Whether continue:true lets the turn proceed depends on the event's decision:\"block\" semantics. On PostToolUse, the reason is fed back to Claude and the turn continues.`"
+												},
+												"statusMessage": {
+													"type": "string",
+													"description": "Custom status message to display in spinner while hook runs"
+												},
+												"once": {
+													"type": "boolean",
+													"description": "If true, hook runs once and is removed after execution"
+												}
+											},
+											"required": [
+												"type",
+												"prompt"
+											]
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "agent",
+													"description": "Agentic verifier hook type"
+												},
+												"prompt": {
+													"type": "string",
+													"description": "Prompt describing what to verify (e.g. \"Verify that unit tests ran and passed.\"). Use $ARGUMENTS placeholder for hook input JSON."
+												},
+												"if": {
+													"type": "string",
+													"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+												},
+												"timeout": {
+													"type": "number",
+													"description": "Timeout in seconds for agent execution (default 60)"
+												},
+												"model": {
+													"type": "string",
+													"description": "Model to use for this agent hook (e.g., \"claude-sonnet-4-6\"). If not specified, uses Haiku."
+												},
+												"statusMessage": {
+													"type": "string",
+													"description": "Custom status message to display in spinner while hook runs"
+												},
+												"once": {
+													"type": "boolean",
+													"description": "If true, hook runs once and is removed after execution"
+												}
+											},
+											"required": [
+												"type",
+												"prompt"
+											]
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "http",
+													"description": "HTTP hook type"
+												},
+												"url": {
+													"type": "string",
+													"format": "uri",
+													"description": "URL to POST the hook input JSON to"
+												},
+												"if": {
+													"type": "string",
+													"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+												},
+												"timeout": {
+													"type": "number",
+													"description": "Timeout in seconds for this specific request"
+												},
+												"headers": {
+													"type": "object",
+													"additionalProperties": {
+														"type": "string"
+													},
+													"description": "Additional headers to include in the request. Values may reference environment variables using $VAR_NAME or ${VAR_NAME} syntax (e.g., \"Authorization\": \"Bearer $MY_TOKEN\"). Only variables listed in allowedEnvVars will be interpolated."
+												},
+												"allowedEnvVars": {
+													"type": "array",
+													"items": {
+														"type": "string"
+													},
+													"description": "Explicit list of environment variable names that may be interpolated in header values. Only variables listed here will be resolved; all other $VAR references are left as empty strings. Required for env var interpolation to work."
+												},
+												"statusMessage": {
+													"type": "string",
+													"description": "Custom status message to display in spinner while hook runs"
+												},
+												"once": {
+													"type": "boolean",
+													"description": "If true, hook runs once and is removed after execution"
+												}
+											},
+											"required": [
+												"type",
+												"url"
+											]
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "mcp_tool",
+													"description": "MCP tool hook type"
+												},
+												"server": {
+													"type": "string",
+													"description": "Name of an already-configured MCP server to invoke"
+												},
+												"tool": {
+													"type": "string",
+													"description": "Name of the tool on that server to call"
+												},
+												"input": {
+													"type": "object",
+													"additionalProperties": {},
+													"description": "Arguments passed to the MCP tool. String values support ${path} interpolation from the hook input JSON (e.g. \"${tool_input.file_path}\")."
+												},
+												"if": {
+													"type": "string",
+													"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+												},
+												"timeout": {
+													"type": "number",
+													"description": "Timeout in seconds for this specific tool call"
+												},
+												"statusMessage": {
+													"type": "string",
+													"description": "Custom status message to display in spinner while hook runs"
+												},
+												"once": {
+													"type": "boolean",
+													"description": "If true, hook runs once and is removed after execution"
+												}
+											},
+											"required": [
+												"type",
+												"server",
+												"tool"
+											]
+										}
+									]
+								},
+								"description": "List of hooks to execute when the matcher matches"
+							}
+						},
+						"required": [
+							"hooks"
+						]
+					}
+				},
 				"description": "Custom commands to run before/after tool executions"
 			},
 			"worktree": {
@@ -317,7 +575,14 @@
 					},
 					{
 						"type": "array",
-						"items": {}
+						"items": {
+							"enum": [
+								"skills",
+								"agents",
+								"hooks",
+								"mcp"
+							]
+						}
 					}
 				],
 				"description": "'When set in managed settings, blocks non-plugin customization sources for the listed surfaces. Array form locks specific surfaces (e.g. [\"skills\", \"hooks\"]); `true` locks all four; `false` is an explicit no-op. Blocked: ~/.claude/{surface}/, .claude/{surface}/ (project), settings.json hooks, .mcp.json. NOT blocked: managed (policySettings) sources, plugin-provided customizations. '+\"Composes with strictKnownMarketplaces for end-to-end admin control \\u2014 plugins gated by \"+\"marketplace allowlist, everything else blocked here.\""
@@ -2138,6 +2403,10 @@
 				"description": "Color theme for the UI"
 			},
 			"editorMode": {
+				"enum": [
+					"normal",
+					"vim"
+				],
 				"description": "Key binding mode for the prompt input"
 			},
 			"verbose": {
@@ -2145,6 +2414,15 @@
 				"description": "Show full tool output instead of truncated summaries"
 			},
 			"preferredNotifChannel": {
+				"enum": [
+					"auto",
+					"iterm2",
+					"iterm2_with_bell",
+					"terminal_bell",
+					"kitty",
+					"ghostty",
+					"notifications_disabled"
+				],
 				"description": "Preferred OS notification channel"
 			},
 			"autoCompactEnabled": {
@@ -2176,6 +2454,11 @@
 				"description": "Enable the todo / task tracking panel"
 			},
 			"teammateMode": {
+				"enum": [
+					"auto",
+					"tmux",
+					"in-process"
+				],
 				"description": "How spawned teammates execute (tmux, in-process, auto)"
 			},
 			"remoteControlAtStartup": {

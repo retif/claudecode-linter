@@ -94,4 +94,34 @@ describe("hooks-json linter", () => {
     expect(diags.some((d) => d.rule === "hooks-json/hook-type-required")).toBe(true);
     expect(diags[0].message).toContain("command");
   });
+
+  describe("schema-valid", () => {
+    it("does not flag a valid hooks.json", () => {
+      const diags = lintFile(resolve(FIXTURES, "valid-plugin/hooks/hooks.json"));
+      expect(diags.some((d) => d.rule === "hooks-json/schema-valid")).toBe(false);
+    });
+
+    it("flags a malformed hook field type", () => {
+      const diags = lintFile(
+        resolve(FIXTURES, "invalid/hooks-json/bad-schema-types.json"),
+      );
+      const schemaErrors = diags.filter(
+        (d) => d.rule === "hooks-json/schema-valid",
+      );
+      expect(schemaErrors.length).toBeGreaterThan(0);
+      expect(schemaErrors.every((d) => d.severity === "error")).toBe(true);
+    });
+
+    it("respects the rule being disabled", () => {
+      const diags = hooksJsonLinter.lint(
+        "hooks.json",
+        readFileSync(
+          resolve(FIXTURES, "invalid/hooks-json/bad-schema-types.json"),
+          "utf-8",
+        ),
+        { rules: { "hooks-json/schema-valid": false } },
+      );
+      expect(diags.some((d) => d.rule === "hooks-json/schema-valid")).toBe(false);
+    });
+  });
 });

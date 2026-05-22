@@ -92,6 +92,14 @@ export function loadSettingsSchema(): CompiledSchema | null {
 	return loadCompiledSchema("settings.schema.json");
 }
 
+export function loadMcpJsonSchema(): CompiledSchema | null {
+	return loadCompiledSchema("mcp.schema.json");
+}
+
+export function loadHooksJsonSchema(): CompiledSchema | null {
+	return loadCompiledSchema("hooks.schema.json");
+}
+
 export function loadSkillFrontmatterSchema(): CompiledSchema | null {
 	return loadCompiledSchema("skill-frontmatter.schema.json");
 }

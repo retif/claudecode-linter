@@ -60,6 +60,7 @@ rules:
 
   # ── hooks.json ───────────────────────────────────────────
   hooks-json/valid-json: error
+  hooks-json/schema-valid: error
   hooks-json/root-hooks-key: error
   hooks-json/valid-event-names: error
   hooks-json/hook-type-required: error
@@ -98,6 +99,7 @@ rules:
   # ── mcp.json ─────────────────────────────────────────────
   mcp-json/scope-file-name: warning
   mcp-json/valid-json: error
+  mcp-json/schema-valid: error
   mcp-json/servers-required: error
   mcp-json/servers-object: error
   mcp-json/server-name-kebab: info

@@ -30,6 +30,8 @@
 		"contracts/skill-frontmatter.schema.json",
 		"contracts/agent-frontmatter.schema.json",
 		"contracts/command-frontmatter.schema.json",
+		"contracts/mcp.schema.json",
+		"contracts/hooks.schema.json",
 		".claudecode-lint.defaults.yaml",
 		"README.md"
 	],

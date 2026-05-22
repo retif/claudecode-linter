@@ -215,6 +215,14 @@ export interface DefinitionIndex {
 	zodAlias: string;
 	/** Detected lazy-wrapper helper (e.g. "CH" or "xH" — `<name>(()=>...)`). */
 	lazyWrapper: string;
+	/**
+	 * Maps symbol name → array-literal text for plain `<name>=[...]`
+	 * declarations. Claude Code declares reusable enum value lists this way
+	 * (e.g. `ev=["PreToolUse",…]`, `DLq=["bash","powershell"]`) and references
+	 * them as `y.enum(ev)`. Indexed so the walker can resolve the identifier
+	 * argument to a concrete `enum` instead of degrading to `{}`.
+	 */
+	arrays: Map<string, string>;
 }
 
 /**
@@ -274,7 +282,34 @@ export function indexDefinitions(source: string): DefinitionIndex {
 			if (expr) defs.set(name, expr);
 		}
 	}
-	return { source, defs, zodAlias, lazyWrapper };
+
+	// Index plain `<name>=[...]` array-literal declarations whose elements are
+	// all string literals. These back `y.enum(<name>)` references (e.g. the
+	// hook-event list `ev`, the shell list `DLq`). Only string-of-strings
+	// arrays are indexed — that is all `y.enum(...)` ever consumes.
+	const arrays = new Map<string, string>();
+	const arrRe = /(?:^|[;,{(\s])([A-Za-z_$][\w$]*)=\[/g;
+	let am: RegExpExecArray | null;
+	while ((am = arrRe.exec(source)) !== null) {
+		const name = am[1];
+		if (arrays.has(name)) continue;
+		const bracketIdx = source.indexOf("[", am.index);
+		const arr = extractBalanced(source, bracketIdx, "[", "]");
+		if (!arr) continue;
+		const inner = arr.slice(1, -1).trim();
+		if (inner.length === 0) continue;
+		const parts = splitTopLevelArgs(inner);
+		// All elements must be plain string literals — anything else means this
+		// isn't an enum value list and resolving it could mislead the walker.
+		const allStrings = parts.every(
+			(p) =>
+				(p.startsWith('"') && p.endsWith('"')) ||
+				(p.startsWith("'") && p.endsWith("'")),
+		);
+		if (allStrings) arrays.set(name, arr);
+	}
+
+	return { source, defs, zodAlias, lazyWrapper, arrays };
 }
 
 /**
@@ -447,6 +482,13 @@ export type JSONSchema = Record<string, unknown>;
 interface EvalContext {
 	index: DefinitionIndex;
 	resolving: Set<string>; // cycle guard
+	/**
+	 * Locally-scoped schema expressions, e.g. the `let{A:H,…}=Np9()`
+	 * destructuring inside a block-body arrow factory. `evalHead` consults this
+	 * map before treating a bare `<ident>` as a top-level definition. Optional —
+	 * absent at the top level.
+	 */
+	bindings?: Map<string, string>;
 }
 
 /**
@@ -476,6 +518,18 @@ export function evalZod(expr: string, ctx: EvalContext): JSONSchema {
 		return evalZod(expr.slice(4), ctx);
 	}
 
+	// Block-body arrow factory: `{ let{A:H,…}=<Fn>(); return <ZodExpr> }`.
+	// Claude Code's hook-entry validator is declared this way — it destructures
+	// a bundle of named sub-schemas out of a helper function and then composes
+	// them into a discriminatedUnion. We resolve the helper's returned object
+	// literal, bind each destructured name to its schema expression, and
+	// evaluate the `return` expression with those local bindings in scope.
+	if (expr.startsWith("{") && extractBalanced(expr, 0, "{", "}") === expr) {
+		const blockSchema = evalBlockBody(expr, ctx);
+		if (blockSchema) return blockSchema;
+		return {};
+	}
+
 	// Strip plain (X) wrapping.
 	if (expr.startsWith("(") && extractBalanced(expr, 0, "(", ")") === expr) {
 		return evalZod(expr.slice(1, -1), ctx);
@@ -490,6 +544,114 @@ export function evalZod(expr: string, ctx: EvalContext): JSONSchema {
 		schema = applyMethod(schema, chain[i], ctx);
 	}
 	return schema;
+}
+
+/**
+ * Evaluate a block-body arrow factory:
+ *   `{ let{Key1:H,Key2:$,…}=<Fn>(); return <ZodExpr> }`
+ *
+ * Claude Code's hook-entry schema (`XLq`) is declared exactly this way: it
+ * destructures a bundle of named sub-schemas out of a plain helper function
+ * (`Np9`) — itself `function Np9(){ let H=y.object({…}),…; return {Key1:H,…} }`
+ * — and composes them into a `discriminatedUnion`. The generic chain evaluator
+ * cannot follow this, so we special-case it:
+ *
+ *   1. Parse the `let{…}=<Fn>()` destructuring → `{ localName → returnKey }`.
+ *   2. Locate `function <Fn>()`, extract its returned object literal, and map
+ *      each `returnKey → schemaExpr`.
+ *   3. Bind every destructured local name to its schema expression and
+ *      evaluate the `return` expression with those bindings in scope.
+ *
+ * Returns null when the body does not match this shape — the caller then
+ * degrades to permissive `{}`, never a false positive.
+ */
+function evalBlockBody(block: string, ctx: EvalContext): JSONSchema | null {
+	const inner = block.slice(1, -1);
+	// `return <expr>` — capture the trailing return expression.
+	const retIdx = inner.search(/\breturn\b/);
+	if (retIdx === -1) return null;
+	let retExpr = inner.slice(retIdx + "return".length).trim();
+	if (retExpr.endsWith(";")) retExpr = retExpr.slice(0, -1).trim();
+
+	const bindings = new Map<string, string>(ctx.bindings ?? []);
+
+	// Parse `let{A:H,B:$,…}=<Fn>()` destructuring assignments in the prelude.
+	const prelude = inner.slice(0, retIdx);
+	const destructRe = /\{([^{}]*)\}=([\w$]+)\(\)/g;
+	let dm: RegExpExecArray | null;
+	while ((dm = destructRe.exec(prelude)) !== null) {
+		const pairs = dm[1];
+		const fnName = dm[2];
+		const returned = evalFunctionReturnObject(fnName, ctx);
+		if (!returned) continue;
+		for (const part of splitTopLevelArgs(pairs)) {
+			const entry = parseEntry(part);
+			// `{Key:local}` → bind `local`; `{Key}` shorthand → bind `Key`.
+			const returnKey = entry ? entry.key : part.trim();
+			const localName = entry ? entry.value.trim() : part.trim();
+			const schemaExpr = returned.get(returnKey);
+			if (schemaExpr) bindings.set(localName, schemaExpr);
+		}
+	}
+
+	if (bindings.size === 0) return null;
+	return evalZod(retExpr, { ...ctx, bindings });
+}
+
+/**
+ * Locate `function <name>(){…}` and parse its returned object literal into a
+ * `key → schemaExpr` map. The helper declares each schema as a `let`/`var`
+ * binding and returns `{Key1:local1,Key2:local2,…}`; we resolve those local
+ * names back to their declared expressions so each key maps to a real schema.
+ */
+function evalFunctionReturnObject(
+	fnName: string,
+	ctx: EvalContext,
+): Map<string, string> | null {
+	const { source } = ctx.index;
+	const fnIdx = source.indexOf(`function ${fnName}(`);
+	if (fnIdx === -1) return null;
+	const braceIdx = source.indexOf("{", fnIdx);
+	if (braceIdx === -1) return null;
+	const body = extractBalanced(source, braceIdx, "{", "}");
+	if (!body) return null;
+	const fnInner = body.slice(1, -1);
+
+	const retIdx = fnInner.lastIndexOf("return{");
+	if (retIdx === -1) return null;
+	const retObj = extractBalanced(
+		fnInner,
+		fnInner.indexOf("{", retIdx),
+		"{",
+		"}",
+	);
+	if (!retObj) return null;
+
+	// Collect the helper's local `let`/`var`/`const` declarations:
+	// `H=y.object({…})`, `$=y.object({…})`, … The prelude is everything before
+	// the return; declarations are comma- or `let`-separated assignments.
+	const prelude = fnInner.slice(0, retIdx);
+	const localDefs = new Map<string, string>();
+	const declRe = /(?:^|[;,]|\blet |\bvar |\bconst )([A-Za-z_$][\w$]*)=/g;
+	let dm: RegExpExecArray | null;
+	while ((dm = declRe.exec(prelude)) !== null) {
+		const name = dm[1];
+		if (localDefs.has(name)) continue;
+		const valStart = declRe.lastIndex;
+		const expr = extractExpression(prelude, valStart);
+		if (expr) localDefs.set(name, expr);
+	}
+
+	// Map each returned `Key:local` (or `{Key}` shorthand) to its schema expr.
+	const out = new Map<string, string>();
+	for (const part of splitTopLevelArgs(retObj.slice(1, -1))) {
+		const entry = parseEntry(part);
+		const key = entry ? entry.key : part.trim();
+		const localName = entry ? entry.value.trim() : part.trim();
+		const schemaExpr = localDefs.get(localName) ?? localName;
+		out.set(key, schemaExpr);
+	}
+	return out.size > 0 ? out : null;
 }
 
 /**
@@ -542,12 +704,32 @@ function evalHead(head: string, ctx: EvalContext): JSONSchema {
 	const { zodAlias, defs } = ctx.index;
 	head = head.trim();
 
+	// Resolve a locally-bound identifier (block-body `let{…}=Fn()` destructure).
+	// These appear bare — `[H,$,q,K,_]` inside a discriminatedUnion array — not
+	// as `H()` calls, so the bare-identifier case is checked first.
+	if (ctx.bindings) {
+		const bareId = head.match(/^([\w$]+)$/);
+		if (bareId) {
+			const bound = ctx.bindings.get(bareId[1]);
+			if (bound !== undefined && !ctx.resolving.has(bareId[1])) {
+				ctx.resolving.add(bareId[1]);
+				try {
+					return evalZod(bound, ctx);
+				} finally {
+					ctx.resolving.delete(bareId[1]);
+				}
+			}
+		}
+	}
+
 	// Resolve identifier()  →  follow definition.
 	const idCall = head.match(/^([\w$]+)\(\)$/);
 	if (idCall && idCall[1] !== zodAlias) {
 		const name = idCall[1];
 		if (ctx.resolving.has(name)) return {}; // cycle
-		const def = defs.get(name);
+		// A locally-bound name may be called as `<name>()` too.
+		const localBound = ctx.bindings?.get(name);
+		const def = localBound ?? defs.get(name);
 		if (!def) return {};
 		ctx.resolving.add(name);
 		try {
@@ -609,7 +791,16 @@ function evalZodPrimitive(
 		case "enum":
 		case "nativeEnum": {
 			if (args.length === 0) return {};
-			const arrBody = args[0];
+			let arrBody = args[0].trim();
+			// `y.enum(<ident>)` — resolve the identifier to its indexed
+			// array-literal definition (e.g. `y.enum(ev)`).
+			if (!arrBody.startsWith("[")) {
+				const idMatch = arrBody.match(/^([\w$]+)$/);
+				if (idMatch) {
+					const resolved = ctx.index.arrays.get(idMatch[1]);
+					if (resolved) arrBody = resolved;
+				}
+			}
 			if (arrBody.startsWith("[") && arrBody.endsWith("]")) {
 				const vals = splitTopLevelArgs(arrBody.slice(1, -1)).map(
 					evalLiteralValue,
@@ -647,10 +838,14 @@ function evalZodPrimitive(
 			const obj = evalZodObject(args[0], ctx, /*strict*/ false);
 			return { ...obj, additionalProperties: true };
 		}
-		case "record": {
+		case "record":
+		case "partialRecord": {
 			if (args.length === 0)
 				return { type: "object", additionalProperties: {} };
-			// Two forms: record(V) or record(K, V). We only need V (additionalProperties).
+			// Two forms: record(V) or record(K, V). We only need V
+			// (additionalProperties). `partialRecord` differs from `record` only
+			// in that every key is optional — JSON Schema records have no
+			// required keys anyway, so the two map to the same shape.
 			const valueExpr = args.length === 1 ? args[0] : args[1];
 			return { type: "object", additionalProperties: evalZod(valueExpr, ctx) };
 		}
@@ -1205,6 +1400,150 @@ export function buildCommandFrontmatterSchema(
 	);
 }
 
+/**
+ * Build the `.mcp.json` / `mcp.json` schema. Claude Code's config validator is
+ *   `lcA = SH(()=>y.object({mcpServers:y.record(y.string(), aa())}))`
+ * where `aa` is the discriminated server-config union
+ *   `aa = SH(()=>y.union([K4$(),vU8(),kU8(),NU8(),Sx$(),EU8(),yU8(),SU8()]))`
+ * — stdio / sse / sse-ide / ws-ide / http+streamable-http / ws / sdk /
+ * claudeai-proxy. (`extract-contracts.ts`'s `extractMcpServerFields` locates
+ * the per-transport object via the `type:<alias>.literal("stdio")` anchor; we
+ * locate the whole config object instead.)
+ *
+ * We anchor on the literal source of the `mcpServers` record declaration —
+ * `mcpServers:<alias>.record(<alias>.string(),` — walk back to the enclosing
+ * `<alias>.object(`, and evaluate the whole expression. The server union has
+ * no `.strict()`, so unknown server fields stay the advisory
+ * `mcp-json/no-unknown-server-fields` rule's job; we defensively strip any
+ * `additionalProperties:false` the walker might emit.
+ */
+export function buildMcpJsonSchema(index: DefinitionIndex): JSONSchema | null {
+	const { source, zodAlias } = index;
+	const anchor = `mcpServers:${zodAlias}.record(${zodAlias}.string(),`;
+	const anchorIdx = source.indexOf(anchor);
+	if (anchorIdx === -1) return null;
+
+	// Walk back to the nearest `<alias>.object(` whose balanced body encloses
+	// the anchor.
+	const objMarker = `${zodAlias}.object(`;
+	let objIdx = -1;
+	let searchFrom = anchorIdx;
+	for (;;) {
+		const cand = source.lastIndexOf(objMarker, searchFrom);
+		if (cand === -1) return null;
+		const block = extractBalanced(
+			source,
+			cand + `${zodAlias}.object`.length,
+			"(",
+			")",
+		);
+		if (
+			block &&
+			cand + `${zodAlias}.object`.length + block.length > anchorIdx
+		) {
+			objIdx = cand;
+			break;
+		}
+		searchFrom = cand - 1;
+		if (searchFrom < 0) return null;
+	}
+
+	const parenBlock = extractBalanced(
+		source,
+		objIdx + `${zodAlias}.object`.length,
+		"(",
+		")",
+	);
+	if (!parenBlock) return null;
+	const expr = source.slice(objIdx, objIdx + `${zodAlias}.object`.length) +
+		parenBlock;
+	const schema = evalZod(expr, { index, resolving: new Set() });
+	if (schema.type !== "object") return null;
+	if (schema.additionalProperties === false) {
+		delete (schema as Record<string, unknown>).additionalProperties;
+	}
+	stripAdditionalPropertiesFalse(schema);
+	return {
+		$schema: "https://json-schema.org/draft/2020-12/schema",
+		title: "Claude Code .mcp.json",
+		...schema,
+		description:
+			"Claude Code .mcp.json / mcp.json. The single `mcpServers` key maps server names to per-server transport configs (stdio / sse / http / streamable-http / …). Validates the structure of known fields; unknown server fields are not schema errors — the advisory mcp-json/no-unknown-server-fields rule reports those.",
+	};
+}
+
+/**
+ * Build the `hooks/hooks.json` schema. Claude Code has no standalone
+ * `{hooks:…}` validator — the hooks block is always nested inside
+ * `settings.json` as `hooks:HC()`. `hooks.json` is that same block lifted to a
+ * file, so the schema is `{ hooks: <HC> }`.
+ *
+ * `HC` is the hooks-config validator:
+ *   `HC = SH(()=>y.partialRecord(y.enum(ev), y.array(LLq())))`
+ * — a map of hook-event name (`ev` = PreToolUse / PostToolUse / …) to an array
+ * of `LLq` matcher entries `{matcher?:string, hooks:array(XLq())}`. `XLq` is
+ * the per-hook discriminated union (`command` / `prompt` / `http` / `agent` /
+ * `mcp_tool`), declared as a block-body factory the walker now resolves.
+ *
+ * We anchor on `XLq`'s `=<lazyWrapper>(()=>{` declaration (the block-body form
+ * is unique to the hook-entry schema) and walk up the reference chain
+ * XLq → LLq → HC by symbol name. The hook objects are plain `y.object(...)`
+ * (not `.strict()`), so unknown hook fields stay permissive.
+ */
+export function buildHooksJsonSchema(
+	index: DefinitionIndex,
+): JSONSchema | null {
+	const { source, lazyWrapper } = index;
+	// `HC = <lazyWrapper>(()=><alias>.partialRecord(...))` — anchor on the
+	// partialRecord call, which is distinctive to the hooks-config validator.
+	const anchor = `${index.zodAlias}.partialRecord(`;
+	const anchorIdx = source.indexOf(anchor);
+	if (anchorIdx === -1) return null;
+	// Walk back to the enclosing `=<lazyWrapper>(()=>` and read the symbol.
+	const eq = source.lastIndexOf(`=${lazyWrapper}(()=>`, anchorIdx);
+	if (eq === -1) return null;
+	let nameStart = eq;
+	while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
+	const hcSym = source.slice(nameStart, eq);
+	if (!hcSym) return null;
+	const hcDef = index.defs.get(hcSym);
+	if (!hcDef) return null;
+
+	const hooksValue = evalZod(hcDef, { index, resolving: new Set() });
+	if (hooksValue.type !== "object") return null;
+	stripAdditionalPropertiesFalse(hooksValue);
+
+	return {
+		$schema: "https://json-schema.org/draft/2020-12/schema",
+		title: "Claude Code hooks.json",
+		type: "object",
+		properties: { hooks: hooksValue },
+		required: ["hooks"],
+		description:
+			"Claude Code hooks/hooks.json. The `hooks` key maps hook-event names (PreToolUse, PostToolUse, …) to arrays of matcher entries, each holding a list of hook definitions (command / prompt / http / agent / mcp_tool). Same shape as the `hooks` block inside settings.json. Validates the structure of known fields; unknown hook fields are not schema errors — the advisory hooks-json hand-written rules report those.",
+	};
+}
+
+/**
+ * Recursively delete every `additionalProperties:false` in a schema tree. The
+ * mcp / hooks schemas must never reject unknown keys (that is the hand-written
+ * `no-unknown-*` rules' job) — a stray `.strict()` deep inside a nested object
+ * would otherwise turn an unknown field into a false-positive error.
+ */
+function stripAdditionalPropertiesFalse(node: unknown): void {
+	if (Array.isArray(node)) {
+		for (const child of node) stripAdditionalPropertiesFalse(child);
+		return;
+	}
+	if (node && typeof node === "object") {
+		const obj = node as Record<string, unknown>;
+		if (obj.additionalProperties === false) delete obj.additionalProperties;
+		for (const value of Object.values(obj)) {
+			stripAdditionalPropertiesFalse(value);
+		}
+	}
+}
+
 export function buildPluginSchema(index: DefinitionIndex): JSONSchema {
 	const masterName = findMasterSchemaName(index);
 	if (!masterName) {
@@ -1411,7 +1750,8 @@ function main() {
 		);
 	}
 
-	// Markdown frontmatter schemas (SKILL.md / agent .md / command .md).
+	// Markdown frontmatter schemas (SKILL.md / agent .md / command .md) plus the
+	// standalone JSON config schemas (mcp.json / hooks.json).
 	const frontmatterTargets: Array<{
 		label: string;
 		file: string;
@@ -1431,6 +1771,16 @@ function main() {
 			label: "Command frontmatter",
 			file: "command-frontmatter.schema.json",
 			build: buildCommandFrontmatterSchema,
+		},
+		{
+			label: "MCP config",
+			file: "mcp.schema.json",
+			build: buildMcpJsonSchema,
+		},
+		{
+			label: "Hooks config",
+			file: "hooks.schema.json",
+			build: buildHooksJsonSchema,
 		},
 	];
 	for (const target of frontmatterTargets) {

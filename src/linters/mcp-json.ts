@@ -1,5 +1,10 @@
 import { basename } from "node:path";
 import { MCP_SERVER_FIELDS } from "../contracts.js";
+import {
+  formatAjvError,
+  loadMcpJsonSchema,
+  summarizeErrors,
+} from "../plugin-schema.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity, ConfigScope } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { isKebabCase } from "../utils/kebab-case.js";
@@ -14,6 +19,7 @@ const HTTP_TRANSPORT_TYPES = new Set<string>(["http", "streamable-http"]);
 const RULES: RuleDef[] = [
   { id: "mcp-json/scope-file-name", defaultSeverity: "warning" },
   { id: "mcp-json/valid-json", defaultSeverity: "error" },
+  { id: "mcp-json/schema-valid", defaultSeverity: "error" },
   { id: "mcp-json/servers-required", defaultSeverity: "error" },
   { id: "mcp-json/servers-object", defaultSeverity: "error" },
   { id: "mcp-json/server-name-kebab", defaultSeverity: "info" },
@@ -92,6 +98,30 @@ export const mcpJsonLinter: Linter = {
       push(diag(config, filePath, "mcp-json/valid-json", "error",
         "mcp.json must be a JSON object"));
       return diagnostics;
+    }
+
+    // schema-valid — structural validation against the JSON Schema
+    // auto-extracted from Claude Code's .mcp.json Zod validator (the
+    // `mcpServers` record of discriminated transport configs). The hand-written
+    // rules below add Claude-Code-specific advice the schema can't express
+    // (kebab-case names, ${CLAUDE_PLUGIN_ROOT} hints, …). The extracted schema
+    // is intentionally permissive about unknown server fields (Claude Code's
+    // server union is not .strict()), so those are NOT reported here —
+    // mcp-json/no-unknown-server-fields handles them. Skipped silently if the
+    // schema bundle isn't shipped with this install.
+    if (isRuleEnabled(config, "mcp-json/schema-valid")) {
+      const compiled = loadMcpJsonSchema();
+      if (compiled) {
+        const ok = compiled.validate(parsed);
+        if (!ok && compiled.validate.errors) {
+          for (const err of summarizeErrors(compiled.validate.errors)) {
+            const firstSeg = err.instancePath.split("/").filter(Boolean)[0];
+            const p = firstSeg ? findKeyPosition(content, firstSeg) : undefined;
+            push(diag(config, filePath, "mcp-json/schema-valid", "error",
+              formatAjvError(err), p?.line, p?.column));
+          }
+        }
+      }
     }
 
     // mcpServers required

@@ -1,4 +1,9 @@
 import { HOOK_EVENTS, HOOK_TYPES, PROMPT_EVENTS } from "../contracts.js";
+import {
+  formatAjvError,
+  loadHooksJsonSchema,
+  summarizeErrors,
+} from "../plugin-schema.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 
@@ -6,6 +11,7 @@ interface RuleDef { id: string; defaultSeverity: Severity; }
 
 const RULES: RuleDef[] = [
   { id: "hooks-json/valid-json", defaultSeverity: "error" },
+  { id: "hooks-json/schema-valid", defaultSeverity: "error" },
   { id: "hooks-json/root-hooks-key", defaultSeverity: "error" },
   { id: "hooks-json/valid-event-names", defaultSeverity: "error" },
   { id: "hooks-json/hook-type-required", defaultSeverity: "error" },
@@ -67,6 +73,30 @@ export const hooksJsonLinter: Linter = {
       push(diag(config, filePath, "hooks-json/valid-json", "error",
         "hooks.json must be a JSON object"));
       return diagnostics;
+    }
+
+    // schema-valid — structural validation against the JSON Schema
+    // auto-extracted from Claude Code's hooks-config Zod validator (the
+    // hook-event → matcher-array map, each matcher holding a discriminated
+    // union of hook definitions). The hand-written rules below add
+    // Claude-Code-specific advice the schema can't express (hardcoded-path
+    // warnings, prompt-event-support hints, …). The extracted schema is
+    // intentionally permissive about unknown hook fields (Claude Code's hook
+    // objects are not .strict()). Skipped silently if the schema bundle isn't
+    // shipped with this install.
+    if (isRuleEnabled(config, "hooks-json/schema-valid")) {
+      const compiled = loadHooksJsonSchema();
+      if (compiled) {
+        const ok = compiled.validate(parsed);
+        if (!ok && compiled.validate.errors) {
+          for (const err of summarizeErrors(compiled.validate.errors)) {
+            const firstSeg = err.instancePath.split("/").filter(Boolean)[0];
+            const p = firstSeg ? findKeyPosition(content, firstSeg) : undefined;
+            push(diag(config, filePath, "hooks-json/schema-valid", "error",
+              formatAjvError(err), p?.line, p?.column));
+          }
+        }
+      }
     }
 
     const root = parsed as Record<string, unknown>;

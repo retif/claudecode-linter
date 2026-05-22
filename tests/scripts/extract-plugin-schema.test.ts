@@ -223,6 +223,46 @@ describe("evalZod primitives", () => {
 		});
 	});
 
+	it("translates E.partialRecord(K, V) like E.record", () => {
+		expect(evalZod("E.partialRecord(E.string(), E.number())", ctx)).toEqual({
+			type: "object",
+			additionalProperties: { type: "number" },
+		});
+	});
+
+	it("resolves E.enum(<identifier>) via the indexed array literal", () => {
+		// `evCfg` is declared as a plain string-array in the bundle fragment.
+		const local = {
+			index: indexDefinitions(
+				'var evCfg=["one","two","three"];authorSchema=CH(()=>E.object({a:E.string()}))',
+			),
+			resolving: new Set<string>(),
+		};
+		expect(evalZod("E.enum(evCfg)", local)).toEqual({
+			enum: ["one", "two", "three"],
+		});
+	});
+
+	it("resolves a block-body factory that destructures a helper", () => {
+		// Mirrors Claude Code's hook-entry schema: a block-body arrow that
+		// destructures named sub-schemas out of a helper function, then composes
+		// them into a discriminatedUnion.
+		const bundle =
+			"function Hb(){let H=E.object({type:E.literal(\"command\"),cmd:E.string()})," +
+			"$=E.object({type:E.literal(\"prompt\"),prompt:E.string()});" +
+			"return{A:H,B:$}}" +
+			",entrySchema=CH(()=>{let{A:H,B:$}=Hb();return E.discriminatedUnion(\"type\",[H,$])})";
+		const local = {
+			index: indexDefinitions(bundle),
+			resolving: new Set<string>(),
+		};
+		const def = local.index.defs.get("entrySchema");
+		expect(def).toBeDefined();
+		const out = evalZod(def as string, local);
+		expect(out.oneOf).toBeDefined();
+		expect((out.oneOf as object[]).length).toBe(2);
+	});
+
 	it("handles spread inside object body", () => {
 		const out = evalZod(
 			"E.object({...authorSchema().shape,extra:E.boolean()})",

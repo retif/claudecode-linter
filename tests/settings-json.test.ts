@@ -335,6 +335,35 @@ describe("settings-json — schema-valid (auto-extracted JSON Schema)", () => {
     expect(r).toContain("settings-json/schema-valid");
   });
 
+  it("does not flag a well-formed embedded hooks block", () => {
+    // settings.json's `hooks` key resolves to the real hooks-config shape.
+    const r = rules({
+      hooks: {
+        PreToolUse: [
+          { matcher: "Write", hooks: [{ type: "command", command: "echo hi" }] },
+        ],
+      },
+    });
+    expect(r).not.toContain("settings-json/schema-valid");
+  });
+
+  it("flags a malformed hook inside the embedded hooks block", () => {
+    // The `hooks` key is no longer a permissive placeholder — a hook with a
+    // non-string `command` is now a structural error.
+    const d = find(
+      {
+        hooks: {
+          PreToolUse: [
+            { matcher: "Write", hooks: [{ type: "command", command: 42 }] },
+          ],
+        },
+      },
+      "settings-json/schema-valid",
+    );
+    expect(d).toBeDefined();
+    expect(d?.severity).toBe("error");
+  });
+
   it("flags malformed value types from a fixture file", () => {
     const path = resolve(
       import.meta.dirname,

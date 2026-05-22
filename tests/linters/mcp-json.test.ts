@@ -137,4 +137,34 @@ describe("mcp-json linter", () => {
     const diags = mcpJsonLinter.lint(".mcp.json", content, CONFIG, "project");
     expect(diags.some((d) => d.rule === "mcp-json/scope-file-name")).toBe(false);
   });
+
+  describe("schema-valid", () => {
+    it("does not flag a valid .mcp.json", () => {
+      const diags = lintFile(resolve(FIXTURES, "valid-plugin/.mcp.json"));
+      expect(diags.some((d) => d.rule === "mcp-json/schema-valid")).toBe(false);
+    });
+
+    it("flags a malformed server field type", () => {
+      const diags = lintFile(
+        resolve(FIXTURES, "invalid/mcp-json/bad-schema-types.json"),
+      );
+      const schemaErrors = diags.filter(
+        (d) => d.rule === "mcp-json/schema-valid",
+      );
+      expect(schemaErrors.length).toBeGreaterThan(0);
+      expect(schemaErrors.every((d) => d.severity === "error")).toBe(true);
+    });
+
+    it("respects the rule being disabled", () => {
+      const diags = mcpJsonLinter.lint(
+        ".mcp.json",
+        readFileSync(
+          resolve(FIXTURES, "invalid/mcp-json/bad-schema-types.json"),
+          "utf-8",
+        ),
+        { rules: { "mcp-json/schema-valid": false } },
+      );
+      expect(diags.some((d) => d.rule === "mcp-json/schema-valid")).toBe(false);
+    });
+  });
 });

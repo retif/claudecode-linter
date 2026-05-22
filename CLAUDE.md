@@ -57,11 +57,15 @@ tests/
 
 ## Schema extraction pipeline
 
-`scripts/extract-plugin-schema.ts` walks Claude Code's minified Zod schemas and emits JSON Schema (draft-2020-12) for three validators:
+`scripts/extract-plugin-schema.ts` walks Claude Code's minified Zod schemas and emits JSON Schema (draft-2020-12) for these validators:
 
 1. **plugin.json** — master schema located via the "kebab-case" error string anchor near `.strict().safeParse(...)`; composed from N spread sub-schemas (`{...sub().shape, ...sub().partial().shape}`).
 2. **`.lsp.json`** — `E.record(E.string(), RSH())` where RSH is located via the "extensionToLanguage must have at least one mapping" anchor.
 3. **monitors/monitors.json** — `E.array(M09())` where the wrapping array is located via the "Monitor names must be unique" anchor.
+4. **settings.json** — `y.object({...}).passthrough()` located via the "JSON Schema reference for Claude Code settings" describe anchor.
+5. **skill/agent/command frontmatter** — per-artifact frontmatter objects located via field-specific describe anchors.
+6. **`.mcp.json`** — `y.object({mcpServers:y.record(y.string(), <server-union>)})` located via the `mcpServers:y.record(y.string(),` source anchor. The server union is a `z.union` of transport configs (stdio / sse / http / streamable-http / …).
+7. **hooks/hooks.json** — `{hooks:HC()}` where `HC` (the hook-event → matcher-array `partialRecord`) is located via the `y.partialRecord(` anchor. The per-hook discriminated union is declared as a block-body arrow factory the walker resolves by destructuring its helper function. The same `HC` shape also fills settings.json's embedded `hooks` key.
 
 The walker auto-detects the Zod alias (`E`/`I`/`y`/…) and the lazy-wrapper helper (`CH(()=>…)`/`xH(()=>…)`/…) per release — minifier rotations don't break extraction. A drift gate (>30% top-level field loss vs the previous extraction) fails CI; override with `FORCE_SCHEMA=1`.
 

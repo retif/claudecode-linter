@@ -1,0 +1,302 @@
+{
+	"extractedFromClaudeCodeVersion": "2.1.146",
+	"extractedAt": "2026-05-22T08:16:43.683Z",
+	"schema": {
+		"$schema": "https://json-schema.org/draft/2020-12/schema",
+		"title": "Claude Code .mcp.json",
+		"type": "object",
+		"properties": {
+			"mcpServers": {
+				"type": "object",
+				"additionalProperties": {
+					"anyOf": [
+						{
+							"type": "object",
+							"properties": {
+								"type": {
+									"const": "stdio"
+								},
+								"command": {
+									"type": "string",
+									"minLength": 1
+								},
+								"args": {
+									"type": "array",
+									"items": {
+										"type": "string"
+									},
+									"default": "[]"
+								},
+								"env": {
+									"type": "object",
+									"additionalProperties": {
+										"type": "string"
+									}
+								},
+								"alwaysLoad": {
+									"type": "boolean"
+								},
+								"role": {
+									"const": "comms"
+								}
+							},
+							"required": [
+								"command"
+							]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"type": {
+									"const": "sse"
+								},
+								"url": {
+									"type": "string"
+								},
+								"headers": {
+									"type": "object",
+									"additionalProperties": {
+										"type": "string"
+									}
+								},
+								"headersHelper": {
+									"type": "string"
+								},
+								"oauth": {
+									"type": "object",
+									"properties": {
+										"clientId": {
+											"type": "string"
+										},
+										"callbackPort": {
+											"type": "number"
+										},
+										"authServerMetadataUrl": {
+											"type": "string",
+											"format": "uri"
+										},
+										"scopes": {
+											"type": "string",
+											"minLength": 1
+										},
+										"xaa": {
+											"type": "boolean"
+										}
+									}
+								},
+								"alwaysLoad": {
+									"type": "boolean"
+								},
+								"role": {
+									"const": "comms"
+								}
+							},
+							"required": [
+								"type",
+								"url"
+							]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"type": {
+									"const": "sse-ide"
+								},
+								"url": {
+									"type": "string"
+								},
+								"ideName": {
+									"type": "string"
+								},
+								"ideRunningInWindows": {
+									"type": "boolean"
+								},
+								"alwaysLoad": {
+									"type": "boolean"
+								},
+								"role": {
+									"const": "comms"
+								}
+							},
+							"required": [
+								"type",
+								"url",
+								"ideName"
+							]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"type": {
+									"const": "ws-ide"
+								},
+								"url": {
+									"type": "string"
+								},
+								"ideName": {
+									"type": "string"
+								},
+								"authToken": {
+									"type": "string"
+								},
+								"ideRunningInWindows": {
+									"type": "boolean"
+								},
+								"alwaysLoad": {
+									"type": "boolean"
+								},
+								"role": {
+									"const": "comms"
+								}
+							},
+							"required": [
+								"type",
+								"url",
+								"ideName"
+							]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"type": {
+									"enum": [
+										"http",
+										"streamable-http"
+									]
+								},
+								"url": {
+									"type": "string"
+								},
+								"headers": {
+									"type": "object",
+									"additionalProperties": {
+										"type": "string"
+									}
+								},
+								"headersHelper": {
+									"type": "string"
+								},
+								"oauth": {
+									"type": "object",
+									"properties": {
+										"clientId": {
+											"type": "string"
+										},
+										"callbackPort": {
+											"type": "number"
+										},
+										"authServerMetadataUrl": {
+											"type": "string",
+											"format": "uri"
+										},
+										"scopes": {
+											"type": "string",
+											"minLength": 1
+										},
+										"xaa": {
+											"type": "boolean"
+										}
+									}
+								},
+								"alwaysLoad": {
+									"type": "boolean"
+								},
+								"role": {
+									"const": "comms"
+								}
+							},
+							"required": [
+								"type",
+								"url"
+							]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"type": {
+									"const": "ws"
+								},
+								"url": {
+									"type": "string"
+								},
+								"headers": {
+									"type": "object",
+									"additionalProperties": {
+										"type": "string"
+									}
+								},
+								"headersHelper": {
+									"type": "string"
+								},
+								"alwaysLoad": {
+									"type": "boolean"
+								},
+								"role": {
+									"const": "comms"
+								}
+							},
+							"required": [
+								"type",
+								"url"
+							]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"type": {
+									"const": "sdk"
+								},
+								"name": {
+									"type": "string"
+								},
+								"alwaysLoad": {
+									"type": "boolean"
+								}
+							},
+							"required": [
+								"type",
+								"name"
+							]
+						},
+						{
+							"type": "object",
+							"properties": {
+								"type": {
+									"const": "claudeai-proxy"
+								},
+								"url": {
+									"type": "string"
+								},
+								"id": {
+									"type": "string"
+								},
+								"alwaysLoad": {
+									"type": "boolean"
+								},
+								"toolPermissions": {
+									"type": "object",
+									"additionalProperties": {
+										"enum": [
+											"allow",
+											"ask",
+											"blocked"
+										]
+									}
+								}
+							},
+							"required": [
+								"type",
+								"url",
+								"id"
+							]
+						}
+					]
+				}
+			}
+		},
+		"required": [
+			"mcpServers"
+		],
+		"description": "Claude Code .mcp.json / mcp.json. The single `mcpServers` key maps server names to per-server transport configs (stdio / sse / http / streamable-http / …). Validates the structure of known fields; unknown server fields are not schema errors — the advisory mcp-json/no-unknown-server-fields rule reports those."
+	}
+}
