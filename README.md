@@ -23,6 +23,17 @@ Or run directly:
 npx claudecode-linter ~/projects/my-plugin/
 ```
 
+Or build it from a clone of this repository — there is no `dist/` until you build:
+
+```bash
+git clone https://github.com/retif/claudecode-linter
+cd claudecode-linter
+npm ci && npm run build      # install dependencies, compile to dist/
+node dist/index.js path/to/plugin/
+```
+
+Commands elsewhere in this README are written as `claudecode-linter …` (the global / `npx` install); from a clone, that is `node dist/index.js …`.
+
 ## Usage
 
 ### Lint
