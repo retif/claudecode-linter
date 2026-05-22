@@ -34,6 +34,8 @@ export interface PluginSchemaContext {
 export interface CompiledSchema {
 	validate: ValidateFunction;
 	extractedFromVersion: string;
+	/** Top-level property names declared in the schema (empty for record/array roots). */
+	knownFields: ReadonlySet<string>;
 }
 
 let cached: PluginSchemaContext | null = null;
@@ -70,11 +72,12 @@ function loadCompiledSchema(fileName: string): CompiledSchema | null {
 	}
 	const wrapped = JSON.parse(raw) as {
 		extractedFromClaudeCodeVersion: string;
-		schema: object;
+		schema: { properties?: Record<string, unknown> };
 	};
 	const compiled: CompiledSchema = {
 		validate: getAjv().compile(wrapped.schema),
 		extractedFromVersion: wrapped.extractedFromClaudeCodeVersion,
+		knownFields: new Set(Object.keys(wrapped.schema.properties ?? {})),
 	};
 	compiledCache.set(fileName, compiled);
 	return compiled;

@@ -43,13 +43,13 @@ describe("command-md linter", () => {
   });
 
   it("reports a cross-artifact frontmatter key as info", () => {
-    // `effort` is agent frontmatter — misplaced on a command.
-    const content = "---\ndescription: A command\neffort: high\n---\n\nDo the thing.";
+    // `color` is agent frontmatter — misplaced on a command.
+    const content = "---\ndescription: A command\ncolor: green\n---\n\nDo the thing.";
     const diags = commandMdLinter.lint("test.md", content, CONFIG);
     const unknowns = diags.filter((d) => d.rule === "command-md/no-unknown-frontmatter");
     expect(unknowns).toHaveLength(1);
     expect(unknowns[0].severity).toBe("info");
-    expect(unknowns[0].message).toContain("effort");
+    expect(unknowns[0].message).toContain("color");
     expect(unknowns[0].message).toContain("agent");
   });
 

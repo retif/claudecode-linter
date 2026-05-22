@@ -3,6 +3,11 @@ import {
   AGENT_FRONTMATTER,
   COMMAND_FRONTMATTER,
 } from "../contracts.js";
+import {
+  loadSkillFrontmatterSchema,
+  loadAgentFrontmatterSchema,
+  loadCommandFrontmatterSchema,
+} from "../plugin-schema.js";
 
 /**
  * Cross-artifact classification of a markdown frontmatter key.
@@ -22,11 +27,42 @@ import {
  */
 export type ArtifactKind = "skill" | "agent" | "command";
 
-const KEY_SETS: Record<ArtifactKind, ReadonlySet<string>> = {
+// Census-extraction sets (scripts/extract-contracts.ts). Used only as a
+// fallback when the auto-extracted frontmatter schema is unavailable — the
+// census extractor lags the schema walker (e.g. it was missing `effort`).
+const CENSUS_FALLBACK: Record<ArtifactKind, ReadonlySet<string>> = {
   skill: SKILL_FRONTMATTER,
   agent: AGENT_FRONTMATTER,
   command: COMMAND_FRONTMATTER,
 };
+
+const SCHEMA_LOADERS: Record<
+  ArtifactKind,
+  () => { knownFields: ReadonlySet<string> } | null
+> = {
+  skill: loadSkillFrontmatterSchema,
+  agent: loadAgentFrontmatterSchema,
+  command: loadCommandFrontmatterSchema,
+};
+
+const keyCache = new Map<ArtifactKind, ReadonlySet<string>>();
+
+/**
+ * Known frontmatter keys for an artifact — the union of the auto-extracted
+ * schema's property names (authoritative, complete, kept in sync with Claude
+ * Code's Zod) and the census-contract set. Union rather than schema-only so a
+ * key known to *either* extraction is never mis-flagged: `no-unknown-
+ * frontmatter` is advisory and a false positive is the only real harm.
+ */
+function knownKeys(kind: ArtifactKind): ReadonlySet<string> {
+  const cached = keyCache.get(kind);
+  if (cached) return cached;
+  const merged = new Set<string>(CENSUS_FALLBACK[kind]);
+  const schema = SCHEMA_LOADERS[kind]();
+  if (schema) for (const k of schema.knownFields) merged.add(k);
+  keyCache.set(kind, merged);
+  return merged;
+}
 
 const ARTIFACT_LABEL: Record<ArtifactKind, string> = {
   skill: "skill",
@@ -53,12 +89,12 @@ export function classifyUnknownFrontmatterKey(
   extraKnown: ReadonlySet<string> = new Set(),
 ): CrossArtifactResult | null {
   // Known for the current artifact — not unknown at all.
-  if (KEY_SETS[self].has(key) || extraKnown.has(key)) return null;
+  if (knownKeys(self).has(key) || extraKnown.has(key)) return null;
 
   // Valid for some *other* markdown artifact → misplacement.
   for (const kind of ["skill", "agent", "command"] as ArtifactKind[]) {
     if (kind === self) continue;
-    if (KEY_SETS[kind].has(key)) {
+    if (knownKeys(kind).has(key)) {
       return { kind: "owned-by-other", owner: kind };
     }
   }

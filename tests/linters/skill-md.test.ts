@@ -61,10 +61,10 @@ describe("skill-md linter", () => {
 		const unknowns = diags.filter(
 			(d) => d.rule === "skill-md/no-unknown-frontmatter",
 		);
-		// `effort` is an agent key → one info; `xyzzy` is valid nowhere → silent.
+		// `color` is an agent key → one info; `xyzzy` is valid nowhere → silent.
 		expect(unknowns).toHaveLength(1);
 		expect(unknowns[0].severity).toBe("info");
-		expect(unknowns[0].message).toContain("effort");
+		expect(unknowns[0].message).toContain("color");
 		expect(unknowns[0].message).toContain("agent");
 	});
 
