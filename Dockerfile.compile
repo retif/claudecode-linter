@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1
+#
+# Optional smaller image variant: a single-executable build via
+# `bun build --compile`. The default image remains `Dockerfile` (node:24-alpine).
+#
+#   docker build -f Dockerfile.compile -t cc-linter:compile .
+#
+# Asset note: inside the compiled binary `import.meta.url` points into Bun's
+# virtual FS, so `contracts/` and `.claudecode-lint.defaults.yaml` are shipped
+# next to the executable; the process.execPath-relative fallback in
+# src/utils/asset-path.ts finds them there.
+
+# ---- Build stage ----
+# Compiling under musl/alpine yields a musl binary that runs on an alpine
+# runtime. package.json is read at runtime for --version, so it is bundled too.
+FROM oven/bun:1-alpine AS build
+WORKDIR /app
+COPY package.json bun.lock* package-lock.json* ./
+RUN bun install --frozen-lockfile || bun install
+COPY tsconfig.json ./
+COPY src ./src
+# Note: do NOT `strip` the result — `bun build --compile` appends the bundle as
+# a trailing section, and stripping discards it (the binary then degrades to the
+# plain bun CLI). Compile straight from TS with whole-bundle minification.
+RUN bun build src/index.ts --compile --minify --sourcemap=none \
+		--outfile claudecode-linter
+
+# ---- Runtime stage ----
+# The bun-compiled binary is not fully static: it dynamically links libstdc++
+# and libgcc, so a minimal alpine base with those libraries is used rather than
+# distroless/static.
+FROM alpine:3 AS runtime
+RUN apk add --no-cache libstdc++ libgcc \
+	&& addgroup -S linter && adduser -S -G linter linter
+
+# Application directory holds the executable and the assets it resolves via
+# process.execPath: contracts/ and .claudecode-lint.defaults.yaml sit beside it.
+WORKDIR /opt/claudecode-linter
+COPY --from=build /app/claudecode-linter ./claudecode-linter
+COPY contracts ./contracts
+COPY .claudecode-lint.defaults.yaml ./.claudecode-lint.defaults.yaml
+COPY package.json ./package.json
+
+USER linter
+WORKDIR /work
+ENTRYPOINT ["/opt/claudecode-linter/claudecode-linter"]
+CMD ["/work"]

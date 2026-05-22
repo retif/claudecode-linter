@@ -1,11 +1,9 @@
 import { readFileSync, existsSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { homedir } from "node:os";
 import { parse as parseYaml } from "yaml";
 import type { LinterConfig, RuleConfig } from "./types.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { assetCandidates } from "./utils/asset-path.js";
 
 const DEFAULT_CONFIG: LinterConfig = {
   rules: {},
@@ -52,9 +50,15 @@ function findConfigFile(): string | undefined {
     if (existsSync(homePath)) return homePath;
   }
 
-  // 3. Fall back to bundled defaults
-  const bundled = join(__dirname, "..", ".claudecode-lint.defaults.yaml");
-  if (existsSync(bundled)) return bundled;
+  // 3. Fall back to bundled defaults. Resolved relative to import.meta.url
+  //    first (Node / npm package), then relative to process.execPath as a
+  //    fallback for the `bun build --compile` single-executable variant.
+  for (const bundled of assetCandidates(import.meta.url, [
+    "..",
+    ".claudecode-lint.defaults.yaml",
+  ])) {
+    if (existsSync(bundled)) return bundled;
+  }
 
   return undefined;
 }

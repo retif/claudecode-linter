@@ -9,12 +9,11 @@
  */
 
 import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 // biome-ignore lint/style/useImportType: runtime import; types only.
 import * as addFormatsNs from "ajv-formats";
 import type { ErrorObject, ValidateFunction } from "ajv";
+import { assetCandidates } from "./utils/asset-path.js";
 
 // ajv-formats ships as CJS with a default function export. Under Node16
 // ESM resolution we have to reach in for `.default`.
@@ -52,10 +51,9 @@ function getAjv(): Ajv2020 {
 function loadCompiledSchema(fileName: string): CompiledSchema | null {
 	if (compiledCache.has(fileName)) return compiledCache.get(fileName) ?? null;
 
-	const here = dirname(fileURLToPath(import.meta.url));
 	const candidates = [
-		resolve(here, "..", "contracts", fileName),
-		resolve(here, "..", "..", "contracts", fileName),
+		...assetCandidates(import.meta.url, ["..", "contracts", fileName]),
+		...assetCandidates(import.meta.url, ["..", "..", "contracts", fileName]),
 	];
 	let raw: string | null = null;
 	for (const p of candidates) {
@@ -118,10 +116,14 @@ export function loadCommandFrontmatterSchema(): CompiledSchema | null {
 export function loadPluginSchema(): PluginSchemaContext | null {
 	if (cached) return cached;
 
-	const here = dirname(fileURLToPath(import.meta.url));
 	const candidates = [
-		resolve(here, "..", "contracts", "plugin.schema.json"),
-		resolve(here, "..", "..", "contracts", "plugin.schema.json"),
+		...assetCandidates(import.meta.url, ["..", "contracts", "plugin.schema.json"]),
+		...assetCandidates(import.meta.url, [
+			"..",
+			"..",
+			"contracts",
+			"plugin.schema.json",
+		]),
 	];
 
 	let raw: string | null = null;

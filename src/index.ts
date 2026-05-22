@@ -12,6 +12,7 @@ import { fileURLToPath } from "node:url";
 import sade from "sade";
 import pc from "picocolors";
 import { loadConfig, mergeCliRules } from "./config.js";
+import { assetCandidates } from "./utils/asset-path.js";
 import { writeBlockedReason } from "./utils/safe-write.js";
 import { sanitizeForTerminal } from "./utils/terminal.js";
 import { discoverArtifacts, detectArtifactTypes } from "./discovery.js";
@@ -137,12 +138,21 @@ function simpleDiff(
 	return lines.join("\n");
 }
 
-const pkgVersion = JSON.parse(
-	readFileSync(
-		join(dirname(fileURLToPath(import.meta.url)), "..", "package.json"),
-		"utf8",
-	),
-).version;
+function readPkgVersion(): string {
+	// package.json ships beside dist/ (Node) or beside the executable
+	// (bun-compiled single-executable). Try every candidate; fall back to
+	// "0.0.0" if none resolve (e.g. an unexpected layout) rather than crashing.
+	for (const p of assetCandidates(import.meta.url, ["..", "package.json"])) {
+		try {
+			return JSON.parse(readFileSync(p, "utf8")).version;
+		} catch {
+			// try next candidate
+		}
+	}
+	return "0.0.0";
+}
+
+const pkgVersion = readPkgVersion();
 
 sade("claudecode-linter", true)
 	.version(pkgVersion)
@@ -183,9 +193,15 @@ sade("claudecode-linter", true)
 		const fixDryRun: boolean = !!opts["fix-dry-run"];
 		try {
 			if (opts.init !== undefined) {
-				const __filename = fileURLToPath(import.meta.url);
-				const pkgDir = dirname(dirname(__filename));
-				const defaultsFile = join(pkgDir, ".claudecode-lint.defaults.yaml");
+				const defaultsFile =
+					assetCandidates(import.meta.url, [
+						"..",
+						".claudecode-lint.defaults.yaml",
+					]).find((p) => existsSync(p)) ??
+					join(
+						dirname(dirname(fileURLToPath(import.meta.url))),
+						".claudecode-lint.defaults.yaml",
+					);
 				const targetDir =
 					typeof opts.init === "string" ? resolve(opts.init) : process.cwd();
 				const targetFile = join(targetDir, ".claudecode-lint.yaml");

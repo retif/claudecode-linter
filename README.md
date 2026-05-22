@@ -235,6 +235,14 @@ docker run --rm --network none --read-only --tmpfs /tmp \
 
 The Docker recipes above are verified. On Linux without Docker, [bubblewrap](https://github.com/containers/bubblewrap) (`bwrap`) gives the equivalent boundary: `--unshare-all` removes network and other namespaces, and nothing is writable except — for `--fix` — the target directory.
 
+**Optional smaller image (`Dockerfile.compile`):** the default image is built from `Dockerfile` (`node:24-alpine`). A second, smaller variant builds a single-executable with `bun build --compile`:
+
+```bash
+docker build -f Dockerfile.compile -t claudecode-linter:compile .
+```
+
+It runs identically under all the sandbox recipes above — just swap the image name. Measured size: ~111 MB on disk uncompressed (~44 MB compressed), versus the `node:24-alpine` default. Use whichever fits your registry/runtime; the default `Dockerfile` remains `node:24-alpine`.
+
 **bwrap — read-only (lint):**
 
 ```bash
