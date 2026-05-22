@@ -166,5 +166,178 @@ describe("mcp-json linter", () => {
       );
       expect(diags.some((d) => d.rule === "mcp-json/schema-valid")).toBe(false);
     });
+
+    // Per-branch coverage of the `mcpServers` transport union in
+    // contracts/mcp.schema.json. The union has 8 branches: stdio, sse,
+    // sse-ide, ws-ide, http (type enum ["http","streamable-http"]), ws, sdk,
+    // claudeai-proxy. Each is structurally typed (const/enum `type` discriminator
+    // plus typed required fields) — none are hollow placeholders, so every
+    // branch gets both a valid-passes and a malformed-errors test.
+
+    function schemaErrors(content: string) {
+      return lint(content).filter((d) => d.rule === "mcp-json/schema-valid");
+    }
+    const mcp = (server: unknown) =>
+      JSON.stringify({ mcpServers: { srv: server } });
+
+    describe("transport union branches", () => {
+      // --- stdio ---
+      it("stdio: minimal valid config produces no schema-valid error", () => {
+        expect(schemaErrors(mcp({ command: "/usr/bin/mcp" }))).toHaveLength(0);
+      });
+      it("stdio: command of wrong type produces a schema-valid error", () => {
+        expect(
+          schemaErrors(mcp({ type: "stdio", command: 12345 })).length,
+        ).toBeGreaterThan(0);
+      });
+      it("stdio: missing required command produces a schema-valid error", () => {
+        expect(schemaErrors(mcp({ type: "stdio" })).length).toBeGreaterThan(0);
+      });
+
+      // --- sse ---
+      it("sse: minimal valid config produces no schema-valid error", () => {
+        expect(
+          schemaErrors(mcp({ type: "sse", url: "https://example.com/sse" })),
+        ).toHaveLength(0);
+      });
+      it("sse: url of wrong type produces a schema-valid error", () => {
+        expect(
+          schemaErrors(mcp({ type: "sse", url: 123 })).length,
+        ).toBeGreaterThan(0);
+      });
+      it("sse: missing required url produces a schema-valid error", () => {
+        expect(schemaErrors(mcp({ type: "sse" })).length).toBeGreaterThan(0);
+      });
+
+      // --- sse-ide ---
+      it("sse-ide: minimal valid config produces no schema-valid error", () => {
+        expect(
+          schemaErrors(
+            mcp({
+              type: "sse-ide",
+              url: "https://example.com/sse",
+              ideName: "VSCode",
+            }),
+          ),
+        ).toHaveLength(0);
+      });
+      it("sse-ide: ideName of wrong type produces a schema-valid error", () => {
+        expect(
+          schemaErrors(
+            mcp({ type: "sse-ide", url: "https://example.com/sse", ideName: 5 }),
+          ).length,
+        ).toBeGreaterThan(0);
+      });
+      it("sse-ide: missing required ideName produces a schema-valid error", () => {
+        expect(
+          schemaErrors(mcp({ type: "sse-ide", url: "https://example.com/sse" }))
+            .length,
+        ).toBeGreaterThan(0);
+      });
+
+      // --- ws-ide ---
+      it("ws-ide: minimal valid config produces no schema-valid error", () => {
+        expect(
+          schemaErrors(
+            mcp({
+              type: "ws-ide",
+              url: "wss://example.com/ws",
+              ideName: "VSCode",
+            }),
+          ),
+        ).toHaveLength(0);
+      });
+      it("ws-ide: ideName of wrong type produces a schema-valid error", () => {
+        expect(
+          schemaErrors(
+            mcp({ type: "ws-ide", url: "wss://example.com/ws", ideName: 5 }),
+          ).length,
+        ).toBeGreaterThan(0);
+      });
+      it("ws-ide: missing required ideName produces a schema-valid error", () => {
+        expect(
+          schemaErrors(mcp({ type: "ws-ide", url: "wss://example.com/ws" }))
+            .length,
+        ).toBeGreaterThan(0);
+      });
+
+      // --- http (type enum ["http","streamable-http"]) ---
+      it("http: minimal valid config produces no schema-valid error", () => {
+        expect(
+          schemaErrors(mcp({ type: "http", url: "https://example.com/mcp" })),
+        ).toHaveLength(0);
+      });
+      it("http: type \"streamable-http\" is accepted by the http branch", () => {
+        expect(
+          schemaErrors(
+            mcp({ type: "streamable-http", url: "https://example.com/mcp" }),
+          ),
+        ).toHaveLength(0);
+      });
+      it("http: url of wrong type produces a schema-valid error", () => {
+        expect(
+          schemaErrors(mcp({ type: "http", url: 123 })).length,
+        ).toBeGreaterThan(0);
+      });
+      it("http: missing required url produces a schema-valid error", () => {
+        expect(schemaErrors(mcp({ type: "http" })).length).toBeGreaterThan(0);
+      });
+
+      // --- ws ---
+      it("ws: minimal valid config produces no schema-valid error", () => {
+        expect(
+          schemaErrors(mcp({ type: "ws", url: "wss://example.com/ws" })),
+        ).toHaveLength(0);
+      });
+      it("ws: url of wrong type produces a schema-valid error", () => {
+        expect(
+          schemaErrors(mcp({ type: "ws", url: 123 })).length,
+        ).toBeGreaterThan(0);
+      });
+      it("ws: missing required url produces a schema-valid error", () => {
+        expect(schemaErrors(mcp({ type: "ws" })).length).toBeGreaterThan(0);
+      });
+
+      // --- sdk ---
+      it("sdk: minimal valid config produces no schema-valid error", () => {
+        expect(
+          schemaErrors(mcp({ type: "sdk", name: "my-sdk-server" })),
+        ).toHaveLength(0);
+      });
+      it("sdk: name of wrong type produces a schema-valid error", () => {
+        expect(
+          schemaErrors(mcp({ type: "sdk", name: 5 })).length,
+        ).toBeGreaterThan(0);
+      });
+      it("sdk: missing required name produces a schema-valid error", () => {
+        expect(schemaErrors(mcp({ type: "sdk" })).length).toBeGreaterThan(0);
+      });
+
+      // --- claudeai-proxy ---
+      it("claudeai-proxy: minimal valid config produces no schema-valid error", () => {
+        expect(
+          schemaErrors(
+            mcp({
+              type: "claudeai-proxy",
+              url: "https://example.com",
+              id: "proxy-1",
+            }),
+          ),
+        ).toHaveLength(0);
+      });
+      it("claudeai-proxy: id of wrong type produces a schema-valid error", () => {
+        expect(
+          schemaErrors(
+            mcp({ type: "claudeai-proxy", url: "https://example.com", id: 5 }),
+          ).length,
+        ).toBeGreaterThan(0);
+      });
+      it("claudeai-proxy: missing required id produces a schema-valid error", () => {
+        expect(
+          schemaErrors(mcp({ type: "claudeai-proxy", url: "https://example.com" }))
+            .length,
+        ).toBeGreaterThan(0);
+      });
+    });
   });
 });
