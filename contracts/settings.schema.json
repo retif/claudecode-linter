@@ -1,13 +1,13 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.146",
-	"extractedAt": "2026-05-22T08:16:43.683Z",
+	"extractedFromClaudeCodeVersion": "2.1.150",
+	"extractedAt": "2026-05-23T18:30:08.375Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
 		"type": "object",
 		"properties": {
 			"$schema": {
-				"const": "pXq",
+				"const": "https://json.schemastore.org/claude-code-settings.json",
 				"description": "JSON Schema reference for Claude Code settings"
 			},
 			"apiKeyHelper": {
@@ -77,6 +77,48 @@
 			"respectGitignore": {
 				"type": "boolean",
 				"description": "Whether file picker should respect .gitignore files (default: true). Note: .ignore files are always respected."
+			},
+			"breakReminder": {
+				"type": "object",
+				"properties": {
+					"enabled": {
+						"type": "boolean",
+						"description": "Show a friendly nudge after sustained continuous use (default false). Must be true for the reminder to fire."
+					},
+					"intervalMinutes": {
+						"type": "number",
+						"description": "Minutes of continuous use before the reminder fires (default 120). Re-fires every interval until you take a break."
+					},
+					"breakThresholdMinutes": {
+						"type": "number",
+						"description": "Minutes of inactivity that count as a break and reset the timer (default 15)"
+					},
+					"message": {
+						"type": "string",
+						"description": "Custom reminder text. Leave unset for a rotating set of friendly nudges."
+					}
+				},
+				"description": "@internal Opt-in break reminder. When enabled, shows a dismissible nudge after sustained continuous use. Never blocks — just a friendly heads-up."
+			},
+			"quietHours": {
+				"type": "object",
+				"properties": {
+					"enabled": {
+						"type": "boolean",
+						"description": "Show a one-time nudge when you start or keep using the CLI inside your quiet-hours window (default false)."
+					},
+					"start": {
+						"type": "string",
+						"pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$",
+						"description": "Start of the quiet-hours window, 24-hour local time \"HH:MM\"."
+					},
+					"end": {
+						"type": "string",
+						"pattern": "^([01]?\\d|2[0-3]):[0-5]\\d$",
+						"description": "End of the quiet-hours window, 24-hour local time \"HH:MM\". May be earlier than start for an overnight range."
+					}
+				},
+				"description": "@internal Opt-in quiet hours. When enabled, shows a single soft nudge per session while inside the configured local-time window. Never blocks."
 			},
 			"cleanupPeriodDays": {
 				"type": "number",
@@ -567,6 +609,10 @@
 			"allowManagedMcpServersOnly": {
 				"type": "boolean",
 				"description": "When true (and set in managed settings), allowedMcpServers is only read from managed settings. deniedMcpServers still merges from all sources, so users can deny servers for themselves. Users can still add their own MCP servers, but only the admin-defined allowlist applies."
+			},
+			"allowAllClaudeAiMcps": {
+				"type": "boolean",
+				"description": "When true (and set in managed settings), claude.ai cloud MCP connectors load alongside managed-mcp.json instead of being suppressed by its exclusive-control lockdown. Default off preserves the lockdown. Read from managed settings only."
 			},
 			"strictPluginOnlyCustomization": {
 				"anyOf": [

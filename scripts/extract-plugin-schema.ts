@@ -266,6 +266,15 @@ export interface DefinitionIndex {
 	 * argument to a concrete `enum` instead of degrading to `{}`.
 	 */
 	arrays: Map<string, string>;
+	/**
+	 * Maps symbol name → string value for plain `<name>="..."` declarations.
+	 * Claude Code keeps canonical URLs and other tokens in top-level string
+	 * variables and feeds them to Zod via `y.literal(<name>)`. Indexing them
+	 * here lets `case "literal"` resolve identifiers to the real string
+	 * instead of emitting a const literal of the minified identifier name
+	 * (the pXq/V0q-style bug fixed by issue #1).
+	 */
+	stringLits: Map<string, string>;
 }
 
 /**
@@ -394,7 +403,26 @@ export function indexDefinitions(source: string): DefinitionIndex {
 		}
 	}
 
-	return { source, defs, zodAlias, lazyWrapper, arrays };
+	// Index plain `<name>="..."` string-literal assignments. These back
+	// `y.literal(<name>)` references in the settings schema, e.g.
+	// `V0q="https://json.schemastore.org/claude-code-settings.json"` then
+	// `$schema:y.literal(V0q).optional()`. Without this pass, `case "literal"`
+	// captured the bare minified identifier (`V0q`/`pXq`) as the const value.
+	const stringLits = new Map<string, string>();
+	const strRe = /(?:^|[;,{(\s])([A-Za-z_$][\w$]*)=("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)(?=[;,)}\s]|$)/g;
+	let sm: RegExpExecArray | null;
+	while ((sm = strRe.exec(source)) !== null) {
+		const name = sm[1];
+		if (stringLits.has(name)) continue;
+		const raw = sm[2];
+		try {
+			stringLits.set(name, JSON.parse(raw.replace(/^'|'$/g, '"').replace(/^`|`$/g, '"')));
+		} catch {
+			stringLits.set(name, raw.slice(1, -1));
+		}
+	}
+
+	return { source, defs, zodAlias, lazyWrapper, arrays, stringLits };
 }
 
 /**
@@ -493,10 +521,19 @@ export function findMasterSchemaName(index: DefinitionIndex): string | null {
 	const anchor = "is not kebab-case";
 	const anchorIdx = source.indexOf(anchor);
 	if (anchorIdx === -1) return null;
-	// Search backwards for the nearest ".strict().safeParse(" call.
+	// Search backwards for the nearest `.strict().safeParse(` or, on bundles
+	// where `.strict()` is no longer chained inline (Claude Code 2.1.150+
+	// dropped it from the call site — the masterSchema's `.strict()` still
+	// lives inside its own definition), the bare `.safeParse(` form.
 	const search = source.slice(Math.max(0, anchorIdx - 4000), anchorIdx);
-	const callIdx = search.lastIndexOf(".strict().safeParse(");
+	let callIdx = search.lastIndexOf(".strict().safeParse(");
+	let chainLen = ".strict().safeParse(".length;
+	if (callIdx === -1) {
+		callIdx = search.lastIndexOf(".safeParse(");
+		chainLen = ".safeParse(".length;
+	}
 	if (callIdx === -1) return null;
+	void chainLen; // documented for clarity; not used below
 	const absoluteCallIdx = Math.max(0, anchorIdx - 4000) + callIdx;
 	// Walk back across `().` to find the symbol name.
 	let i = absoluteCallIdx - 1;
@@ -871,7 +908,21 @@ function evalZodPrimitive(
 			return { not: {} };
 		case "literal": {
 			if (args.length === 0) return {};
-			return { const: evalLiteralValue(args[0]) };
+			const raw = args[0].trim();
+			// `y.literal(<ident>)` — resolve the identifier through the
+			// string-literal index built in `indexDefinitions`. Without this,
+			// a bare identifier round-tripped through `evalLiteralValue` would
+			// surface as `{ const: "<minified-name>" }` and reject every valid
+			// value (the pXq/V0q bug — gitea issue #1).
+			const identMatch = raw.match(/^[A-Za-z_$][\w$]*$/);
+			if (identMatch) {
+				const resolved = ctx.index.stringLits.get(raw);
+				if (resolved !== undefined) return { const: resolved };
+				// Unresolved identifier — assume string-typed but don't pin a
+				// const value. Safer than emitting a bogus const.
+				return { type: "string" };
+			}
+			return { const: evalLiteralValue(raw) };
 		}
 		case "enum":
 		case "nativeEnum": {

@@ -52,7 +52,6 @@ rules:
   agent-md/permission-mode-valid: warning
   agent-md/effort-valid: warning
   agent-md/max-turns-valid: warning
-  agent-md/color-required: error
   agent-md/color-valid: warning
   agent-md/system-prompt-present: error
   agent-md/system-prompt-length: warning
@@ -83,7 +82,6 @@ rules:
 
   # ── settings.json ────────────────────────────────────────
   settings-json/valid-json: error
-  settings-json/scope-file-name: error
   settings-json/scope-field: warning
   settings-json/no-unknown-fields: warning
   settings-json/permissions-object: error

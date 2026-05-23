@@ -22,7 +22,9 @@ interface RuleDef { id: string; defaultSeverity: Severity; }
 const RULES: RuleDef[] = [
   { id: "settings-json/valid-json", defaultSeverity: "error" },
   { id: "settings-json/schema-valid", defaultSeverity: "error" },
-  { id: "settings-json/scope-file-name", defaultSeverity: "error" },
+  // settings-json/scope-file-name removed in gitea#4 — .claude/settings.json
+  // is a valid project-shared settings source. See misplaced-file/* for
+  // wrong-path warnings.
   { id: "settings-json/scope-field", defaultSeverity: "warning" },
   { id: "settings-json/no-unknown-fields", defaultSeverity: "warning" },
   { id: "settings-json/permissions-object", defaultSeverity: "error" },
@@ -286,26 +288,52 @@ export const settingsJsonLinter: Linter = {
       }
     }
 
-    // Scope-aware: settings.json (non-local) should only be at user level
-    if (!isLocal && scope && scope !== "user") {
-      push(diag(config, filePath, "settings-json/scope-file-name", "error",
-        `"settings.json" should only exist at user level (~/.claude/). Use "settings.local.json" for project-level settings`));
-    }
+    // gitea#4: `.claude/settings.json` is a first-class project settings source
+    // (`projectSettings`, committed/shared) distinct from `.claude/settings.local.json`
+    // (`localSettings`, gitignored). Claude Code's bundle defines both:
+    //   `case "projectSettings": return Rk.join(".claude","settings.json")`
+    //   `case "localSettings":   return "project, gitignored"`
+    // The rule no longer fires for plain project-level settings.json; the
+    // `misplaced-file/canonical-location` rule covers files at the wrong path.
 
-    // Determine which fields are valid for this scope
-    const knownFields = (scope === "user" || !scope) ? SETTINGS_USER_FIELDS : SETTINGS_PROJECT_FIELDS;
+    // Determine which fields are valid for this scope. gitea#2: the legacy
+    // SETTINGS_PROJECT_FIELDS whitelist is too narrow — Claude Code accepts
+    // most user-level fields at project scope too. We now treat all known
+    // user fields as valid at project scope, except a small denylist of
+    // genuinely user-only fields (auth helpers, plugin enablement, dangerous
+    // mode), which still warn via `settings-json/scope-field`.
+    const knownFields = SETTINGS_USER_FIELDS;
 
-    // unknown/misplaced top-level fields
+    // Fields that genuinely only take effect at user scope. Project-scope
+    // versions are silently ignored by Claude Code. Source: bundle inspection
+    // (auth helpers run from user creds; enabledPlugins / skip-permission
+    // flags can't be enabled by a checked-in repo for security reasons).
+    const USER_ONLY_FIELDS = new Set<string>([
+      "apiKeyHelper",
+      "awsAuthRefresh",
+      "awsCredentialExport",
+      "gcpAuthRefresh",
+      "proxyAuthHelper",
+      "policyHelper",
+      "enabledPlugins",
+      "skipDangerousModePermissionPrompt",
+      "forceLoginMethod",
+      "forceLoginOrgUUID",
+    ]);
+
+    // unknown / misplaced top-level fields
     for (const key of Object.keys(parsed)) {
       if (!knownFields.has(key)) {
         const p = findKeyPosition(content, key);
-        if (SETTINGS_USER_FIELDS.has(key) && scope && scope !== "user") {
-          push(diag(config, filePath, "settings-json/scope-field", "warning",
-            `"${key}" is a user-level field — it has no effect in project-level settings.local.json`, p?.line, p?.column));
-        } else if (!SETTINGS_USER_FIELDS.has(key)) {
-          push(diag(config, filePath, "settings-json/no-unknown-fields", "warning",
-            `Unknown top-level field "${key}"`, p?.line, p?.column));
-        }
+        push(diag(config, filePath, "settings-json/no-unknown-fields", "warning",
+          `Unknown top-level field "${key}"`, p?.line, p?.column));
+        continue;
+      }
+      // gitea#2: only the genuinely user-only denylist warns at project scope.
+      if (USER_ONLY_FIELDS.has(key) && scope && scope !== "user") {
+        const p = findKeyPosition(content, key);
+        push(diag(config, filePath, "settings-json/scope-field", "warning",
+          `"${key}" only takes effect at user level (~/.claude/settings.json); it is ignored in project settings`, p?.line, p?.column));
       }
     }
 

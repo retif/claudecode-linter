@@ -106,7 +106,9 @@ describe("settings-json linter", () => {
 		).toBe(true);
 	});
 
-	it("reports settings.json at project level", () => {
+	it("accepts settings.json at project level (gitea#4)", () => {
+		// .claude/settings.json is projectSettings — committed/shared,
+		// distinct from .claude/settings.local.json (localSettings).
 		const diags = settingsJsonLinter.lint(
 			"settings.json",
 			JSON.stringify({ permissions: {} }),
@@ -114,7 +116,7 @@ describe("settings-json linter", () => {
 			"project",
 		);
 		expect(diags.some((d) => d.rule === "settings-json/scope-file-name")).toBe(
-			true,
+			false,
 		);
 	});
 
@@ -130,16 +132,25 @@ describe("settings-json linter", () => {
 		);
 	});
 
-	it("warns about user-level fields in project settings.local.json", () => {
-		const diags = settingsJsonLinter.lint(
+	it("warns only on genuinely user-only fields in project settings (gitea#2)", () => {
+		// apiKeyHelper is user-only — should warn at project scope.
+		const userOnly = settingsJsonLinter.lint(
 			"settings.local.json",
-			JSON.stringify({ env: { FOO: "bar" } }),
+			JSON.stringify({ apiKeyHelper: "/path/to/helper" }),
 			CONFIG,
 			"project",
 		);
-		expect(diags.some((d) => d.rule === "settings-json/scope-field")).toBe(
-			true,
+		expect(userOnly.some((d) => d.rule === "settings-json/scope-field")).toBe(true);
+
+		// enableAllProjectMcpServers is project-scoped (Claude Code writes it to
+		// localSettings itself) — must NOT warn at project scope.
+		const projectField = settingsJsonLinter.lint(
+			"settings.local.json",
+			JSON.stringify({ enableAllProjectMcpServers: false }),
+			CONFIG,
+			"project",
 		);
+		expect(projectField.some((d) => d.rule === "settings-json/scope-field")).toBe(false);
 	});
 
 	it("allows permissions in project settings.local.json", () => {

@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.138",
-	"extractedAt": "2026-05-11T08:02:42.913Z",
+	"extractedFromClaudeCodeVersion": "2.1.150",
+	"extractedAt": "2026-05-23T18:30:08.359Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code monitors.json",
@@ -16,7 +16,7 @@
 				"command": {
 					"type": "string",
 					"minLength": 1,
-					"description": "Shell command to run as a persistent background monitor. Each stdout line is delivered to the model as a <task_notification> event; the process runs for the session lifetime. ${CLAUDE_PLUGIN_ROOT}, ${CLAUDE_PLUGIN_DATA}, ${user_config.*}, and ${ENV_VAR} are substituted. Runs in the session cwd \\u2014 prefix with `cd \"${CLAUDE_PLUGIN_ROOT}\" && ` if the script needs its own directory."
+					"description": "Shell command to run as a persistent background monitor. Each stdout line is delivered to the model as a <task_notification> event; the process runs for the session lifetime. ${CLAUDE_PLUGIN_ROOT}, ${CLAUDE_PLUGIN_DATA}, ${CLAUDE_PROJECT_DIR}, ${user_config.*}, and ${ENV_VAR} are substituted. Runs in the session cwd \\u2014 prefix with `cd \"${CLAUDE_PLUGIN_ROOT}\" && ` if the script needs its own directory."
 				},
 				"description": {
 					"type": "string",

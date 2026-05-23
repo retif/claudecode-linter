@@ -64,8 +64,14 @@ function hasTriggerSignal(desc: string): boolean {
   // ("Trigger on …", "Trigger when/whenever/if …", "Triggers: …", "TRIGGER
   // when:") — not when "trigger" merely appears as a noun (e.g. the phrase
   // "no trigger phrases").
+  // gitea#5: widened to accept more applicability phrasings observed in the
+  // wild — "Loaded automatically when …", "when a turn touches …",
+  // "applies to …", "for memory operations", "Memory protocol for the X
+  // MCP" (a noun-opener that names the domain). The runtime makes
+  // `description` optional, so this rule is advisory; aim for low false
+  // positive rate rather than complete coverage.
   const triggerPhrases =
-    /\btrigger(s)?\b\s*(on|when|whenever|if|upon|for)\b|\btriggers?\s*:|\buse (this skill |it )?(when|whenever|for|to|on|if)\b|\bshould be used (when|whenever|for|to|if)\b|\b(applies|invoke|reach for|call this|run this|use this) (when|whenever|if|to|for)\b|\bwhen (the user|you|asked|working|debugging|diagnosing|investigating|reviewing|writing|building|creating|editing|setting up|deploying|the task|a request|a question|you need|there|something|anything)\b|\bwhen [a-z]+ing\b|\bfor (debugging|diagnosing|tasks|requests|questions|when|any)\b/i;
+    /\btrigger(s)?\b\s*(on|when|whenever|if|upon|for)\b|\btriggers?\s*:|\buse (this skill |it )?(when|whenever|for|to|on|if)\b|\bshould be used (when|whenever|for|to|if)\b|\b(applies|invoke|reach for|call this|run this|use this|loaded|loads|reaches for|fires) (when|whenever|if|to|for|automatically|on)\b|\bwhen (the user|you|asked|working|debugging|diagnosing|investigating|reviewing|writing|building|creating|editing|setting up|deploying|the task|a request|a question|a message|a turn|the turn|the session|the conversation|the model|you need|there|something|anything)\b|\bwhen [a-z]+ing\b|\bfor (debugging|diagnosing|tasks|requests|questions|when|any|memory|recall|search|saves?|the )\b|\bprotocol for\b|\barchivist for\b|\bhandler for\b|\bauto(matic|-?)\s+(save|load|invocation)\b/i;
   if (triggerPhrases.test(d)) return true;
 
   // First "sentence-ish" chunk — used to detect imperative / gerund openers.

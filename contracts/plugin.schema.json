@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.138",
-	"extractedAt": "2026-05-11T08:02:42.909Z",
+	"extractedFromClaudeCodeVersion": "2.1.150",
+	"extractedAt": "2026-05-23T18:30:08.356Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code plugin.json",
@@ -14,6 +14,10 @@
 				"type": "string",
 				"minLength": 1,
 				"description": "Unique identifier for the plugin, used for namespacing (prefer kebab-case)"
+			},
+			"displayName": {
+				"type": "string",
+				"description": "Human-readable name shown in UI (e.g., \"GitHub Utils\"). Falls back to `name` when omitted. Unlike `name`, may contain spaces and any casing; not used for namespacing or lookup."
 			},
 			"version": {
 				"type": "string",
@@ -101,6 +105,264 @@
 						"description": "Path to file with additional hooks (in addition to those in hooks/hooks.json, if it exists), relative to the plugin root"
 					},
 					{
+						"type": "object",
+						"additionalProperties": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"matcher": {
+										"type": "string",
+										"description": "String pattern to match (e.g. tool names like \"Write\")"
+									},
+									"hooks": {
+										"type": "array",
+										"items": {
+											"oneOf": [
+												{
+													"type": "object",
+													"properties": {
+														"type": {
+															"const": "command",
+															"description": "Shell command hook type"
+														},
+														"command": {
+															"type": "string",
+															"description": "Shell command to execute"
+														},
+														"args": {
+															"type": "array",
+															"items": {
+																"type": "string"
+															},
+															"description": "Argument list for exec form. When present, `command` is resolved as \"+\"an executable and spawned directly with these arguments \\u2014 no shell. \"+\"Path placeholders like ${CLAUDE_PLUGIN_ROOT} are substituted per-element as plain strings, so paths with quotes, $, or backticks never reach a shell parser. When absent, `command` runs through a shell (bash on POSIX, PowerShell on Windows without Git Bash)."
+														},
+														"if": {
+															"type": "string",
+															"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+														},
+														"shell": {
+															"enum": [
+																"bash",
+																"powershell"
+															],
+															"description": "Shell interpreter. 'bash' uses your $SHELL (bash/zsh/sh); 'powershell' uses pwsh. Defaults to bash (powershell on Windows without Git Bash)."
+														},
+														"timeout": {
+															"type": "number",
+															"description": "Timeout in seconds for this specific command"
+														},
+														"statusMessage": {
+															"type": "string",
+															"description": "Custom status message to display in spinner while hook runs"
+														},
+														"once": {
+															"type": "boolean",
+															"description": "If true, hook runs once and is removed after execution"
+														},
+														"async": {
+															"type": "boolean",
+															"description": "If true, hook runs in background without blocking"
+														},
+														"asyncRewake": {
+															"type": "boolean",
+															"description": "If true, hook runs in background and wakes the model on exit code 2 (blocking error). Implies async."
+														},
+														"rewakeMessage": {
+															"type": "string",
+															"minLength": 1,
+															"description": "@internal Custom prefix for the system-reminder shown to the model when an asyncRewake hook exits with code 2. The hook output is appended after this prefix."
+														},
+														"rewakeSummary": {
+															"type": "string",
+															"minLength": 1,
+															"description": "@internal One-line summary shown to the user in the terminal when an asyncRewake hook exits with code 2. Defaults to \"Stop hook feedback\"."
+														}
+													},
+													"required": [
+														"type",
+														"command"
+													]
+												},
+												{
+													"type": "object",
+													"properties": {
+														"type": {
+															"const": "prompt",
+															"description": "LLM prompt hook type"
+														},
+														"prompt": {
+															"type": "string",
+															"description": "Prompt to evaluate with LLM. Use $ARGUMENTS placeholder for hook input JSON."
+														},
+														"if": {
+															"type": "string",
+															"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+														},
+														"timeout": {
+															"type": "number",
+															"description": "Timeout in seconds for this specific prompt evaluation"
+														},
+														"model": {
+															"type": "string",
+															"description": "Model to use for this prompt hook (e.g., \"claude-sonnet-4-6\"). If not specified, uses the default small fast model."
+														},
+														"continueOnBlock": {
+															"type": "boolean",
+															"description": "`Sets the continue value for the decision:\"block\" produced when ok is false. Default false (turn ends). Whether continue:true lets the turn proceed depends on the event's decision:\"block\" semantics. On PostToolUse, the reason is fed back to Claude and the turn continues.`"
+														},
+														"statusMessage": {
+															"type": "string",
+															"description": "Custom status message to display in spinner while hook runs"
+														},
+														"once": {
+															"type": "boolean",
+															"description": "If true, hook runs once and is removed after execution"
+														}
+													},
+													"required": [
+														"type",
+														"prompt"
+													]
+												},
+												{
+													"type": "object",
+													"properties": {
+														"type": {
+															"const": "agent",
+															"description": "Agentic verifier hook type"
+														},
+														"prompt": {
+															"type": "string",
+															"description": "Prompt describing what to verify (e.g. \"Verify that unit tests ran and passed.\"). Use $ARGUMENTS placeholder for hook input JSON."
+														},
+														"if": {
+															"type": "string",
+															"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+														},
+														"timeout": {
+															"type": "number",
+															"description": "Timeout in seconds for agent execution (default 60)"
+														},
+														"model": {
+															"type": "string",
+															"description": "Model to use for this agent hook (e.g., \"claude-sonnet-4-6\"). If not specified, uses Haiku."
+														},
+														"statusMessage": {
+															"type": "string",
+															"description": "Custom status message to display in spinner while hook runs"
+														},
+														"once": {
+															"type": "boolean",
+															"description": "If true, hook runs once and is removed after execution"
+														}
+													},
+													"required": [
+														"type",
+														"prompt"
+													]
+												},
+												{
+													"type": "object",
+													"properties": {
+														"type": {
+															"const": "http",
+															"description": "HTTP hook type"
+														},
+														"url": {
+															"type": "string",
+															"format": "uri",
+															"description": "URL to POST the hook input JSON to"
+														},
+														"if": {
+															"type": "string",
+															"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+														},
+														"timeout": {
+															"type": "number",
+															"description": "Timeout in seconds for this specific request"
+														},
+														"headers": {
+															"type": "object",
+															"additionalProperties": {
+																"type": "string"
+															},
+															"description": "Additional headers to include in the request. Values may reference environment variables using $VAR_NAME or ${VAR_NAME} syntax (e.g., \"Authorization\": \"Bearer $MY_TOKEN\"). Only variables listed in allowedEnvVars will be interpolated."
+														},
+														"allowedEnvVars": {
+															"type": "array",
+															"items": {
+																"type": "string"
+															},
+															"description": "Explicit list of environment variable names that may be interpolated in header values. Only variables listed here will be resolved; all other $VAR references are left as empty strings. Required for env var interpolation to work."
+														},
+														"statusMessage": {
+															"type": "string",
+															"description": "Custom status message to display in spinner while hook runs"
+														},
+														"once": {
+															"type": "boolean",
+															"description": "If true, hook runs once and is removed after execution"
+														}
+													},
+													"required": [
+														"type",
+														"url"
+													]
+												},
+												{
+													"type": "object",
+													"properties": {
+														"type": {
+															"const": "mcp_tool",
+															"description": "MCP tool hook type"
+														},
+														"server": {
+															"type": "string",
+															"description": "Name of an already-configured MCP server to invoke"
+														},
+														"tool": {
+															"type": "string",
+															"description": "Name of the tool on that server to call"
+														},
+														"input": {
+															"type": "object",
+															"additionalProperties": {},
+															"description": "Arguments passed to the MCP tool. String values support ${path} interpolation from the hook input JSON (e.g. \"${tool_input.file_path}\")."
+														},
+														"if": {
+															"type": "string",
+															"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+														},
+														"timeout": {
+															"type": "number",
+															"description": "Timeout in seconds for this specific tool call"
+														},
+														"statusMessage": {
+															"type": "string",
+															"description": "Custom status message to display in spinner while hook runs"
+														},
+														"once": {
+															"type": "boolean",
+															"description": "If true, hook runs once and is removed after execution"
+														}
+													},
+													"required": [
+														"type",
+														"server",
+														"tool"
+													]
+												}
+											]
+										},
+										"description": "List of hooks to execute when the matcher matches"
+									}
+								},
+								"required": [
+									"hooks"
+								]
+							}
+						},
 						"description": "Additional hooks (in addition to those in hooks/hooks.json, if it exists)"
 					},
 					{
@@ -112,6 +374,264 @@
 									"description": "Path to file with additional hooks (in addition to those in hooks/hooks.json, if it exists), relative to the plugin root"
 								},
 								{
+									"type": "object",
+									"additionalProperties": {
+										"type": "array",
+										"items": {
+											"type": "object",
+											"properties": {
+												"matcher": {
+													"type": "string",
+													"description": "String pattern to match (e.g. tool names like \"Write\")"
+												},
+												"hooks": {
+													"type": "array",
+													"items": {
+														"oneOf": [
+															{
+																"type": "object",
+																"properties": {
+																	"type": {
+																		"const": "command",
+																		"description": "Shell command hook type"
+																	},
+																	"command": {
+																		"type": "string",
+																		"description": "Shell command to execute"
+																	},
+																	"args": {
+																		"type": "array",
+																		"items": {
+																			"type": "string"
+																		},
+																		"description": "Argument list for exec form. When present, `command` is resolved as \"+\"an executable and spawned directly with these arguments \\u2014 no shell. \"+\"Path placeholders like ${CLAUDE_PLUGIN_ROOT} are substituted per-element as plain strings, so paths with quotes, $, or backticks never reach a shell parser. When absent, `command` runs through a shell (bash on POSIX, PowerShell on Windows without Git Bash)."
+																	},
+																	"if": {
+																		"type": "string",
+																		"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+																	},
+																	"shell": {
+																		"enum": [
+																			"bash",
+																			"powershell"
+																		],
+																		"description": "Shell interpreter. 'bash' uses your $SHELL (bash/zsh/sh); 'powershell' uses pwsh. Defaults to bash (powershell on Windows without Git Bash)."
+																	},
+																	"timeout": {
+																		"type": "number",
+																		"description": "Timeout in seconds for this specific command"
+																	},
+																	"statusMessage": {
+																		"type": "string",
+																		"description": "Custom status message to display in spinner while hook runs"
+																	},
+																	"once": {
+																		"type": "boolean",
+																		"description": "If true, hook runs once and is removed after execution"
+																	},
+																	"async": {
+																		"type": "boolean",
+																		"description": "If true, hook runs in background without blocking"
+																	},
+																	"asyncRewake": {
+																		"type": "boolean",
+																		"description": "If true, hook runs in background and wakes the model on exit code 2 (blocking error). Implies async."
+																	},
+																	"rewakeMessage": {
+																		"type": "string",
+																		"minLength": 1,
+																		"description": "@internal Custom prefix for the system-reminder shown to the model when an asyncRewake hook exits with code 2. The hook output is appended after this prefix."
+																	},
+																	"rewakeSummary": {
+																		"type": "string",
+																		"minLength": 1,
+																		"description": "@internal One-line summary shown to the user in the terminal when an asyncRewake hook exits with code 2. Defaults to \"Stop hook feedback\"."
+																	}
+																},
+																"required": [
+																	"type",
+																	"command"
+																]
+															},
+															{
+																"type": "object",
+																"properties": {
+																	"type": {
+																		"const": "prompt",
+																		"description": "LLM prompt hook type"
+																	},
+																	"prompt": {
+																		"type": "string",
+																		"description": "Prompt to evaluate with LLM. Use $ARGUMENTS placeholder for hook input JSON."
+																	},
+																	"if": {
+																		"type": "string",
+																		"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+																	},
+																	"timeout": {
+																		"type": "number",
+																		"description": "Timeout in seconds for this specific prompt evaluation"
+																	},
+																	"model": {
+																		"type": "string",
+																		"description": "Model to use for this prompt hook (e.g., \"claude-sonnet-4-6\"). If not specified, uses the default small fast model."
+																	},
+																	"continueOnBlock": {
+																		"type": "boolean",
+																		"description": "`Sets the continue value for the decision:\"block\" produced when ok is false. Default false (turn ends). Whether continue:true lets the turn proceed depends on the event's decision:\"block\" semantics. On PostToolUse, the reason is fed back to Claude and the turn continues.`"
+																	},
+																	"statusMessage": {
+																		"type": "string",
+																		"description": "Custom status message to display in spinner while hook runs"
+																	},
+																	"once": {
+																		"type": "boolean",
+																		"description": "If true, hook runs once and is removed after execution"
+																	}
+																},
+																"required": [
+																	"type",
+																	"prompt"
+																]
+															},
+															{
+																"type": "object",
+																"properties": {
+																	"type": {
+																		"const": "agent",
+																		"description": "Agentic verifier hook type"
+																	},
+																	"prompt": {
+																		"type": "string",
+																		"description": "Prompt describing what to verify (e.g. \"Verify that unit tests ran and passed.\"). Use $ARGUMENTS placeholder for hook input JSON."
+																	},
+																	"if": {
+																		"type": "string",
+																		"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+																	},
+																	"timeout": {
+																		"type": "number",
+																		"description": "Timeout in seconds for agent execution (default 60)"
+																	},
+																	"model": {
+																		"type": "string",
+																		"description": "Model to use for this agent hook (e.g., \"claude-sonnet-4-6\"). If not specified, uses Haiku."
+																	},
+																	"statusMessage": {
+																		"type": "string",
+																		"description": "Custom status message to display in spinner while hook runs"
+																	},
+																	"once": {
+																		"type": "boolean",
+																		"description": "If true, hook runs once and is removed after execution"
+																	}
+																},
+																"required": [
+																	"type",
+																	"prompt"
+																]
+															},
+															{
+																"type": "object",
+																"properties": {
+																	"type": {
+																		"const": "http",
+																		"description": "HTTP hook type"
+																	},
+																	"url": {
+																		"type": "string",
+																		"format": "uri",
+																		"description": "URL to POST the hook input JSON to"
+																	},
+																	"if": {
+																		"type": "string",
+																		"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+																	},
+																	"timeout": {
+																		"type": "number",
+																		"description": "Timeout in seconds for this specific request"
+																	},
+																	"headers": {
+																		"type": "object",
+																		"additionalProperties": {
+																			"type": "string"
+																		},
+																		"description": "Additional headers to include in the request. Values may reference environment variables using $VAR_NAME or ${VAR_NAME} syntax (e.g., \"Authorization\": \"Bearer $MY_TOKEN\"). Only variables listed in allowedEnvVars will be interpolated."
+																	},
+																	"allowedEnvVars": {
+																		"type": "array",
+																		"items": {
+																			"type": "string"
+																		},
+																		"description": "Explicit list of environment variable names that may be interpolated in header values. Only variables listed here will be resolved; all other $VAR references are left as empty strings. Required for env var interpolation to work."
+																	},
+																	"statusMessage": {
+																		"type": "string",
+																		"description": "Custom status message to display in spinner while hook runs"
+																	},
+																	"once": {
+																		"type": "boolean",
+																		"description": "If true, hook runs once and is removed after execution"
+																	}
+																},
+																"required": [
+																	"type",
+																	"url"
+																]
+															},
+															{
+																"type": "object",
+																"properties": {
+																	"type": {
+																		"const": "mcp_tool",
+																		"description": "MCP tool hook type"
+																	},
+																	"server": {
+																		"type": "string",
+																		"description": "Name of an already-configured MCP server to invoke"
+																	},
+																	"tool": {
+																		"type": "string",
+																		"description": "Name of the tool on that server to call"
+																	},
+																	"input": {
+																		"type": "object",
+																		"additionalProperties": {},
+																		"description": "Arguments passed to the MCP tool. String values support ${path} interpolation from the hook input JSON (e.g. \"${tool_input.file_path}\")."
+																	},
+																	"if": {
+																		"type": "string",
+																		"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+																	},
+																	"timeout": {
+																		"type": "number",
+																		"description": "Timeout in seconds for this specific tool call"
+																	},
+																	"statusMessage": {
+																		"type": "string",
+																		"description": "Custom status message to display in spinner while hook runs"
+																	},
+																	"once": {
+																		"type": "boolean",
+																		"description": "If true, hook runs once and is removed after execution"
+																	}
+																},
+																"required": [
+																	"type",
+																	"server",
+																	"tool"
+																]
+															}
+														]
+													},
+													"description": "List of hooks to execute when the matcher matches"
+												}
+											},
+											"required": [
+												"hooks"
+											]
+										}
+									},
 									"description": "Additional hooks (in addition to those in hooks/hooks.json, if it exists)"
 								}
 							]
@@ -130,7 +650,7 @@
 								"type": "string"
 							}
 						],
-						"description": "Path to additional command file or skill directory (in addition to those in the commands/ directory, if it exists), relative to the plugin root"
+						"description": "Path to a command file or skill directory, relative to the plugin root. When set, the commands/ directory is not auto-loaded — list its files here if you want both."
 					},
 					{
 						"type": "array",
@@ -143,9 +663,9 @@
 									"type": "string"
 								}
 							],
-							"description": "Path to additional command file or skill directory (in addition to those in the commands/ directory, if it exists), relative to the plugin root"
+							"description": "Path to a command file or skill directory, relative to the plugin root. When set, the commands/ directory is not auto-loaded — list its files here if you want both."
 						},
-						"description": "List of paths to additional command files or skill directories"
+						"description": "List of command file or skill directory paths. When set, the commands/ directory is not auto-loaded."
 					},
 					{
 						"type": "object",
@@ -196,15 +716,15 @@
 				"anyOf": [
 					{
 						"type": "string",
-						"description": "Path to additional agent file (in addition to those in the agents/ directory, if it exists), relative to the plugin root"
+						"description": "Path to an agent file, relative to the plugin root. When set, the agents/ directory is not auto-loaded — list its files here if you want both."
 					},
 					{
 						"type": "array",
 						"items": {
 							"type": "string",
-							"description": "Path to additional agent file (in addition to those in the agents/ directory, if it exists), relative to the plugin root"
+							"description": "Path to an agent file, relative to the plugin root. When set, the agents/ directory is not auto-loaded — list its files here if you want both."
 						},
-						"description": "List of paths to additional agent files"
+						"description": "List of agent file paths. When set, the agents/ directory is not auto-loaded."
 					}
 				]
 			},
@@ -212,15 +732,15 @@
 				"anyOf": [
 					{
 						"type": "string",
-						"description": "Path to additional skill directory (in addition to those in the skills/ directory, if it exists), relative to the plugin root"
+						"description": "Path to a skill directory, relative to the plugin root. Loaded in addition to the skills/ directory."
 					},
 					{
 						"type": "array",
 						"items": {
 							"type": "string",
-							"description": "Path to additional skill directory (in addition to those in the skills/ directory, if it exists), relative to the plugin root"
+							"description": "Path to a skill directory, relative to the plugin root. Loaded in addition to the skills/ directory."
 						},
-						"description": "List of paths to additional skill directories"
+						"description": "List of skill directory paths, loaded in addition to the skills/ directory."
 					}
 				]
 			},
@@ -228,15 +748,15 @@
 				"anyOf": [
 					{
 						"type": "string",
-						"description": "Path to additional output styles directory or file (in addition to those in the output-styles/ directory, if it exists), relative to the plugin root"
+						"description": "Path to an output-styles directory or file, relative to the plugin root. When set, the output-styles/ directory is not auto-loaded — list its files here if you want both."
 					},
 					{
 						"type": "array",
 						"items": {
 							"type": "string",
-							"description": "Path to additional output styles directory or file (in addition to those in the output-styles/ directory, if it exists), relative to the plugin root"
+							"description": "Path to an output-styles directory or file, relative to the plugin root. When set, the output-styles/ directory is not auto-loaded — list its files here if you want both."
 						},
-						"description": "List of paths to additional output styles directories or files"
+						"description": "List of output-style directory or file paths. When set, the output-styles/ directory is not auto-loaded."
 					}
 				]
 			},
@@ -244,15 +764,31 @@
 				"anyOf": [
 					{
 						"type": "string",
-						"description": "Path to additional themes directory or file (in addition to those in the themes/ directory, if it exists), relative to the plugin root"
+						"description": "Path to a themes directory or file, relative to the plugin root. When set, the themes/ directory is not auto-loaded — list its files here if you want both."
 					},
 					{
 						"type": "array",
 						"items": {
 							"type": "string",
-							"description": "Path to additional themes directory or file (in addition to those in the themes/ directory, if it exists), relative to the plugin root"
+							"description": "Path to a themes directory or file, relative to the plugin root. When set, the themes/ directory is not auto-loaded — list its files here if you want both."
 						},
-						"description": "List of paths to additional themes directories or files"
+						"description": "List of theme directory or file paths. When set, the themes/ directory is not auto-loaded."
+					}
+				]
+			},
+			"workflows": {
+				"anyOf": [
+					{
+						"type": "string",
+						"description": "Path to a workflows directory or .js file, relative to the plugin root. When set, the workflows/ directory is not auto-loaded — list its files here if you want both."
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string",
+							"description": "Path to a workflows directory or .js file, relative to the plugin root. When set, the workflows/ directory is not auto-loaded — list its files here if you want both."
+						},
+						"description": "List of workflow directory or .js file paths. When set, the workflows/ directory is not auto-loaded."
 					}
 				]
 			},
@@ -398,8 +934,14 @@
 												"type": "string"
 											}
 										},
+										"timeout": {
+											"type": "number"
+										},
 										"alwaysLoad": {
 											"type": "boolean"
+										},
+										"role": {
+											"const": "comms"
 										}
 									},
 									"required": [
@@ -446,8 +988,14 @@
 												}
 											}
 										},
+										"timeout": {
+											"type": "number"
+										},
 										"alwaysLoad": {
 											"type": "boolean"
+										},
+										"role": {
+											"const": "comms"
 										}
 									},
 									"required": [
@@ -470,8 +1018,14 @@
 										"ideRunningInWindows": {
 											"type": "boolean"
 										},
+										"timeout": {
+											"type": "number"
+										},
 										"alwaysLoad": {
 											"type": "boolean"
+										},
+										"role": {
+											"const": "comms"
 										}
 									},
 									"required": [
@@ -498,8 +1052,14 @@
 										"ideRunningInWindows": {
 											"type": "boolean"
 										},
+										"timeout": {
+											"type": "number"
+										},
 										"alwaysLoad": {
 											"type": "boolean"
+										},
+										"role": {
+											"const": "comms"
 										}
 									},
 									"required": [
@@ -551,8 +1111,14 @@
 												}
 											}
 										},
+										"timeout": {
+											"type": "number"
+										},
 										"alwaysLoad": {
 											"type": "boolean"
+										},
+										"role": {
+											"const": "comms"
 										}
 									},
 									"required": [
@@ -578,8 +1144,14 @@
 										"headersHelper": {
 											"type": "string"
 										},
+										"timeout": {
+											"type": "number"
+										},
 										"alwaysLoad": {
 											"type": "boolean"
+										},
+										"role": {
+											"const": "comms"
 										}
 									},
 									"required": [
@@ -595,6 +1167,9 @@
 										},
 										"name": {
 											"type": "string"
+										},
+										"timeout": {
+											"type": "number"
 										},
 										"alwaysLoad": {
 											"type": "boolean"
@@ -616,6 +1191,9 @@
 										},
 										"id": {
 											"type": "string"
+										},
+										"timeout": {
+											"type": "number"
 										},
 										"alwaysLoad": {
 											"type": "boolean"
@@ -690,8 +1268,14 @@
 															"type": "string"
 														}
 													},
+													"timeout": {
+														"type": "number"
+													},
 													"alwaysLoad": {
 														"type": "boolean"
+													},
+													"role": {
+														"const": "comms"
 													}
 												},
 												"required": [
@@ -738,8 +1322,14 @@
 															}
 														}
 													},
+													"timeout": {
+														"type": "number"
+													},
 													"alwaysLoad": {
 														"type": "boolean"
+													},
+													"role": {
+														"const": "comms"
 													}
 												},
 												"required": [
@@ -762,8 +1352,14 @@
 													"ideRunningInWindows": {
 														"type": "boolean"
 													},
+													"timeout": {
+														"type": "number"
+													},
 													"alwaysLoad": {
 														"type": "boolean"
+													},
+													"role": {
+														"const": "comms"
 													}
 												},
 												"required": [
@@ -790,8 +1386,14 @@
 													"ideRunningInWindows": {
 														"type": "boolean"
 													},
+													"timeout": {
+														"type": "number"
+													},
 													"alwaysLoad": {
 														"type": "boolean"
+													},
+													"role": {
+														"const": "comms"
 													}
 												},
 												"required": [
@@ -843,8 +1445,14 @@
 															}
 														}
 													},
+													"timeout": {
+														"type": "number"
+													},
 													"alwaysLoad": {
 														"type": "boolean"
+													},
+													"role": {
+														"const": "comms"
 													}
 												},
 												"required": [
@@ -870,8 +1478,14 @@
 													"headersHelper": {
 														"type": "string"
 													},
+													"timeout": {
+														"type": "number"
+													},
 													"alwaysLoad": {
 														"type": "boolean"
+													},
+													"role": {
+														"const": "comms"
 													}
 												},
 												"required": [
@@ -887,6 +1501,9 @@
 													},
 													"name": {
 														"type": "string"
+													},
+													"timeout": {
+														"type": "number"
 													},
 													"alwaysLoad": {
 														"type": "boolean"
@@ -908,6 +1525,9 @@
 													},
 													"id": {
 														"type": "string"
+													},
+													"timeout": {
+														"type": "number"
 													},
 													"alwaysLoad": {
 														"type": "boolean"
@@ -1130,7 +1750,7 @@
 								"command": {
 									"type": "string",
 									"minLength": 1,
-									"description": "Shell command to run as a persistent background monitor. Each stdout line is delivered to the model as a <task_notification> event; the process runs for the session lifetime. ${CLAUDE_PLUGIN_ROOT}, ${CLAUDE_PLUGIN_DATA}, ${user_config.*}, and ${ENV_VAR} are substituted. Runs in the session cwd \\u2014 prefix with `cd \"${CLAUDE_PLUGIN_ROOT}\" && ` if the script needs its own directory."
+									"description": "Shell command to run as a persistent background monitor. Each stdout line is delivered to the model as a <task_notification> event; the process runs for the session lifetime. ${CLAUDE_PLUGIN_ROOT}, ${CLAUDE_PLUGIN_DATA}, ${CLAUDE_PROJECT_DIR}, ${user_config.*}, and ${ENV_VAR} are substituted. Runs in the session cwd \\u2014 prefix with `cd \"${CLAUDE_PLUGIN_ROOT}\" && ` if the script needs its own directory."
 								},
 								"description": {
 									"type": "string",
@@ -1246,15 +1866,15 @@
 						"anyOf": [
 							{
 								"type": "string",
-								"description": "Path to additional themes directory or file (in addition to those in the themes/ directory, if it exists), relative to the plugin root"
+								"description": "Path to a themes directory or file, relative to the plugin root. When set, the themes/ directory is not auto-loaded — list its files here if you want both."
 							},
 							{
 								"type": "array",
 								"items": {
 									"type": "string",
-									"description": "Path to additional themes directory or file (in addition to those in the themes/ directory, if it exists), relative to the plugin root"
+									"description": "Path to a themes directory or file, relative to the plugin root. When set, the themes/ directory is not auto-loaded — list its files here if you want both."
 								},
-								"description": "List of paths to additional themes directories or files"
+								"description": "List of theme directory or file paths. When set, the themes/ directory is not auto-loaded."
 							}
 						]
 					},
@@ -1277,7 +1897,7 @@
 										"command": {
 											"type": "string",
 											"minLength": 1,
-											"description": "Shell command to run as a persistent background monitor. Each stdout line is delivered to the model as a <task_notification> event; the process runs for the session lifetime. ${CLAUDE_PLUGIN_ROOT}, ${CLAUDE_PLUGIN_DATA}, ${user_config.*}, and ${ENV_VAR} are substituted. Runs in the session cwd \\u2014 prefix with `cd \"${CLAUDE_PLUGIN_ROOT}\" && ` if the script needs its own directory."
+											"description": "Shell command to run as a persistent background monitor. Each stdout line is delivered to the model as a <task_notification> event; the process runs for the session lifetime. ${CLAUDE_PLUGIN_ROOT}, ${CLAUDE_PLUGIN_DATA}, ${CLAUDE_PROJECT_DIR}, ${user_config.*}, and ${ENV_VAR} are substituted. Runs in the session cwd \\u2014 prefix with `cd \"${CLAUDE_PLUGIN_ROOT}\" && ` if the script needs its own directory."
 										},
 										"description": {
 											"type": "string",
@@ -1307,6 +1927,36 @@
 							}
 						],
 						"description": "Background watch scripts the host arms as persistent Monitor tasks (unsandboxed, same trust tier as hooks) so plugins need not instruct the model to arm them. When omitted, monitors/monitors.json at the plugin root is loaded if present."
+					},
+					"outputStyles": {
+						"anyOf": [
+							{
+								"type": "string",
+								"description": "Path to an output-styles directory or file, relative to the plugin root. When set, the output-styles/ directory is not auto-loaded — list its files here if you want both."
+							},
+							{
+								"type": "array",
+								"items": {
+									"type": "string",
+									"description": "Path to an output-styles directory or file, relative to the plugin root. When set, the output-styles/ directory is not auto-loaded — list its files here if you want both."
+								},
+								"description": "List of output-style directory or file paths. When set, the output-styles/ directory is not auto-loaded."
+							}
+						]
+					},
+					"evals": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							}
+						],
+						"description": "Path(s) to evaluation query files for `claude plugin eval`. Defaults to `evals/`."
 					}
 				},
 				"description": "Components whose manifest shape may change without a deprecation cycle. Move a key out of here once it is promoted to stable."

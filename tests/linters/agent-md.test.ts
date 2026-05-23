@@ -27,7 +27,8 @@ describe("agent-md linter", () => {
 		const rules = diags.map((d) => d.rule);
 		expect(rules).toContain("agent-md/description-required");
 		expect(rules).toContain("agent-md/model-required");
-		expect(rules).toContain("agent-md/color-required");
+		// gitea#3: color is .optional() @internal upstream; no longer required.
+		expect(rules).not.toContain("agent-md/color-required");
 	});
 
 	it("reports invalid model", () => {
