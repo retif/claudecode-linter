@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.146",
-	"extractedAt": "2026-05-22T08:16:43.683Z",
+	"extractedFromClaudeCodeVersion": "2.1.150",
+	"extractedAt": "2026-05-23T18:30:08.385Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code .mcp.json",
@@ -32,6 +32,9 @@
 									"additionalProperties": {
 										"type": "string"
 									}
+								},
+								"timeout": {
+									"type": "number"
 								},
 								"alwaysLoad": {
 									"type": "boolean"
@@ -84,6 +87,9 @@
 										}
 									}
 								},
+								"timeout": {
+									"type": "number"
+								},
 								"alwaysLoad": {
 									"type": "boolean"
 								},
@@ -110,6 +116,9 @@
 								},
 								"ideRunningInWindows": {
 									"type": "boolean"
+								},
+								"timeout": {
+									"type": "number"
 								},
 								"alwaysLoad": {
 									"type": "boolean"
@@ -141,6 +150,9 @@
 								},
 								"ideRunningInWindows": {
 									"type": "boolean"
+								},
+								"timeout": {
+									"type": "number"
 								},
 								"alwaysLoad": {
 									"type": "boolean"
@@ -198,6 +210,9 @@
 										}
 									}
 								},
+								"timeout": {
+									"type": "number"
+								},
 								"alwaysLoad": {
 									"type": "boolean"
 								},
@@ -228,6 +243,9 @@
 								"headersHelper": {
 									"type": "string"
 								},
+								"timeout": {
+									"type": "number"
+								},
 								"alwaysLoad": {
 									"type": "boolean"
 								},
@@ -249,6 +267,9 @@
 								"name": {
 									"type": "string"
 								},
+								"timeout": {
+									"type": "number"
+								},
 								"alwaysLoad": {
 									"type": "boolean"
 								}
@@ -269,6 +290,9 @@
 								},
 								"id": {
 									"type": "string"
+								},
+								"timeout": {
+									"type": "number"
 								},
 								"alwaysLoad": {
 									"type": "boolean"

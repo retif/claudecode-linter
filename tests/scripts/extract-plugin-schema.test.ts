@@ -140,6 +140,23 @@ describe("evalZod primitives", () => {
 		expect(evalZod('E.literal("x")', ctx)).toEqual({ const: "x" });
 	});
 
+	it("resolves E.literal(<ident>) via the string-literal index", () => {
+		// gitea#1 regression: `y.literal(V0q)` with `V0q="https://..."` must
+		// resolve to the URL, not surface as `{ const: "V0q" }`.
+		const idx = indexDefinitions(
+			`V0q="https://json.schemastore.org/claude-code-settings.json";` +
+			`var s=CH(()=>E.object({$schema:E.literal(V0q).optional()}));`,
+		);
+		const ctx2 = { index: idx, resolving: new Set<string>() };
+		expect(evalZod("E.literal(V0q)", ctx2)).toEqual({
+			const: "https://json.schemastore.org/claude-code-settings.json",
+		});
+	});
+
+	it("E.literal(<unknown-ident>) falls back to {type:string} (never a bogus const)", () => {
+		expect(evalZod("E.literal(unknownIdent)", ctx)).toEqual({ type: "string" });
+	});
+
 	it("translates E.enum([...]) → {enum: [...]}", () => {
 		expect(evalZod('E.enum(["a","b","c"])', ctx)).toEqual({
 			enum: ["a", "b", "c"],

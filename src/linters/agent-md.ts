@@ -99,7 +99,9 @@ const RULES: RuleDef[] = [
 	{ id: "agent-md/permission-mode-valid", defaultSeverity: "warning" },
 	{ id: "agent-md/effort-valid", defaultSeverity: "warning" },
 	{ id: "agent-md/max-turns-valid", defaultSeverity: "warning" },
-	{ id: "agent-md/color-required", defaultSeverity: "warning" },
+	// agent-md/color-required removed in gitea#3 — Claude Code marks `color`
+	// as `.optional()` and `@internal`. The remaining `color-valid` rule still
+	// enforces the value set when an author opts in.
 	{ id: "agent-md/color-valid", defaultSeverity: "warning" },
 	{ id: "agent-md/system-prompt-present", defaultSeverity: "error" },
 	{ id: "agent-md/system-prompt-length", defaultSeverity: "warning" },
@@ -327,27 +329,34 @@ export const agentMdLinter: Linter = {
 			}
 		}
 
-		// color
-		if (!("color" in fm.data) || typeof fm.data.color !== "string") {
-			push(
-				diag(
-					config,
-					filePath,
-					"agent-md/color-required",
-					"warning",
-					'"color" is required in frontmatter',
-				),
-			);
-		} else if (!AGENT_COLORS.has(fm.data.color)) {
-			push(
-				diag(
-					config,
-					filePath,
-					"agent-md/color-valid",
-					"warning",
-					`"color" must be one of: ${[...AGENT_COLORS].join(", ")} (got "${fm.data.color}")`,
-				),
-			);
+		// color — optional per Claude Code's agent frontmatter Zod schema
+		// (`color: hW().optional().describe("@internal — display color in the
+		// agents UI")`). Only validate the value if the user set one; never
+		// require it. The `color-required` rule (gitea#3) is kept on disk for
+		// users who explicitly opted in via .claudecode-lint.yaml, but defaults
+		// to off because requiring an @internal display field misled users.
+		if ("color" in fm.data) {
+			if (typeof fm.data.color !== "string") {
+				push(
+					diag(
+						config,
+						filePath,
+						"agent-md/color-valid",
+						"warning",
+						'"color" must be a string when set',
+					),
+				);
+			} else if (!AGENT_COLORS.has(fm.data.color)) {
+				push(
+					diag(
+						config,
+						filePath,
+						"agent-md/color-valid",
+						"warning",
+						`"color" must be one of: ${[...AGENT_COLORS].join(", ")} (got "${fm.data.color}")`,
+					),
+				);
+			}
 		}
 
 		// Frontmatter keys: only flag cross-artifact misplacement. A key valid

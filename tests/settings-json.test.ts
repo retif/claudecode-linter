@@ -240,8 +240,10 @@ describe("settings-json — project scope", () => {
   });
 
   it("still flags a genuine user-only field in settings.local.json", () => {
-    // regression guard: the project-scope fix must not whitelist everything
-    const d = diagnose({ model: "opus" }, "project", "settings.local.json")
+    // regression guard: the project-scope fix must not whitelist everything.
+    // `apiKeyHelper` runs as the user — checking it into a repo would be
+    // silently ignored by Claude Code.
+    const d = diagnose({ apiKeyHelper: "/x" }, "project", "settings.local.json")
       .find((x) => x.rule === "settings-json/scope-field");
     expect(d?.severity).toBe("warning");
   });
