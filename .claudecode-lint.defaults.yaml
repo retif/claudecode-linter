@@ -57,6 +57,14 @@ rules:
   agent-md/system-prompt-length: warning
   agent-md/system-prompt-second-person: info
 
+  # ── marketplace.json (schemastore-only) ──────────────────
+  marketplace-json/valid-json: error
+  marketplace-json/schema-valid: error
+
+  # ── keybindings.json (schemastore-only) ──────────────────
+  keybindings-json/valid-json: error
+  keybindings-json/schema-valid: error
+
   # ── Command .md ──────────────────────────────────────────
   command-md/valid-frontmatter: error
   command-md/schema-valid: error

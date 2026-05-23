@@ -56,7 +56,16 @@ jobs:
           FORCE_CONTRACTS: ${{ inputs.force_contracts && '1' || '0' }}
         run: |
           npx tsx scripts/extract-contracts.ts --changelog
+          npx tsx scripts/extract-plugin-schema.ts
           npx tsx scripts/generate-contracts.ts
+
+      - name: Fetch schemastore.org schemas
+        if: steps.check.outputs.skip == 'false'
+        # gitea#6: pull canonical Claude Code JSON schemas from
+        # schemastore.org and commit them so the linter ships with both
+        # the Zod-extracted contracts (runtime truth) and the schemastore
+        # copies (used as the sole source for marketplace + keybindings).
+        run: npx tsx scripts/fetch-schemastore.ts
 
       - name: Build and test
         if: steps.check.outputs.skip == 'false'

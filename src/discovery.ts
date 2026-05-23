@@ -235,6 +235,27 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 		artifacts.push({ filePath: f, artifactType: "monitors-json" });
 	}
 
+	// .claude-plugin/marketplace.json — schemastore-only artifact.
+	const marketplace = join(dir, ".claude-plugin", "marketplace.json");
+	if (existsSync(marketplace)) {
+		artifacts.push({ filePath: marketplace, artifactType: "marketplace-json" });
+	}
+
+	// keybindings.json — usually at ~/.claude/keybindings.json (user scope),
+	// but also picked up at project root if present. schemastore-only artifact.
+	for (const candidate of [
+		join(dir, "keybindings.json"),
+		join(dir, ".claude", "keybindings.json"),
+	]) {
+		if (existsSync(candidate)) {
+			artifacts.push({
+				filePath: candidate,
+				artifactType: "keybindings-json",
+				scope: detectScope(candidate),
+			});
+		}
+	}
+
 	// Claude config files — settings
 	for (const name of ["settings.json", "settings.local.json"]) {
 		// Direct in dir (handles both ~/.claude/settings.json and project root)
@@ -353,6 +374,9 @@ function classifyFile(filePath: string): ArtifactType | null {
 
 	if (name === "plugin.json" && parent === ".claude-plugin")
 		return "plugin-json";
+	if (name === "marketplace.json" && parent === ".claude-plugin")
+		return "marketplace-json";
+	if (name === "keybindings.json") return "keybindings-json";
 	if (name === "SKILL.md") return "skill-md";
 	if (name === "hooks.json" && parent === "hooks") return "hooks-json";
 	if (name === ".lsp.json") return "lsp-json";

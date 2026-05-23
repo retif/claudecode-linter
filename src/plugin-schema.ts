@@ -48,36 +48,97 @@ function getAjv(): Ajv2020 {
 	return ajvShared;
 }
 
-function loadCompiledSchema(fileName: string): CompiledSchema | null {
-	if (compiledCache.has(fileName)) return compiledCache.get(fileName) ?? null;
+type SchemaShape =
+	| { extractedFromClaudeCodeVersion: string; schema: Record<string, unknown> }
+	| Record<string, unknown>;
 
+function tryReadFile(relPath: string[]): string | null {
 	const candidates = [
-		...assetCandidates(import.meta.url, ["..", "contracts", fileName]),
-		...assetCandidates(import.meta.url, ["..", "..", "contracts", fileName]),
+		...assetCandidates(import.meta.url, ["..", ...relPath]),
+		...assetCandidates(import.meta.url, ["..", "..", ...relPath]),
 	];
-	let raw: string | null = null;
 	for (const p of candidates) {
 		try {
-			raw = readFileSync(p, "utf8");
-			break;
+			return readFileSync(p, "utf8");
 		} catch {
 			// try next
 		}
 	}
+	return null;
+}
+
+/**
+ * Compile a schema document, handling both wrapper shapes:
+ *   - extracted (`{ extractedFromClaudeCodeVersion, schema: {...} }`)
+ *   - bare JSON Schema (the schemastore.org files, no envelope)
+ */
+function compileSchemaDoc(
+	raw: string,
+	sourceLabel: string,
+): CompiledSchema {
+	const parsed = JSON.parse(raw) as SchemaShape;
+	let schema: Record<string, unknown>;
+	let version: string;
+	if (
+		"extractedFromClaudeCodeVersion" in parsed &&
+		typeof parsed.extractedFromClaudeCodeVersion === "string" &&
+		"schema" in parsed &&
+		typeof parsed.schema === "object" &&
+		parsed.schema !== null
+	) {
+		schema = parsed.schema as Record<string, unknown>;
+		version = parsed.extractedFromClaudeCodeVersion;
+	} else {
+		// Bare schemastore document. Strip `$id` (Ajv registers it globally
+		// and trips `$id already exists` on a second compile) and any
+		// `$schema` meta-pointer Ajv2020 can't resolve (draft-07 etc.).
+		const { $id: _id, $schema: _meta, ...rest } = parsed as Record<
+			string,
+			unknown
+		>;
+		void _id;
+		void _meta;
+		schema = rest;
+		version = sourceLabel;
+	}
+	const propSrc =
+		(schema.properties as Record<string, unknown> | undefined) ?? {};
+	return {
+		validate: getAjv().compile(schema),
+		extractedFromVersion: version,
+		knownFields: new Set(Object.keys(propSrc)),
+	};
+}
+
+function loadCompiledSchema(fileName: string): CompiledSchema | null {
+	if (compiledCache.has(fileName)) return compiledCache.get(fileName) ?? null;
+	const raw = tryReadFile(["contracts", fileName]);
 	if (!raw) {
 		compiledCache.set(fileName, null);
 		return null;
 	}
-	const wrapped = JSON.parse(raw) as {
-		extractedFromClaudeCodeVersion: string;
-		schema: { properties?: Record<string, unknown> };
-	};
-	const compiled: CompiledSchema = {
-		validate: getAjv().compile(wrapped.schema),
-		extractedFromVersion: wrapped.extractedFromClaudeCodeVersion,
-		knownFields: new Set(Object.keys(wrapped.schema.properties ?? {})),
-	};
+	const compiled = compileSchemaDoc(raw, fileName);
 	compiledCache.set(fileName, compiled);
+	return compiled;
+}
+
+/**
+ * Load a schemastore.org-curated schema from `contracts/schemastore/`.
+ * Schemastore is preferred for top-level artifact validation because it's
+ * Anthropic's own published source of truth and stays stable across Claude
+ * Code minifier rotations. The Zod-extracted schemas (`loadCompiledSchema`)
+ * remain authoritative for sub-shapes schemastore doesn't enumerate.
+ */
+function loadSchemastoreSchema(fileName: string): CompiledSchema | null {
+	const cacheKey = `schemastore/${fileName}`;
+	if (compiledCache.has(cacheKey)) return compiledCache.get(cacheKey) ?? null;
+	const raw = tryReadFile(["contracts", "schemastore", fileName]);
+	if (!raw) {
+		compiledCache.set(cacheKey, null);
+		return null;
+	}
+	const compiled = compileSchemaDoc(raw, `schemastore:${fileName}`);
+	compiledCache.set(cacheKey, compiled);
 	return compiled;
 }
 
@@ -90,7 +151,25 @@ export function loadMonitorsSchema(): CompiledSchema | null {
 }
 
 export function loadSettingsSchema(): CompiledSchema | null {
+	// gitea#6: prefer the Zod-extracted schema (runtime truth, e.g.
+	// `disableAutoMode` is `boolean` in 2.1.150) over schemastore (which
+	// still lists it as a string literal — out of date). Schemastore is
+	// only used for artifacts with no Zod source (marketplace, keybindings).
 	return loadCompiledSchema("settings.schema.json");
+}
+
+/**
+ * Marketplace and keybindings schemas come exclusively from schemastore —
+ * there is no Zod source for them in the Claude Code bundle. Returns null
+ * if the user's install was shipped without the schemastore bundle (rare;
+ * the package.json includes them in `files`).
+ */
+export function loadMarketplaceSchema(): CompiledSchema | null {
+	return loadSchemastoreSchema("marketplace.schema.json");
+}
+
+export function loadKeybindingsSchema(): CompiledSchema | null {
+	return loadSchemastoreSchema("keybindings.schema.json");
 }
 
 export function loadMcpJsonSchema(): CompiledSchema | null {
@@ -116,39 +195,17 @@ export function loadCommandFrontmatterSchema(): CompiledSchema | null {
 export function loadPluginSchema(): PluginSchemaContext | null {
 	if (cached) return cached;
 
-	const candidates = [
-		...assetCandidates(import.meta.url, ["..", "contracts", "plugin.schema.json"]),
-		...assetCandidates(import.meta.url, [
-			"..",
-			"..",
-			"contracts",
-			"plugin.schema.json",
-		]),
-	];
-
-	let raw: string | null = null;
-	for (const p of candidates) {
-		try {
-			raw = readFileSync(p, "utf8");
-			break;
-		} catch {
-			// try next
-		}
-	}
+	// gitea#6: prefer the Zod-extracted plugin.schema.json (runtime truth);
+	// schemastore copy stays committed at `contracts/schemastore/` for
+	// reference and for the marketplace/keybindings artifacts only.
+	const raw = tryReadFile(["contracts", "plugin.schema.json"]);
 	if (!raw) return null;
 
-	const wrapped = JSON.parse(raw) as {
-		extractedFromClaudeCodeVersion: string;
-		schema: { properties?: Record<string, unknown> };
-	};
-	const ajv = new Ajv2020({ allErrors: true, strict: false });
-	addFormats(ajv);
-	const validate = ajv.compile(wrapped.schema);
-	const knownFields = new Set(Object.keys(wrapped.schema.properties ?? {}));
+	const compiled = compileSchemaDoc(raw, "plugin.schema.json");
 	cached = {
-		validate,
-		extractedFromVersion: wrapped.extractedFromClaudeCodeVersion,
-		knownFields,
+		validate: compiled.validate,
+		extractedFromVersion: compiled.extractedFromVersion,
+		knownFields: compiled.knownFields,
 	};
 	return cached;
 }

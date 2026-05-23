@@ -11,6 +11,8 @@ export type ArtifactType =
   | "claude-md"
   | "lsp-json"
   | "monitors-json"
+  | "marketplace-json"
+  | "keybindings-json"
   | "misplaced-file";
 
 export interface LintDiagnostic {

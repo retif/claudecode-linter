@@ -28,6 +28,8 @@ import { mcpJsonLinter } from "./linters/mcp-json.js";
 import { claudeMdLinter } from "./linters/claude-md.js";
 import { lspJsonLinter } from "./linters/lsp-json.js";
 import { monitorsJsonLinter } from "./linters/monitors-json.js";
+import { marketplaceJsonLinter } from "./linters/marketplace-json.js";
+import { keybindingsJsonLinter } from "./linters/keybindings-json.js";
 import {
 	misplacedFileLinter,
 	MISPLACED_FILE_RULES,
@@ -48,6 +50,8 @@ import { MCP_JSON_RULES } from "./linters/mcp-json.js";
 import { CLAUDE_MD_RULES } from "./linters/claude-md.js";
 import { LSP_JSON_RULES } from "./linters/lsp-json.js";
 import { MONITORS_JSON_RULES } from "./linters/monitors-json.js";
+import { MARKETPLACE_JSON_RULES } from "./linters/marketplace-json.js";
+import { KEYBINDINGS_JSON_RULES } from "./linters/keybindings-json.js";
 import type {
 	ArtifactType,
 	ConfigScope,
@@ -67,6 +71,8 @@ const LINTERS: Record<ArtifactType, Linter> = {
 	"claude-md": claudeMdLinter,
 	"lsp-json": lspJsonLinter,
 	"monitors-json": monitorsJsonLinter,
+	"marketplace-json": marketplaceJsonLinter,
+	"keybindings-json": keybindingsJsonLinter,
 	"misplaced-file": misplacedFileLinter,
 };
 
@@ -92,6 +98,8 @@ const ALL_RULES = [
 	...CLAUDE_MD_RULES,
 	...LSP_JSON_RULES,
 	...MONITORS_JSON_RULES,
+	...MARKETPLACE_JSON_RULES,
+	...KEYBINDINGS_JSON_RULES,
 	...MISPLACED_FILE_RULES,
 ];
 

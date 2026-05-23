@@ -10,7 +10,8 @@
 npm run build               # tsc → dist/
 npm test                    # vitest run (165 tests)
 npm run dev                 # tsc --watch
-npm run extract-contracts   # pull contracts from latest Claude Code
+npm run extract-contracts   # pull contracts from latest Claude Code (Zod + schemastore)
+npm run fetch-schemastore   # refresh contracts/schemastore/ only
 npm run generate-contracts  # regenerate src/contracts.ts from JSON
 npm run knip                # find unused exports/dependencies
 npm run check-deps          # check for replaceable dependencies
@@ -71,6 +72,19 @@ The walker auto-detects the Zod alias (`E`/`I`/`y`/…) and the lazy-wrapper hel
 
 Verified against 2.1.131 (older symbol set) and 2.1.138 (current). When extraction does break on a new release, the walker falls back to `{}` (permissive) per missing primitive — never emits a stricter schema than Claude Code actually enforces.
 
+### Schemastore.org as a secondary source (gitea#6)
+
+The contract-sync pipeline also fetches the four schemastore.org-curated Claude Code schemas into `contracts/schemastore/`:
+
+| Schemastore file | Used by |
+|---|---|
+| `settings.schema.json` | reference / future cross-check (Zod extraction is primary — schemastore lags, e.g. it still types `disableAutoMode` as a string literal long after the runtime switched to boolean) |
+| `plugin-manifest.schema.json` | reference (Zod extraction is primary) |
+| `marketplace.schema.json` | sole source for the `marketplace-json` linter — no Zod source in the bundle |
+| `keybindings.schema.json` | sole source for the `keybindings-json` linter — no Zod source in the bundle |
+
+The schemastore fetch happens in `npm run extract-contracts` and on each CI release. The committed JSONs ship in the published package via the `files` array.
+
 ## Linter Pattern
 
 Every linter implements the `Linter` interface from `types.ts`:
@@ -98,6 +112,8 @@ Rules are named `<artifact>/<rule>` (e.g., `plugin-json/name-kebab-case`). Use `
 | `claude-md` | `CLAUDE.md` | user, project |
 | `lsp-json` | `.lsp.json` | — |
 | `monitors-json` | `monitors/monitors.json` | — |
+| `marketplace-json` | `.claude-plugin/marketplace.json` | — |
+| `keybindings-json` | `keybindings.json`, `.claude/keybindings.json` | user, project |
 
 Scope detection (`discovery.ts`): files in `~/.claude/` or `~/` → user, files in project `.claude/` → project.
 

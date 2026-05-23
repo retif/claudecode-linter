@@ -17,8 +17,9 @@
 		"deps:update": "ncu -u",
 		"knip": "knip --exclude types",
 		"check-deps": "tsx scripts/check-deps.ts",
-		"extract-contracts": "tsx scripts/extract-contracts.ts && tsx scripts/extract-plugin-schema.ts",
+		"extract-contracts": "tsx scripts/extract-contracts.ts && tsx scripts/extract-plugin-schema.ts && tsx scripts/fetch-schemastore.ts",
 		"extract-plugin-schema": "tsx scripts/extract-plugin-schema.ts",
+		"fetch-schemastore": "tsx scripts/fetch-schemastore.ts",
 		"generate-contracts": "tsx scripts/generate-contracts.ts"
 	},
 	"files": [
@@ -32,6 +33,7 @@
 		"contracts/command-frontmatter.schema.json",
 		"contracts/mcp.schema.json",
 		"contracts/hooks.schema.json",
+		"contracts/schemastore/*.json",
 		".claudecode-lint.defaults.yaml",
 		"README.md"
 	],
