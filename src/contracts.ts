@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.148 — extracted 2026-05-22T07:13:45.210Z
+// Claude Code v2.1.149 — extracted 2026-05-23T01:03:30.744Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -24,9 +24,11 @@ export const TOOLS = new Set<string>([
 	"NotebookEdit",
 	"NotebookRead",
 	"PushNotification",
+	"REPL",
 	"Read",
 	"ReadMcpResource",
 	"RemoteTrigger",
+	"ScheduleWakeup",
 	"SendMessage",
 	"Skill",
 	"SubscribeMcpResource",
@@ -45,6 +47,7 @@ export const TOOLS = new Set<string>([
 	"UnsubscribePolling",
 	"WebFetch",
 	"WebSearch",
+	"Workflow",
 	"Write",
 ]);
 
@@ -219,6 +222,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"advisorModel",
 	"agent",
 	"agentPushNotifEnabled",
+	"allowAllClaudeAiMcps",
 	"allowManagedHooksOnly",
 	"allowManagedMcpServersOnly",
 	"allowManagedPermissionRulesOnly",
@@ -242,6 +246,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"awsAuthRefresh",
 	"awsCredentialExport",
 	"blockedMarketplaces",
+	"breakReminder",
 	"channelsEnabled",
 	"claudeMd",
 	"claudeMdExcludes",
@@ -298,6 +303,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"proactive",
 	"promptSuggestionEnabled",
 	"proxyAuthHelper",
+	"quietHours",
 	"remote",
 	"remoteControlAtStartup",
 	"respectGitignore",

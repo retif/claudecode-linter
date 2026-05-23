@@ -1,6 +1,6 @@
 {
-	"version": "2.1.148",
-	"extractedAt": "2026-05-22T07:13:45.210Z",
+	"version": "2.1.149",
+	"extractedAt": "2026-05-23T01:03:30.744Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -24,9 +24,11 @@
 			"NotebookEdit",
 			"NotebookRead",
 			"PushNotification",
+			"REPL",
 			"Read",
 			"ReadMcpResource",
 			"RemoteTrigger",
+			"ScheduleWakeup",
 			"SendMessage",
 			"Skill",
 			"SubscribeMcpResource",
@@ -45,6 +47,7 @@
 			"UnsubscribePolling",
 			"WebFetch",
 			"WebSearch",
+			"Workflow",
 			"Write"
 		],
 		"hookEvents": [
@@ -208,6 +211,7 @@
 			"advisorModel",
 			"agent",
 			"agentPushNotifEnabled",
+			"allowAllClaudeAiMcps",
 			"allowManagedHooksOnly",
 			"allowManagedMcpServersOnly",
 			"allowManagedPermissionRulesOnly",
@@ -231,6 +235,7 @@
 			"awsAuthRefresh",
 			"awsCredentialExport",
 			"blockedMarketplaces",
+			"breakReminder",
 			"channelsEnabled",
 			"claudeMd",
 			"claudeMdExcludes",
@@ -287,6 +292,7 @@
 			"proactive",
 			"promptSuggestionEnabled",
 			"proxyAuthHelper",
+			"quietHours",
 			"remote",
 			"remoteControlAtStartup",
 			"respectGitignore",
