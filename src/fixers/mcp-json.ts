@@ -40,6 +40,12 @@ export const mcpJsonFixer: Fixer = {
               orderedServer[field] = serverObj[field];
             }
           }
+          // gitea#7: URL-based servers with type:"http" rewrite to
+          // "streamable-http" (the runtime transport is identical post-v2.1.146;
+          // the rename avoids the legacy OAuth-probe code path).
+          if (orderedServer.type === "http" && typeof orderedServer.url === "string") {
+            orderedServer.type = "streamable-http";
+          }
           sortedServers[serverName] = orderedServer;
         } else {
           sortedServers[serverName] = server;

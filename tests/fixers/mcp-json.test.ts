@@ -42,4 +42,24 @@ describe("mcp-json fixer", () => {
   it("returns invalid JSON unchanged", async () => {
     expect(await fix("not json")).toBe("not json");
   });
+
+  it("rewrites type:http to streamable-http on URL-based servers", async () => {
+    const input = JSON.stringify({
+      mcpServers: {
+        "remote": { type: "http", url: "https://example.com/mcp" },
+      },
+    });
+    const result = JSON.parse(await fix(input));
+    expect(result.mcpServers.remote.type).toBe("streamable-http");
+  });
+
+  it("does not touch type:http when there is no url", async () => {
+    const input = JSON.stringify({
+      mcpServers: {
+        "weird": { type: "http", command: "x" },
+      },
+    });
+    const result = JSON.parse(await fix(input));
+    expect(result.mcpServers.weird.type).toBe("http");
+  });
 });

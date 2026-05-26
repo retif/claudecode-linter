@@ -114,6 +114,35 @@ describe("mcp-json linter", () => {
     expect(errors).toHaveLength(0);
   });
 
+  it("warns on type:http for URL-based server (prefer-streamable-http)", () => {
+    const diags = lint(JSON.stringify({
+      mcpServers: {
+        "my-server": { type: "http", url: "https://example.com/mcp" },
+      },
+    }));
+    const d = diags.find((d) => d.rule === "mcp-json/prefer-streamable-http");
+    expect(d).toBeDefined();
+    expect(d?.severity).toBe("warning");
+  });
+
+  it("does not warn prefer-streamable-http on streamable-http URL servers", () => {
+    const diags = lint(JSON.stringify({
+      mcpServers: {
+        "my-server": { type: "streamable-http", url: "https://example.com/mcp" },
+      },
+    }));
+    expect(diags.some((d) => d.rule === "mcp-json/prefer-streamable-http")).toBe(false);
+  });
+
+  it("does not warn prefer-streamable-http on stdio servers", () => {
+    const diags = lint(JSON.stringify({
+      mcpServers: {
+        "local": { command: "/usr/bin/mcp" },
+      },
+    }));
+    expect(diags.some((d) => d.rule === "mcp-json/prefer-streamable-http")).toBe(false);
+  });
+
   it("warns .mcp.json at user level", () => {
     const content = JSON.stringify({ mcpServers: { test: { command: "cmd" } } });
     const diags = mcpJsonLinter.lint(".mcp.json", content, CONFIG, "user");
