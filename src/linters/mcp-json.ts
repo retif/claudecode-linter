@@ -28,6 +28,7 @@ const RULES: RuleDef[] = [
   { id: "mcp-json/url-protocol", defaultSeverity: "warning" },
   { id: "mcp-json/url-valid", defaultSeverity: "error" },
   { id: "mcp-json/type-matches-transport", defaultSeverity: "warning" },
+  { id: "mcp-json/prefer-streamable-http", defaultSeverity: "warning" },
   { id: "mcp-json/command-args-split", defaultSeverity: "info" },
   { id: "mcp-json/args-array", defaultSeverity: "error" },
   { id: "mcp-json/env-object", defaultSeverity: "error" },
@@ -184,6 +185,15 @@ export const mcpJsonLinter: Linter = {
         if ("type" in server && !HTTP_TRANSPORT_TYPES.has(server.type as string)) {
           push(diag(config, filePath, "mcp-json/type-matches-transport", "warning",
             `Server "${name}" has URL but type is "${server.type}" (expected one of ${[...HTTP_TRANSPORT_TYPES].join(", ")})`, sp?.line, sp?.column));
+        }
+
+        // Prefer "streamable-http" over "http" for URL-based MCP servers.
+        // Per gitea#7: older Claude Code's "http" transport may trigger an
+        // OAuth metadata probe / DCR POST that "streamable-http" skips, and
+        // misbehaving upstream proxies can silently fail with "0 tools".
+        if (server.type === "http") {
+          push(diag(config, filePath, "mcp-json/prefer-streamable-http", "warning",
+            `Server "${name}" uses type "http" — prefer "streamable-http" to avoid OAuth probe edge cases on some upstream proxies`, sp?.line, sp?.column));
         }
       }
 
