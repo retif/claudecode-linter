@@ -1,4 +1,5 @@
-import { basename } from "node:path";
+import { basename, dirname, join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
 import {
 	SETTINGS_USER_FIELDS,
 	SETTINGS_PROJECT_FIELDS,
@@ -47,6 +48,7 @@ const RULES: RuleDef[] = [
   { id: "settings-json/plugins-boolean", defaultSeverity: "warning" },
   { id: "settings-json/plugins-format", defaultSeverity: "warning" },
   { id: "settings-json/skip-prompt-boolean", defaultSeverity: "error" },
+  { id: "settings-json/disable-project-mcpjson-shadow", defaultSeverity: "warning" },
 ];
 
 type FieldType = "boolean" | "string" | "number" | "string-array" | "object";
@@ -551,6 +553,52 @@ export const settingsJsonLinter: Linter = {
           if (!key.includes("@")) {
             push(diag(config, filePath, "settings-json/plugins-format", "warning",
               `Plugin key "${key}" should be in "name@marketplace" format`, kp?.line, kp?.column));
+          }
+        }
+      }
+    }
+
+    // gitea#8: when this settings.json sits at <plugin-root>/.claude/settings.json
+    // and the plugin also ships a <plugin-root>/.mcp.json, Claude Code loads the
+    // plugin's MCP servers twice when launched from the plugin dir (once as the
+    // plugin, once as project-scope .mcp.json) and dedupes — triggering /doctor
+    // "skipped" warnings. The committed suppression is to list each server name
+    // in this file's `disabledMcpjsonServers`.
+    if (isRuleEnabled(config, "settings-json/disable-project-mcpjson-shadow") &&
+        basename(filePath) === "settings.json" &&
+        basename(dirname(filePath)) === ".claude") {
+      const pluginRoot = dirname(dirname(filePath));
+      const pluginJson = join(pluginRoot, ".claude-plugin", "plugin.json");
+      const mcpJson = join(pluginRoot, ".mcp.json");
+      if (existsSync(pluginJson) && existsSync(mcpJson)) {
+        let mcpServerNames: string[] = [];
+        try {
+          const mcp = JSON.parse(readFileSync(mcpJson, "utf-8")) as Record<string, unknown>;
+          if (isPlainObject(mcp.mcpServers)) {
+            mcpServerNames = Object.keys(mcp.mcpServers);
+          }
+        } catch { /* ignore — broken .mcp.json is the mcp-json linter's job */ }
+
+        // settings.local.json with the same disable also satisfies the rule.
+        let disabled: unknown[] = Array.isArray(parsed.disabledMcpjsonServers)
+          ? parsed.disabledMcpjsonServers as unknown[]
+          : [];
+        const localPath = join(dirname(filePath), "settings.local.json");
+        if (existsSync(localPath)) {
+          try {
+            const local = JSON.parse(readFileSync(localPath, "utf-8")) as Record<string, unknown>;
+            if (Array.isArray(local.disabledMcpjsonServers)) {
+              disabled = disabled.concat(local.disabledMcpjsonServers as unknown[]);
+            }
+          } catch { /* ignore */ }
+        }
+        const disabledSet = new Set(disabled.filter((x): x is string => typeof x === "string"));
+        const dp = findKeyPosition(content, "disabledMcpjsonServers");
+        for (const name of mcpServerNames) {
+          if (!disabledSet.has(name)) {
+            push(diag(config, filePath, "settings-json/disable-project-mcpjson-shadow", "warning",
+              `Server "${name}" is declared in .mcp.json but not in .claude/settings.json#disabledMcpjsonServers — when Claude Code is launched from this plugin directory, the MCP server is loaded twice (plugin + project-level), triggering /doctor "skipped" warnings`,
+              dp?.line, dp?.column));
           }
         }
       }

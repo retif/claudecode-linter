@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { settingsJsonLinter } from "../../src/linters/settings-json.js";
 import type { LinterConfig } from "../../src/types.js";
 
@@ -163,6 +164,88 @@ describe("settings-json linter", () => {
 		expect(diags.some((d) => d.rule === "settings-json/scope-field")).toBe(
 			false,
 		);
+	});
+
+	describe("disable-project-mcpjson-shadow", () => {
+		function makePluginTree(opts: {
+			mcpServers?: Record<string, unknown>;
+			settings?: Record<string, unknown>;
+			settingsLocal?: Record<string, unknown>;
+		}): { settingsPath: string; cleanup: () => void } {
+			const root = mkdtempSync(join(tmpdir(), "ccl-shadow-"));
+			mkdirSync(join(root, ".claude-plugin"));
+			mkdirSync(join(root, ".claude"));
+			writeFileSync(join(root, ".claude-plugin", "plugin.json"),
+				JSON.stringify({ name: "p" }));
+			if (opts.mcpServers !== undefined) {
+				writeFileSync(join(root, ".mcp.json"),
+					JSON.stringify({ mcpServers: opts.mcpServers }));
+			}
+			const settingsPath = join(root, ".claude", "settings.json");
+			writeFileSync(settingsPath, JSON.stringify(opts.settings ?? {}));
+			if (opts.settingsLocal !== undefined) {
+				writeFileSync(join(root, ".claude", "settings.local.json"),
+					JSON.stringify(opts.settingsLocal));
+			}
+			return { settingsPath, cleanup: () => rmSync(root, { recursive: true, force: true }) };
+		}
+
+		it("warns when .mcp.json server is not in disabledMcpjsonServers", () => {
+			const t = makePluginTree({
+				mcpServers: { "my-mcp": { command: "x" } },
+				settings: {},
+			});
+			try {
+				const diags = lintFile(t.settingsPath);
+				const d = diags.find((d) => d.rule === "settings-json/disable-project-mcpjson-shadow");
+				expect(d).toBeDefined();
+				expect(d?.message).toContain("my-mcp");
+			} finally { t.cleanup(); }
+		});
+
+		it("does not warn when server name is in disabledMcpjsonServers", () => {
+			const t = makePluginTree({
+				mcpServers: { "my-mcp": { command: "x" } },
+				settings: { disabledMcpjsonServers: ["my-mcp"] },
+			});
+			try {
+				const diags = lintFile(t.settingsPath);
+				expect(diags.some((d) => d.rule === "settings-json/disable-project-mcpjson-shadow")).toBe(false);
+			} finally { t.cleanup(); }
+		});
+
+		it("accepts disable in sibling settings.local.json", () => {
+			const t = makePluginTree({
+				mcpServers: { "my-mcp": { command: "x" } },
+				settings: {},
+				settingsLocal: { disabledMcpjsonServers: ["my-mcp"] },
+			});
+			try {
+				const diags = lintFile(t.settingsPath);
+				expect(diags.some((d) => d.rule === "settings-json/disable-project-mcpjson-shadow")).toBe(false);
+			} finally { t.cleanup(); }
+		});
+
+		it("does not fire outside a plugin tree (no .claude-plugin/plugin.json)", () => {
+			const root = mkdtempSync(join(tmpdir(), "ccl-shadow-"));
+			mkdirSync(join(root, ".claude"));
+			const settingsPath = join(root, ".claude", "settings.json");
+			writeFileSync(settingsPath, JSON.stringify({}));
+			writeFileSync(join(root, ".mcp.json"),
+				JSON.stringify({ mcpServers: { "x": { command: "y" } } }));
+			try {
+				const diags = lintFile(settingsPath);
+				expect(diags.some((d) => d.rule === "settings-json/disable-project-mcpjson-shadow")).toBe(false);
+			} finally { rmSync(root, { recursive: true, force: true }); }
+		});
+
+		it("does not fire when .mcp.json is absent", () => {
+			const t = makePluginTree({ settings: {} });
+			try {
+				const diags = lintFile(t.settingsPath);
+				expect(diags.some((d) => d.rule === "settings-json/disable-project-mcpjson-shadow")).toBe(false);
+			} finally { t.cleanup(); }
+		});
 	});
 
 	it("accepts mcp__ tool patterns in allow list", () => {
