@@ -34,6 +34,7 @@ const RULES: RuleDef[] = [
   { id: "plugin-json/keywords-no-duplicates", defaultSeverity: "warning" },
   { id: "plugin-json/no-unknown-fields", defaultSeverity: "info" },
   { id: "plugin-json/license-spdx", defaultSeverity: "info" },
+  { id: "plugin-json/no-inline-mcp-servers", defaultSeverity: "warning" },
 ];
 
 function findKeyPosition(content: string, key: string): { line: number; column: number } | undefined {
@@ -219,6 +220,16 @@ export const pluginJsonLinter: Linter = {
             p?.line, p?.column));
         }
       }
+    }
+
+    // gitea#9: mcpServers belongs in `.mcp.json` at the plugin root, not as
+    // a top-level key in `.claude-plugin/plugin.json`. The legacy shape still
+    // loads but uses a different code path and contradicts the official docs.
+    if ("mcpServers" in parsed) {
+      const p = pos("mcpServers");
+      push(diag(config, filePath, "plugin-json/no-inline-mcp-servers", "warning",
+        "\"mcpServers\" should not live inside plugin.json — move to .mcp.json at the plugin root. See https://code.claude.com/docs/en/plugins#plugin-structure-overview",
+        p?.line, p?.column));
     }
 
     // license

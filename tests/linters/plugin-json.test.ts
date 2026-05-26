@@ -100,6 +100,21 @@ describe("plugin-json linter", () => {
     expect(lengthErrors).toHaveLength(1);
   });
 
+  it("warns on inline mcpServers (no-inline-mcp-servers)", () => {
+    const diags = lint(JSON.stringify({
+      name: "my-plugin",
+      mcpServers: { "x": { command: "y" } },
+    }));
+    const d = diags.find((d) => d.rule === "plugin-json/no-inline-mcp-servers");
+    expect(d).toBeDefined();
+    expect(d?.severity).toBe("warning");
+  });
+
+  it("does not warn no-inline-mcp-servers when mcpServers is absent", () => {
+    const diags = lint(JSON.stringify({ name: "my-plugin" }));
+    expect(diags.some((d) => d.rule === "plugin-json/no-inline-mcp-servers")).toBe(false);
+  });
+
   describe("plugin-json/schema-valid", () => {
     it("flags wrong type for name", () => {
       const diags = lintFile(resolve(FIXTURES, "invalid/plugin-json/wrong-name-type.json"));
