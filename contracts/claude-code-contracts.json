@@ -1,6 +1,6 @@
 {
-	"version": "2.1.150",
-	"extractedAt": "2026-05-23T07:05:23.158Z",
+	"version": "2.1.152",
+	"extractedAt": "2026-05-27T07:39:34.438Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -57,6 +57,7 @@
 			"ElicitationResult",
 			"FileChanged",
 			"InstructionsLoaded",
+			"MessageDisplay",
 			"Notification",
 			"PermissionDenied",
 			"PermissionRequest",
@@ -250,6 +251,7 @@
 			"disableBackgroundAgents",
 			"disableRemoteControl",
 			"disableSkillShellExecution",
+			"disableWorkflows",
 			"disabledMcpjsonServers",
 			"doneMeansMerged",
 			"editorMode",
@@ -284,6 +286,7 @@
 			"permissions",
 			"plansDirectory",
 			"pluginConfigs",
+			"pluginSuggestionMarketplaces",
 			"pluginTrustMessage",
 			"policyHelper",
 			"prUrlTemplate",

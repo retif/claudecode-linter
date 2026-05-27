@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.150",
-	"extractedAt": "2026-05-23T18:30:08.375Z",
+	"extractedFromClaudeCodeVersion": "2.1.152",
+	"extractedAt": "2026-05-27T07:39:39.197Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -572,6 +572,10 @@
 			"disableRemoteControl": {
 				"type": "boolean",
 				"description": "Disable Remote Control (claude.ai/code, `claude remote-control`, `--remote-control`/`--rc`, auto-start, and the in-session toggle). Typically set in managed settings."
+			},
+			"disableWorkflows": {
+				"type": "boolean",
+				"description": "@internal Disable the Workflows feature (also via CLAUDE_CODE_DISABLE_WORKFLOWS)."
 			},
 			"disableSkillShellExecution": {
 				"type": "boolean",
@@ -1882,6 +1886,13 @@
 				},
 				"description": "Enterprise blocklist of marketplace sources. When set in managed settings, these exact sources are blocked from being added as marketplaces. The check happens BEFORE downloading, so blocked sources never touch the filesystem."
 			},
+			"pluginSuggestionMarketplaces": {
+				"type": "array",
+				"items": {
+					"type": "string"
+				},
+				"description": "Marketplace names whose plugins may surface as contextual install suggestions (relevance-based tips), in addition to the official marketplace. Only honored when set in managed settings (policy scope); the key is ignored in user, project, and local settings. A name only takes effect when the marketplace is registered on the machine AND its registered source is also declared in managed settings, either as the extraKnownMarketplaces entry for that name or as an entry of strictKnownMarketplaces. A marketplace registered from a different source under an allowlisted name is ignored."
+			},
 			"forceLoginMethod": {
 				"enum": [
 					"claudeai",
@@ -2374,7 +2385,7 @@
 			},
 			"showThinkingSummaries": {
 				"type": "boolean",
-				"description": "Show thinking summaries in the transcript view (ctrl+o). Default: false."
+				"description": "Request API-side thinking summaries and show them in the conversation and in the transcript view (ctrl+o). Set explicitly to override the default for your install."
 			},
 			"skipDangerousModePermissionPrompt": {
 				"type": "boolean",

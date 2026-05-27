@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.150",
-	"extractedAt": "2026-05-23T18:30:08.380Z",
+	"extractedFromClaudeCodeVersion": "2.1.152",
+	"extractedAt": "2026-05-27T07:39:39.199Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code SKILL.md frontmatter",
@@ -83,6 +83,60 @@
 					}
 				],
 				"description": "Tools available to the model while this file is active. Comma-separated string or YAML list."
+			},
+			"disallowed-tools": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				],
+				"description": "Tools removed from the model while this file is active. Comma-separated string or YAML list. Cleared when the user sends the next message."
+			},
+			"disallowedTools": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				],
+				"description": "Canonical (normalized) alias of `disallowed-tools`."
 			},
 			"argument-hint": {
 				"anyOf": [

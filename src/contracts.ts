@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.150 — extracted 2026-05-23T07:05:23.158Z
+// Claude Code v2.1.152 — extracted 2026-05-27T07:39:34.438Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -58,6 +58,7 @@ export const HOOK_EVENTS = new Set<string>([
 	"ElicitationResult",
 	"FileChanged",
 	"InstructionsLoaded",
+	"MessageDisplay",
 	"Notification",
 	"PermissionDenied",
 	"PermissionRequest",
@@ -261,6 +262,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"disableBackgroundAgents",
 	"disableRemoteControl",
 	"disableSkillShellExecution",
+	"disableWorkflows",
 	"disabledMcpjsonServers",
 	"doneMeansMerged",
 	"editorMode",
@@ -295,6 +297,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"permissions",
 	"plansDirectory",
 	"pluginConfigs",
+	"pluginSuggestionMarketplaces",
 	"pluginTrustMessage",
 	"policyHelper",
 	"prUrlTemplate",
