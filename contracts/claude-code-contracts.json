@@ -1,6 +1,6 @@
 {
-	"version": "2.1.152",
-	"extractedAt": "2026-05-27T07:39:34.438Z",
+	"version": "2.1.153",
+	"extractedAt": "2026-05-28T01:01:24.865Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -257,6 +257,7 @@
 			"editorMode",
 			"effortLevel",
 			"enableAllProjectMcpServers",
+			"enableWorkflows",
 			"enabledMcpjsonServers",
 			"enabledPlugins",
 			"env",
@@ -310,6 +311,7 @@
 			"skipAutoPermissionPrompt",
 			"skipDangerousModePermissionPrompt",
 			"skipWebFetchPreflight",
+			"skipWorkflowUsageWarning",
 			"spinnerTipsEnabled",
 			"spinnerTipsOverride",
 			"spinnerVerbs",

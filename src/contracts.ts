@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.152 — extracted 2026-05-27T07:39:34.438Z
+// Claude Code v2.1.153 — extracted 2026-05-28T01:01:24.865Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -268,6 +268,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"editorMode",
 	"effortLevel",
 	"enableAllProjectMcpServers",
+	"enableWorkflows",
 	"enabledMcpjsonServers",
 	"enabledPlugins",
 	"env",
@@ -321,6 +322,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"skipAutoPermissionPrompt",
 	"skipDangerousModePermissionPrompt",
 	"skipWebFetchPreflight",
+	"skipWorkflowUsageWarning",
 	"spinnerTipsEnabled",
 	"spinnerTipsOverride",
 	"spinnerVerbs",

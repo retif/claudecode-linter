@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.152",
-	"extractedAt": "2026-05-27T07:39:39.197Z",
+	"extractedFromClaudeCodeVersion": "2.1.153",
+	"extractedAt": "2026-05-28T01:01:28.673Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -577,6 +577,10 @@
 				"type": "boolean",
 				"description": "@internal Disable the Workflows feature (also via CLAUDE_CODE_DISABLE_WORKFLOWS)."
 			},
+			"enableWorkflows": {
+				"type": "boolean",
+				"description": "Enable or disable the Workflows feature for this user. Unset = default by plan once the feature is available."
+			},
 			"disableSkillShellExecution": {
 				"type": "boolean",
 				"description": "Disable inline shell execution in skills and custom slash commands from user, project, or plugin sources. Commands are replaced with a placeholder instead of being run."
@@ -760,6 +764,10 @@
 												"type": "string"
 											},
 											"description": "Directories to include via git sparse-checkout (cone mode). Use for monorepos where the marketplace lives in a subdirectory. Example: [\".claude-plugin\", \"plugins\"]. If omitted, the full repository is cloned."
+										},
+										"skipLfs": {
+											"type": "boolean",
+											"description": "Skip Git LFS smudge during clone and update (sets GIT_LFS_SKIP_SMUDGE=1) so LFS pointer files stay as pointers instead of downloading their content. Use for marketplaces hosted in repos with large LFS objects."
 										}
 									},
 									"required": [
@@ -791,6 +799,10 @@
 												"type": "string"
 											},
 											"description": "Directories to include via git sparse-checkout (cone mode). Use for monorepos where the marketplace lives in a subdirectory. Example: [\".claude-plugin\", \"plugins\"]. If omitted, the full repository is cloned."
+										},
+										"skipLfs": {
+											"type": "boolean",
+											"description": "Skip Git LFS smudge during clone and update (sets GIT_LFS_SKIP_SMUDGE=1) so LFS pointer files stay as pointers instead of downloading their content. Use for marketplaces hosted in repos with large LFS objects."
 										}
 									},
 									"required": [
@@ -1162,6 +1174,10 @@
 										"type": "string"
 									},
 									"description": "Directories to include via git sparse-checkout (cone mode). Use for monorepos where the marketplace lives in a subdirectory. Example: [\".claude-plugin\", \"plugins\"]. If omitted, the full repository is cloned."
+								},
+								"skipLfs": {
+									"type": "boolean",
+									"description": "Skip Git LFS smudge during clone and update (sets GIT_LFS_SKIP_SMUDGE=1) so LFS pointer files stay as pointers instead of downloading their content. Use for marketplaces hosted in repos with large LFS objects."
 								}
 							},
 							"required": [
@@ -1193,6 +1209,10 @@
 										"type": "string"
 									},
 									"description": "Directories to include via git sparse-checkout (cone mode). Use for monorepos where the marketplace lives in a subdirectory. Example: [\".claude-plugin\", \"plugins\"]. If omitted, the full repository is cloned."
+								},
+								"skipLfs": {
+									"type": "boolean",
+									"description": "Skip Git LFS smudge during clone and update (sets GIT_LFS_SKIP_SMUDGE=1) so LFS pointer files stay as pointers instead of downloading their content. Use for marketplaces hosted in repos with large LFS objects."
 								}
 							},
 							"required": [
@@ -1550,6 +1570,10 @@
 										"type": "string"
 									},
 									"description": "Directories to include via git sparse-checkout (cone mode). Use for monorepos where the marketplace lives in a subdirectory. Example: [\".claude-plugin\", \"plugins\"]. If omitted, the full repository is cloned."
+								},
+								"skipLfs": {
+									"type": "boolean",
+									"description": "Skip Git LFS smudge during clone and update (sets GIT_LFS_SKIP_SMUDGE=1) so LFS pointer files stay as pointers instead of downloading their content. Use for marketplaces hosted in repos with large LFS objects."
 								}
 							},
 							"required": [
@@ -1581,6 +1605,10 @@
 										"type": "string"
 									},
 									"description": "Directories to include via git sparse-checkout (cone mode). Use for monorepos where the marketplace lives in a subdirectory. Example: [\".claude-plugin\", \"plugins\"]. If omitted, the full repository is cloned."
+								},
+								"skipLfs": {
+									"type": "boolean",
+									"description": "Skip Git LFS smudge during clone and update (sets GIT_LFS_SKIP_SMUDGE=1) so LFS pointer files stay as pointers instead of downloading their content. Use for marketplaces hosted in repos with large LFS objects."
 								}
 							},
 							"required": [
@@ -2390,6 +2418,10 @@
 			"skipDangerousModePermissionPrompt": {
 				"type": "boolean",
 				"description": "Whether the user has accepted the bypass permissions mode dialog"
+			},
+			"skipWorkflowUsageWarning": {
+				"type": "boolean",
+				"description": "@internal Whether the user has accepted the multi-agent workflow usage warning. Until set, auto permission mode prompts before running a workflow."
 			},
 			"disableAutoMode": {
 				"enum": [
