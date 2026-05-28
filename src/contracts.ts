@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.153 — extracted 2026-05-28T01:01:24.865Z
+// Claude Code v2.1.154 — extracted 2026-05-28T19:02:16.908Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -137,6 +137,7 @@ export const AGENT_MODELS = new Set<string>([
 export const PLUGIN_JSON_FIELDS = new Set<string>([
 	"$schema",
 	"author",
+	"defaultEnabled",
 	"dependencies",
 	"description",
 	"displayName",
@@ -338,6 +339,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"theme",
 	"todoFeatureEnabled",
 	"tui",
+	"ultracode",
 	"verbose",
 	"viewMode",
 	"voice",

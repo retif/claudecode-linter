@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.153",
-	"extractedAt": "2026-05-28T01:01:28.658Z",
+	"extractedFromClaudeCodeVersion": "2.1.154",
+	"extractedAt": "2026-05-28T19:02:21.473Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code plugin.json",
@@ -68,6 +68,10 @@
 					"type": "string"
 				},
 				"description": "Tags for plugin discovery and categorization"
+			},
+			"defaultEnabled": {
+				"type": "boolean",
+				"description": "Whether the plugin starts enabled when the user has no explicit enabled/disabled setting for it (default: true). Explicit enabledPlugins values always win, and a plugin required by an enabled dependent is enabled regardless of this value."
 			},
 			"dependencies": {
 				"type": "array",

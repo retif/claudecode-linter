@@ -1,6 +1,6 @@
 {
-	"version": "2.1.153",
-	"extractedAt": "2026-05-28T01:01:24.865Z",
+	"version": "2.1.154",
+	"extractedAt": "2026-05-28T19:02:16.908Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -131,6 +131,7 @@
 		"pluginJsonFields": [
 			"$schema",
 			"author",
+			"defaultEnabled",
 			"dependencies",
 			"description",
 			"displayName",
@@ -327,6 +328,7 @@
 			"theme",
 			"todoFeatureEnabled",
 			"tui",
+			"ultracode",
 			"verbose",
 			"viewMode",
 			"voice",

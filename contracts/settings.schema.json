@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.153",
-	"extractedAt": "2026-05-28T01:01:28.673Z",
+	"extractedFromClaudeCodeVersion": "2.1.154",
+	"extractedAt": "2026-05-28T19:02:21.492Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -575,7 +575,7 @@
 			},
 			"disableWorkflows": {
 				"type": "boolean",
-				"description": "@internal Disable the Workflows feature (also via CLAUDE_CODE_DISABLE_WORKFLOWS)."
+				"description": "Disable the Workflows feature (also via CLAUDE_CODE_DISABLE_WORKFLOWS)."
 			},
 			"enableWorkflows": {
 				"type": "boolean",
@@ -2215,6 +2215,10 @@
 					"xhigh"
 				],
 				"description": "Persisted effort level for supported models."
+			},
+			"ultracode": {
+				"type": "boolean",
+				"description": "Enable ultracode for the session: xhigh effort plus standing dynamic-workflow orchestration. \"+\"Session-scoped \\u2014 typically provided via --settings or the apply_flag_settings control request; \"+\"interactive toggles never persist it. Requires workflows to be enabled and an xhigh-capable model."
 			},
 			"autoCompactWindow": {
 				"type": "number",
