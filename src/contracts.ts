@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.156 — extracted 2026-05-29T07:33:28.194Z
+// Claude Code v2.1.157 — extracted 2026-05-30T01:05:12.082Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -344,6 +344,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"viewMode",
 	"voice",
 	"voiceEnabled",
+	"workflowKeywordTriggerEnabled",
 	"worktree",
 	"wslInheritsWindowsSettings",
 ]);
