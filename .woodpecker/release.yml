@@ -2,7 +2,7 @@
 #
 # Trigger: manual (will be cron in the future).
 # Secrets required:
-#   GITEA_TOKEN      — git push + npm publish + release creation
+#   REGISTRY_TOKEN   — git push (Woodpecker secret still named gitea_token) + npm publish + release creation
 
 when:
   event: manual
@@ -57,7 +57,10 @@ steps:
   release:
     image: node:20
     environment:
-      GITEA_TOKEN:
+      # Single token env var across CI + local (oleks/emmett#44). The Woodpecker
+      # secret may still be named `gitea_token`; we expose it as $REGISTRY_TOKEN
+      # so the shared ci/ scripts resolve it identically in CI and on emmett.
+      REGISTRY_TOKEN:
         from_secret: gitea_token
     commands:
       - |
@@ -104,48 +107,22 @@ steps:
         git tag -a "v$VERSION" -m "v$VERSION"
 
         # Push
-        PUSH_URL=$(echo "$CI_REPO_CLONE_URL" | sed "s|://|://$GITEA_TOKEN@|")
+        PUSH_URL=$(echo "$CI_REPO_CLONE_URL" | sed "s|://|://$REGISTRY_TOKEN@|")
         echo "==> Pushing v$VERSION..."
         git push "$PUSH_URL" HEAD:$CI_COMMIT_BRANCH --tags
 
-        # Pack and publish to Gitea npm registry (curl — npm cli auth broken in CI containers)
-        echo "==> Publishing to $NPM_REGISTRY..."
-        npm pack --ignore-scripts
-        TARBALL=$(ls *.tgz)
-        PKG_NAME=$(node -e "console.log(require('./package.json').name)")
-        node -e "
-          const fs = require('fs');
-          const crypto = require('crypto');
-          const pkg = require('./package.json');
-          const tarball = fs.readFileSync(process.argv[1]);
-          const shasum = crypto.createHash('sha1').update(tarball).digest('hex');
-          const integrity = 'sha512-' + crypto.createHash('sha512').update(tarball).digest('base64');
-          const body = {
-            _id: pkg.name,
-            name: pkg.name,
-            'dist-tags': { latest: pkg.version },
-            versions: {
-              [pkg.version]: {
-                ...pkg,
-                _id: pkg.name + '@' + pkg.version,
-                dist: { shasum, integrity, tarball: process.argv[2] + '/' + pkg.name + '/-/' + process.argv[1] }
-              }
-            },
-            _attachments: {
-              [process.argv[1]]: {
-                content_type: 'application/octet-stream',
-                data: tarball.toString('base64'),
-                length: tarball.length
-              }
-            }
-          };
-          process.stdout.write(JSON.stringify(body));
-        " "$TARBALL" "$NPM_REGISTRY" | curl -sf -X PUT \
-          -H "Authorization: token $GITEA_TOKEN" \
-          -H "Content-Type: application/json" \
-          --data-binary @- \
-          "$NPM_REGISTRY/$PKG_NAME"
-        echo "Published $TARBALL to $NPM_REGISTRY"
+        # Pack + publish to the Gitea npm registry via the SHARED scriptset
+        # (oleks/emmett#44). The same ci/stage.sh + ci/publish.sh run locally on
+        # emmett, so CI and local publishing cannot drift. VERSION (already the
+        # stripped Claude Code version here) overrides the derived tag; the dev-tag
+        # guard is satisfied because VERSION is set. ci/publish.sh resolves
+        # $REGISTRY_TOKEN and never prints it (no set -x in those scripts).
+        echo "==> Publishing to $NPM_REGISTRY via ci/ scriptset..."
+        VERSION="$VERSION" bash ci/stage.sh
+        VERSION="$VERSION" bash ci/publish.sh
+        TARBALL=$(cat .stage/.last-tarball)        # absolute path to the staged .tgz
+        TARBALL_NAME=$(basename "$TARBALL")
+        echo "Published $TARBALL_NAME to $NPM_REGISTRY"
 
         # Build release body with install instructions
         RELEASE_BODY=$(node -e "
@@ -168,22 +145,23 @@ steps:
 
         echo "==> Creating Gitea release v$VERSION..."
         curl -sf -X POST \
-          -H "Authorization: token $GITEA_TOKEN" \
+          -H "Authorization: token $REGISTRY_TOKEN" \
           -H "Content-Type: application/json" \
           "$GITEA_API/repos/$REPO_PATH/releases" \
           -d "{\"tag_name\":\"v$VERSION\",\"name\":\"v$VERSION\",\"body\":$RELEASE_BODY}"
 
         RELEASE_ID=$(curl -sf \
-          -H "Authorization: token $GITEA_TOKEN" \
+          -H "Authorization: token $REGISTRY_TOKEN" \
           "$GITEA_API/repos/$REPO_PATH/releases/tags/v$VERSION" \
           | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).id))")
 
-        echo "==> Attaching $TARBALL (release $RELEASE_ID)..."
+        echo "==> Attaching $TARBALL_NAME (release $RELEASE_ID)..."
         curl -sf -X POST \
-          -H "Authorization: token $GITEA_TOKEN" \
-          -F "attachment=@$(pwd)/$TARBALL;type=application/gzip" \
-          "$GITEA_API/repos/$REPO_PATH/releases/$RELEASE_ID/assets?name=$TARBALL"
+          -H "Authorization: token $REGISTRY_TOKEN" \
+          -F "attachment=@$TARBALL;type=application/gzip" \
+          "$GITEA_API/repos/$REPO_PATH/releases/$RELEASE_ID/assets?name=$TARBALL_NAME"
 
         # Cleanup CI-only files
         rm -f CHANGELOG_ENTRY.md .claude-code-version *.tgz "$HOME/.npmrc"
+        rm -rf .stage
         echo "==> Released v$VERSION"

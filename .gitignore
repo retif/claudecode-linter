@@ -6,3 +6,4 @@ dist/
 CHANGELOG_ENTRY.md
 .claude-code-version
 *.tgz
+.stage/
