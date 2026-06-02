@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.159",
-	"extractedAt": "2026-06-01T01:15:42.607Z",
+	"extractedFromClaudeCodeVersion": "2.1.160",
+	"extractedAt": "2026-06-02T07:52:22.616Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -583,7 +583,7 @@
 			},
 			"workflowKeywordTriggerEnabled": {
 				"type": "boolean",
-				"description": "Enable the \"workflow\"/\"workflows\" keyword trigger that opts a prompt into the Workflow tool. Set to false to type the word without triggering a workflow. Default: true."
+				"description": "Enable the \"ultracode\" keyword trigger: including the keyword in a prompt opts that turn into the Workflow tool. Set to false to disable the trigger. Default: true."
 			},
 			"disableSkillShellExecution": {
 				"type": "boolean",
@@ -2525,6 +2525,10 @@
 			"autoCompactEnabled": {
 				"type": "boolean",
 				"description": "Automatically compact conversation when context fills"
+			},
+			"switchModelsOnFlag": {
+				"type": "boolean",
+				"description": "When safety filters block a message, automatically switch to a different model to keep chatting. When off, your chat may stop instead."
 			},
 			"autoScrollEnabled": {
 				"type": "boolean",

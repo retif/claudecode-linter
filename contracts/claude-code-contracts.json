@@ -1,6 +1,6 @@
 {
-	"version": "2.1.159",
-	"extractedAt": "2026-06-01T01:15:38.110Z",
+	"version": "2.1.160",
+	"extractedAt": "2026-06-02T07:52:17.981Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -321,6 +321,7 @@
 			"strictKnownMarketplaces",
 			"strictPluginOnlyCustomization",
 			"subagentStatusLine",
+			"switchModelsOnFlag",
 			"syntaxHighlightingDisabled",
 			"teammateMode",
 			"terminalProgressBarEnabled",
