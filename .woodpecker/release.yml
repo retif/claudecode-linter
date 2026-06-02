@@ -14,6 +14,7 @@ steps:
   check-version:
     image: node:20
     commands:
+      - echo "▸ arch=$(uname -m)"
       - |
         set -e
         npm ci
@@ -36,6 +37,7 @@ steps:
     environment:
       FORCE_CONTRACTS: ${CI_PIPELINE_PARAM_FORCE_CONTRACTS:-0}
     commands:
+      - echo "▸ arch=$(uname -m)"
       - |
         set -e
         VERSION=$(cat .claude-code-version)
@@ -63,6 +65,7 @@ steps:
       REGISTRY_TOKEN:
         from_secret: gitea_token
     commands:
+      - echo "▸ arch=$(uname -m)"
       - |
         set -e
         VERSION=$(cat .claude-code-version)
