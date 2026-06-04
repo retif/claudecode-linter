@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.161 — extracted 2026-06-03T01:20:32.544Z
+// Claude Code v2.1.162 — extracted 2026-06-04T01:20:49.242Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -279,6 +279,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"feedbackSurveyRate",
 	"fileCheckpointingEnabled",
 	"fileSuggestion",
+	"forceLoginGatewayUrl",
 	"forceLoginMethod",
 	"forceLoginOrgUUID",
 	"forceRemoteSettingsRefresh",

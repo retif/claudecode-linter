@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.161",
-	"extractedAt": "2026-06-03T01:20:36.987Z",
+	"extractedFromClaudeCodeVersion": "2.1.162",
+	"extractedAt": "2026-06-04T01:20:53.707Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -1928,9 +1928,15 @@
 			"forceLoginMethod": {
 				"enum": [
 					"claudeai",
-					"console"
+					"console",
+					"gateway"
 				],
-				"description": "Force a specific login method: \"claudeai\" for Claude Pro/Max, \"console\" for Console billing"
+				"description": "Force a specific login method: \"claudeai\" for Claude Pro/Max, \"console\" for Console billing, \"gateway\" for the Cloud gateway OIDC device flow"
+			},
+			"forceLoginGatewayUrl": {
+				"type": "string",
+				"format": "uri",
+				"description": "@internal Cloud gateway URL to pre-fill and auto-connect to during login. Typically set in local managed settings alongside forceLoginMethod: \"gateway\" so users never type the URL. Hidden from public SDK types until Cloud gateway is documented."
 			},
 			"parentSettingsBehavior": {
 				"enum": [
