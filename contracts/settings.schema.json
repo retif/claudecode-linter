@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.162",
-	"extractedAt": "2026-06-04T01:20:53.707Z",
+	"extractedFromClaudeCodeVersion": "2.1.163",
+	"extractedAt": "2026-06-05T01:11:18.067Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -2350,6 +2350,14 @@
 			"minimumVersion": {
 				"type": "string",
 				"description": "Minimum version to stay on - prevents downgrades when switching to stable channel"
+			},
+			"requiredMinimumVersion": {
+				"type": "string",
+				"description": "Minimum Claude Code version required to start. If the running version is older, Claude Code exits at startup with instructions to update. Only enforced from managed (policy) settings."
+			},
+			"requiredMaximumVersion": {
+				"type": "string",
+				"description": "Maximum Claude Code version allowed to start. If the running version is newer, Claude Code exits at startup with instructions to install an approved version. Only enforced from managed (policy) settings."
 			},
 			"plansDirectory": {
 				"type": "string",

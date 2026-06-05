@@ -1,6 +1,6 @@
 {
-	"version": "2.1.162",
-	"extractedAt": "2026-06-04T01:20:49.242Z",
+	"version": "2.1.163",
+	"extractedAt": "2026-06-05T01:11:13.306Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -301,6 +301,8 @@
 			"quietHours",
 			"remote",
 			"remoteControlAtStartup",
+			"requiredMaximumVersion",
+			"requiredMinimumVersion",
 			"respectGitignore",
 			"sandbox",
 			"showClearContextOnPlanAccept",
