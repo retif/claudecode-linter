@@ -1,6 +1,6 @@
 {
-	"version": "2.1.165",
-	"extractedAt": "2026-06-05T07:42:21.114Z",
+	"version": "2.1.166",
+	"extractedAt": "2026-06-06T01:06:34.466Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -263,6 +263,7 @@
 			"enabledPlugins",
 			"env",
 			"extraKnownMarketplaces",
+			"fallbackModel",
 			"fastMode",
 			"fastModePerSessionOptIn",
 			"feedbackSurveyRate",

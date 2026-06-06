@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.165 — extracted 2026-06-05T07:42:21.114Z
+// Claude Code v2.1.166 — extracted 2026-06-06T01:06:34.466Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -274,6 +274,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"enabledPlugins",
 	"env",
 	"extraKnownMarketplaces",
+	"fallbackModel",
 	"fastMode",
 	"fastModePerSessionOptIn",
 	"feedbackSurveyRate",

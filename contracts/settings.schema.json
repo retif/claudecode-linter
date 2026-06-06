@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.165",
-	"extractedAt": "2026-06-05T07:42:25.598Z",
+	"extractedFromClaudeCodeVersion": "2.1.166",
+	"extractedAt": "2026-06-06T01:06:39.148Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -169,6 +169,13 @@
 			"model": {
 				"type": "string",
 				"description": "Override the default model used by Claude Code"
+			},
+			"fallbackModel": {
+				"type": "array",
+				"items": {
+					"type": "string"
+				},
+				"description": "Fallback model(s) tried in order when the primary model is overloaded or unavailable. Each element accepts a model name or alias; \"default\" expands to the default model. CLI --fallback-model takes precedence."
 			},
 			"availableModels": {
 				"type": "array",
@@ -2542,7 +2549,7 @@
 			},
 			"switchModelsOnFlag": {
 				"type": "boolean",
-				"description": "When safety filters block a message, automatically switch to a different model to keep chatting. When off, your chat may stop instead."
+				"description": "When safety measures flag a message, automatically switch to a different model to keep chatting. When off, your session will pause instead."
 			},
 			"autoScrollEnabled": {
 				"type": "boolean",
