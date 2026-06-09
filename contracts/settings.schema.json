@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.168",
-	"extractedAt": "2026-06-07T01:14:20.026Z",
+	"extractedFromClaudeCodeVersion": "2.1.169",
+	"extractedAt": "2026-06-09T01:05:58.185Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -220,6 +220,10 @@
 					]
 				},
 				"description": "Per-skill listing overrides keyed by skill name. \"name-only\" lists the skill without its description; \"user-invocable-only\" hides it from the model but keeps /name; \"off\" hides it from both. Absent = on."
+			},
+			"disableBundledSkills": {
+				"type": "boolean",
+				"description": "Disable the skills and workflows that ship with Claude Code: bundled skills and workflows are removed entirely; built-in slash commands stay typable but are hidden from the model. Plugins, .claude/skills/, and .claude/commands/ are unaffected. Equivalent to CLAUDE_CODE_DISABLE_BUNDLED_SKILLS=1."
 			},
 			"allowedMcpServers": {
 				"type": "array",
@@ -1930,7 +1934,7 @@
 				"items": {
 					"type": "string"
 				},
-				"description": "Marketplace names whose plugins may surface as contextual install suggestions (relevance-based tips), in addition to the official marketplace. Only honored when set in managed settings (policy scope); the key is ignored in user, project, and local settings. A name only takes effect when the marketplace is registered on the machine AND its registered source is also declared in managed settings, either as the extraKnownMarketplaces entry for that name or as an entry of strictKnownMarketplaces. A marketplace registered from a different source under an allowlisted name is ignored."
+				"description": "Marketplace names whose plugins may surface as contextual install suggestions (relevance-based tips). No marketplace-declared suggestions surface without this allowlist; the built-in first-party frontend-design tip is unaffected. Only honored when set in managed settings (policy scope); the key is ignored in user, project, and local settings. A name only takes effect when the marketplace is registered on the machine AND its registered source is also declared in managed settings, either as the extraKnownMarketplaces entry for that name or as an entry of strictKnownMarketplaces. A marketplace registered from a different source under an allowlisted name is ignored. The official marketplace is exempt from the source requirement: allowlisting its name alone suffices, since that name can only register from the official Anthropic source."
 			},
 			"forceLoginMethod": {
 				"enum": [
@@ -2341,10 +2345,10 @@
 				"properties": {
 					"defaultEnvironmentId": {
 						"type": "string",
-						"description": "Default environment ID to use for remote sessions"
+						"description": "Default environment ID to use for cloud sessions"
 					}
 				},
-				"description": "Remote session configuration"
+				"description": "Cloud session configuration"
 			},
 			"autoUpdatesChannel": {
 				"enum": [

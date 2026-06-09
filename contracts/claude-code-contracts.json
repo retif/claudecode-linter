@@ -1,6 +1,6 @@
 {
-	"version": "2.1.168",
-	"extractedAt": "2026-06-07T01:14:15.476Z",
+	"version": "2.1.169",
+	"extractedAt": "2026-06-09T01:05:53.573Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -250,6 +250,7 @@
 			"disableAllHooks",
 			"disableAutoMode",
 			"disableBackgroundAgents",
+			"disableBundledSkills",
 			"disableRemoteControl",
 			"disableSkillShellExecution",
 			"disableWorkflows",
