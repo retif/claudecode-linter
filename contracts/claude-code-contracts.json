@@ -1,6 +1,6 @@
 {
-	"version": "2.1.169",
-	"extractedAt": "2026-06-09T01:05:53.573Z",
+	"version": "2.1.170",
+	"extractedAt": "2026-06-09T18:53:46.190Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -123,6 +123,7 @@
 			"yellow"
 		],
 		"agentModels": [
+			"fable",
 			"haiku",
 			"inherit",
 			"opus",

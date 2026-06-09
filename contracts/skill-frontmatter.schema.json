@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.169",
-	"extractedAt": "2026-06-09T01:05:58.187Z",
+	"extractedFromClaudeCodeVersion": "2.1.170",
+	"extractedAt": "2026-06-09T18:53:50.764Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code SKILL.md frontmatter",
@@ -55,7 +55,7 @@
 						"type": "null"
 					}
 				],
-				"description": "Model override (`haiku`, `sonnet`, `opus`, or a full ID). Use `inherit` to match the parent conversation."
+				"description": "Model override (`haiku`, `sonnet`, `opus`, `fable`, or a full ID). Use `inherit` to match the parent conversation."
 			},
 			"allowed-tools": {
 				"anyOf": [
