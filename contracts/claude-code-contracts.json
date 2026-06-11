@@ -1,9 +1,10 @@
 {
-	"version": "2.1.170",
-	"extractedAt": "2026-06-09T18:53:46.190Z",
+	"version": "2.1.172",
+	"extractedAt": "2026-06-11T01:13:00.607Z",
 	"contracts": {
 		"tools": [
 			"Agent",
+			"Artifact",
 			"AskUserQuestion",
 			"Bash",
 			"Config",
@@ -30,6 +31,7 @@
 			"RemoteTrigger",
 			"ScheduleWakeup",
 			"SendMessage",
+			"ShowOnboardingRolePicker",
 			"Skill",
 			"SubscribeMcpResource",
 			"SubscribePolling",
@@ -249,6 +251,7 @@
 			"deniedMcpServers",
 			"disableAgentView",
 			"disableAllHooks",
+			"disableArtifact",
 			"disableAutoMode",
 			"disableBackgroundAgents",
 			"disableBundledSkills",

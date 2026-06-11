@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.170",
-	"extractedAt": "2026-06-09T18:53:50.762Z",
+	"extractedFromClaudeCodeVersion": "2.1.172",
+	"extractedAt": "2026-06-11T01:13:05.389Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -587,6 +587,10 @@
 			"disableWorkflows": {
 				"type": "boolean",
 				"description": "Disable the Workflows feature (also via CLAUDE_CODE_DISABLE_WORKFLOWS)."
+			},
+			"disableArtifact": {
+				"type": "boolean",
+				"description": "Disable the Artifact tool (also via CLAUDE_CODE_DISABLE_ARTIFACT)."
 			},
 			"enableWorkflows": {
 				"type": "boolean",

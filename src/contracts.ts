@@ -1,9 +1,10 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.170 — extracted 2026-06-09T18:53:46.190Z
+// Claude Code v2.1.172 — extracted 2026-06-11T01:13:00.607Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
 	"Agent",
+	"Artifact",
 	"AskUserQuestion",
 	"Bash",
 	"Config",
@@ -30,6 +31,7 @@ export const TOOLS = new Set<string>([
 	"RemoteTrigger",
 	"ScheduleWakeup",
 	"SendMessage",
+	"ShowOnboardingRolePicker",
 	"Skill",
 	"SubscribeMcpResource",
 	"SubscribePolling",
@@ -260,6 +262,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"deniedMcpServers",
 	"disableAgentView",
 	"disableAllHooks",
+	"disableArtifact",
 	"disableAutoMode",
 	"disableBackgroundAgents",
 	"disableBundledSkills",
