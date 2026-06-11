@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.172",
-	"extractedAt": "2026-06-11T01:13:05.396Z",
+	"extractedFromClaudeCodeVersion": "2.1.173",
+	"extractedAt": "2026-06-11T07:55:05.806Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code .mcp.json",
