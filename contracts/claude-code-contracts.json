@@ -1,6 +1,6 @@
 {
-	"version": "2.1.174",
-	"extractedAt": "2026-06-12T01:16:35.019Z",
+	"version": "2.1.175",
+	"extractedAt": "2026-06-12T07:50:42.300Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -268,6 +268,7 @@
 			"enableWorkflows",
 			"enabledMcpjsonServers",
 			"enabledPlugins",
+			"enforceAvailableModels",
 			"env",
 			"extraKnownMarketplaces",
 			"fallbackModel",

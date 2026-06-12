@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.174",
-	"extractedAt": "2026-06-12T01:16:39.962Z",
+	"extractedFromClaudeCodeVersion": "2.1.175",
+	"extractedAt": "2026-06-12T07:50:46.944Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -183,6 +183,10 @@
 					"type": "string"
 				},
 				"description": "Allowlist of models that users can select. Accepts family aliases (\"opus\" allows any opus version), version prefixes (\"opus-4-5\" allows only that version), and full model IDs. If undefined, all models are available. If empty array, only the default model is available. Typically set in managed settings by enterprise administrators."
+			},
+			"enforceAvailableModels": {
+				"type": "boolean",
+				"description": "When true and availableModels is a non-empty array, the Default model selection is also constrained: if the default model for the user tier is not in availableModels, Default resolves to the first allowed availableModels entry instead. Has no effect when availableModels is unset or an empty array. Typically set in managed settings by enterprise administrators."
 			},
 			"modelOverrides": {
 				"type": "object",
