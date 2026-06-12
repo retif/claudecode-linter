@@ -1,6 +1,6 @@
 {
-	"version": "2.1.173",
-	"extractedAt": "2026-06-11T07:55:01.294Z",
+	"version": "2.1.174",
+	"extractedAt": "2026-06-12T01:16:35.019Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -24,6 +24,7 @@
 			"Monitor",
 			"NotebookEdit",
 			"NotebookRead",
+			"Projects",
 			"PushNotification",
 			"REPL",
 			"Read",
@@ -180,6 +181,7 @@
 			"oauth",
 			"role",
 			"timeout",
+			"toolPermissions",
 			"type",
 			"url"
 		],
@@ -343,6 +345,7 @@
 			"viewMode",
 			"voice",
 			"voiceEnabled",
+			"wheelScrollAccelerationEnabled",
 			"workflowKeywordTriggerEnabled",
 			"worktree",
 			"wslInheritsWindowsSettings"

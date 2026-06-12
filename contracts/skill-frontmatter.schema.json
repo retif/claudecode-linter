@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.173",
-	"extractedAt": "2026-06-11T07:55:05.802Z",
+	"extractedFromClaudeCodeVersion": "2.1.174",
+	"extractedAt": "2026-06-12T01:16:39.964Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code SKILL.md frontmatter",

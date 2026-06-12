@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.173 — extracted 2026-06-11T07:55:01.294Z
+// Claude Code v2.1.174 — extracted 2026-06-12T01:16:35.019Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -24,6 +24,7 @@ export const TOOLS = new Set<string>([
 	"Monitor",
 	"NotebookEdit",
 	"NotebookRead",
+	"Projects",
 	"PushNotification",
 	"REPL",
 	"Read",
@@ -189,6 +190,7 @@ export const MCP_SERVER_FIELDS = new Set<string>([
 	"oauth",
 	"role",
 	"timeout",
+	"toolPermissions",
 	"type",
 	"url",
 ]);
@@ -354,6 +356,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"viewMode",
 	"voice",
 	"voiceEnabled",
+	"wheelScrollAccelerationEnabled",
 	"workflowKeywordTriggerEnabled",
 	"worktree",
 	"wslInheritsWindowsSettings",

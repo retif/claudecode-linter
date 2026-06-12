@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.173",
-	"extractedAt": "2026-06-11T07:55:05.781Z",
+	"extractedFromClaudeCodeVersion": "2.1.174",
+	"extractedAt": "2026-06-12T01:16:39.943Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code plugin.json",
@@ -1000,6 +1000,16 @@
 										},
 										"role": {
 											"const": "comms"
+										},
+										"toolPermissions": {
+											"type": "object",
+											"additionalProperties": {
+												"enum": [
+													"allow",
+													"ask",
+													"blocked"
+												]
+											}
 										}
 									},
 									"required": [
@@ -1123,6 +1133,16 @@
 										},
 										"role": {
 											"const": "comms"
+										},
+										"toolPermissions": {
+											"type": "object",
+											"additionalProperties": {
+												"enum": [
+													"allow",
+													"ask",
+													"blocked"
+												]
+											}
 										}
 									},
 									"required": [
@@ -1344,6 +1364,16 @@
 													},
 													"role": {
 														"const": "comms"
+													},
+													"toolPermissions": {
+														"type": "object",
+														"additionalProperties": {
+															"enum": [
+																"allow",
+																"ask",
+																"blocked"
+															]
+														}
 													}
 												},
 												"required": [
@@ -1467,6 +1497,16 @@
 													},
 													"role": {
 														"const": "comms"
+													},
+													"toolPermissions": {
+														"type": "object",
+														"additionalProperties": {
+															"enum": [
+																"allow",
+																"ask",
+																"blocked"
+															]
+														}
 													}
 												},
 												"required": [
