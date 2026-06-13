@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.175 — extracted 2026-06-12T07:50:42.300Z
+// Claude Code v2.1.176 — extracted 2026-06-13T01:15:05.263Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -288,6 +288,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"feedbackSurveyRate",
 	"fileCheckpointingEnabled",
 	"fileSuggestion",
+	"footerLinksRegexes",
 	"forceLoginGatewayUrl",
 	"forceLoginMethod",
 	"forceLoginOrgUUID",
@@ -351,6 +352,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"terminalTitleFromRename",
 	"theme",
 	"todoFeatureEnabled",
+	"totalTokensReminder",
 	"tui",
 	"ultracode",
 	"verbose",

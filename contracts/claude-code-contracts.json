@@ -1,6 +1,6 @@
 {
-	"version": "2.1.175",
-	"extractedAt": "2026-06-12T07:50:42.300Z",
+	"version": "2.1.176",
+	"extractedAt": "2026-06-13T01:15:05.263Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -277,6 +277,7 @@
 			"feedbackSurveyRate",
 			"fileCheckpointingEnabled",
 			"fileSuggestion",
+			"footerLinksRegexes",
 			"forceLoginGatewayUrl",
 			"forceLoginMethod",
 			"forceLoginOrgUUID",
@@ -340,6 +341,7 @@
 			"terminalTitleFromRename",
 			"theme",
 			"todoFeatureEnabled",
+			"totalTokensReminder",
 			"tui",
 			"ultracode",
 			"verbose",
