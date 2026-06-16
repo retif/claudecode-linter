@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.177",
-	"extractedAt": "2026-06-13T07:30:02.680Z",
+	"extractedFromClaudeCodeVersion": "2.1.178",
+	"extractedAt": "2026-06-16T01:21:30.258Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code plugin.json",
@@ -736,15 +736,15 @@
 				"anyOf": [
 					{
 						"type": "string",
-						"description": "Path to a skill directory, relative to the plugin root. Loaded in addition to the skills/ directory."
+						"description": "Path to a skill directory, relative to the plugin root. Loaded in addition to the skills/ directory (except: for a marketplace entry whose source resolves to the marketplace root, declaring a specific subdirectory replaces the skills/ scan)."
 					},
 					{
 						"type": "array",
 						"items": {
 							"type": "string",
-							"description": "Path to a skill directory, relative to the plugin root. Loaded in addition to the skills/ directory."
+							"description": "Path to a skill directory, relative to the plugin root."
 						},
-						"description": "List of skill directory paths, loaded in addition to the skills/ directory."
+						"description": "List of skill directory paths, loaded in addition to the skills/ directory (except: for a marketplace entry whose source resolves to the marketplace root, declaring specific subdirectories replaces the skills/ scan)."
 					}
 				]
 			},
