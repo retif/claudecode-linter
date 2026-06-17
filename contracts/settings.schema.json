@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.178",
-	"extractedAt": "2026-06-16T01:21:30.276Z",
+	"extractedFromClaudeCodeVersion": "2.1.179",
+	"extractedAt": "2026-06-17T01:16:42.320Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -2615,6 +2615,10 @@
 			"autoCompactEnabled": {
 				"type": "boolean",
 				"description": "Automatically compact conversation when context fills"
+			},
+			"precomputeCompactionEnabled": {
+				"type": "boolean",
+				"description": "@internal Precompute the compaction summary in the background before it is needed. Only applies when auto-compact is on."
 			},
 			"switchModelsOnFlag": {
 				"type": "boolean",

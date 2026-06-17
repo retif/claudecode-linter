@@ -1,6 +1,6 @@
 {
-	"version": "2.1.178",
-	"extractedAt": "2026-06-16T01:21:25.682Z",
+	"version": "2.1.179",
+	"extractedAt": "2026-06-17T01:16:37.585Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -303,6 +303,7 @@
 			"pluginTrustMessage",
 			"policyHelper",
 			"prUrlTemplate",
+			"precomputeCompactionEnabled",
 			"preferredNotifChannel",
 			"prefersReducedMotion",
 			"proactive",
