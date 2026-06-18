@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.179",
-	"extractedAt": "2026-06-17T01:16:42.320Z",
+	"extractedFromClaudeCodeVersion": "2.1.181",
+	"extractedAt": "2026-06-18T01:15:14.456Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -2186,6 +2186,10 @@
 					"enableWeakerNetworkIsolation": {
 						"type": "boolean",
 						"description": "macOS only: Allow access to com.apple.trustd.agent in the sandbox. Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates when using httpProxyPort with a MITM proxy and custom CA. \"+\"**Reduces security** \\u2014 opens a potential data exfiltration vector through the trustd service. Default: false"
+					},
+					"allowAppleEvents": {
+						"type": "boolean",
+						"description": "macOS only: Allow sandboxed commands to send Apple Events (and look up the appleeventsd Mach service). Needed for `open`, `osascript`, and browser-based auth flows that open URLs. \"+\"**Removes code-execution isolation** \\u2014 sandboxed commands can launch other applications \"+\"unsandboxed with no user prompt, and can script running apps (e.g. Terminal) subject to the user's per-app TCC automation consent. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+\"project settings (.claude/settings.json and .claude/settings.local.json) are ignored. Default: false"
 					},
 					"excludedCommands": {
 						"type": "array",
