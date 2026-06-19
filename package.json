@@ -1,6 +1,6 @@
 {
 	"name": "claudecode-linter",
-	"version": "2.1.181",
+	"version": "2.1.183",
 	"description": "Standalone linter for Claude Code plugins and configuration files",
 	"type": "module",
 	"bin": {

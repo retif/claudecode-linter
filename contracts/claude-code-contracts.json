@@ -1,6 +1,6 @@
 {
-	"version": "2.1.181",
-	"extractedAt": "2026-06-18T01:15:09.856Z",
+	"version": "2.1.183",
+	"extractedAt": "2026-06-19T01:21:14.756Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -257,6 +257,7 @@
 			"disableAutoMode",
 			"disableBackgroundAgents",
 			"disableBundledSkills",
+			"disableClaudeAiConnectors",
 			"disableRemoteControl",
 			"disableSkillShellExecution",
 			"disableWorkflows",

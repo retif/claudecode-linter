@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.181 — extracted 2026-06-18T01:15:09.856Z
+// Claude Code v2.1.183 — extracted 2026-06-19T01:21:14.756Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -268,6 +268,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"disableAutoMode",
 	"disableBackgroundAgents",
 	"disableBundledSkills",
+	"disableClaudeAiConnectors",
 	"disableRemoteControl",
 	"disableSkillShellExecution",
 	"disableWorkflows",

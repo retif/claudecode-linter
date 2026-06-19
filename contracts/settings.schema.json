@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.181",
-	"extractedAt": "2026-06-18T01:15:14.456Z",
+	"extractedFromClaudeCodeVersion": "2.1.183",
+	"extractedAt": "2026-06-19T01:21:19.392Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -151,6 +151,10 @@
 					"pr": {
 						"type": "string",
 						"description": "Attribution text for pull request descriptions. Empty string hides attribution."
+					},
+					"sessionUrl": {
+						"type": "boolean",
+						"description": "Whether to append the claude.ai session link to commits and PRs created from web or Remote Control sessions (default: true). Set to false to omit the Claude-Session trailer and PR-body link."
 					}
 				},
 				"description": "Customize attribution text for commits and PRs. Each field defaults to the standard Claude Code attribution if not set."
@@ -213,6 +217,10 @@
 				},
 				"description": "List of rejected MCP servers from .mcp.json"
 			},
+			"disableClaudeAiConnectors": {
+				"type": "boolean",
+				"description": "When true in any settings source, claude.ai MCP cloud connectors are not auto-fetched or connected. \"+\"Only gates auto-fetched connectors \\u2014 a claudeai-proxy server passed explicitly \"+\"(e.g. via --mcp-config or the SDK mcpServers option) still follows the normal MCP config trust flow. Any-source-true wins: a project can opt out, but a project-level false cannot override a user-level true."
+			},
 			"skillOverrides": {
 				"type": "object",
 				"additionalProperties": {
@@ -262,7 +270,7 @@
 					"properties": {
 						"serverName": {
 							"type": "string",
-							"pattern": "^[a-zA-Z0-9_-]+$",
+							"minLength": 1,
 							"description": "Name of the MCP server that is explicitly blocked"
 						},
 						"serverCommand": {
