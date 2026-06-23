@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.185 — extracted 2026-06-21T01:18:53.389Z
+// Claude Code v2.1.186 — extracted 2026-06-23T01:05:11.199Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -29,6 +29,7 @@ export const TOOLS = new Set<string>([
 	"REPL",
 	"Read",
 	"ReadMcpResource",
+	"ReadMcpResourceDir",
 	"RemoteTrigger",
 	"ScheduleWakeup",
 	"SendMessage",
@@ -327,6 +328,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"requiredMaximumVersion",
 	"requiredMinimumVersion",
 	"respectGitignore",
+	"respondToBashCommands",
 	"sandbox",
 	"showClearContextOnPlanAccept",
 	"showMessageTimestamps",

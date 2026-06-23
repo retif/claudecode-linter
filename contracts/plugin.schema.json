@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.185",
-	"extractedAt": "2026-06-21T01:18:57.869Z",
+	"extractedFromClaudeCodeVersion": "2.1.186",
+	"extractedAt": "2026-06-23T01:05:15.862Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code plugin.json",
@@ -2037,6 +2037,7 @@
 						"description": "Path(s) to evaluation query files for `claude plugin eval`. Defaults to `evals/`."
 					}
 				},
+				"additionalProperties": true,
 				"description": "Components whose manifest shape may change without a deprecation cycle. Move a key out of here once it is promoted to stable."
 			}
 		},

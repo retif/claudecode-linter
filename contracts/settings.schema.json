@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.185",
-	"extractedAt": "2026-06-21T01:18:57.889Z",
+	"extractedFromClaudeCodeVersion": "2.1.186",
+	"extractedAt": "2026-06-23T01:05:15.880Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -622,6 +622,10 @@
 					"powershell"
 				],
 				"description": "Default shell for input-box ! commands. Defaults to 'bash' on all platforms (no Windows auto-flip)."
+			},
+			"respondToBashCommands": {
+				"type": "boolean",
+				"description": "Whether Claude responds after an input-box ! bash command runs. Set to false to add the command output to context without a response. Default: true."
 			},
 			"allowManagedHooksOnly": {
 				"type": "boolean",
@@ -2668,9 +2672,10 @@
 				"enum": [
 					"auto",
 					"tmux",
+					"iterm2",
 					"in-process"
 				],
-				"description": "How spawned teammates execute (tmux, in-process, auto)"
+				"description": "How spawned teammates execute (tmux, iterm2, in-process, auto)"
 			},
 			"remoteControlAtStartup": {
 				"type": "boolean",

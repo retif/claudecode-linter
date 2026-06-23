@@ -1,6 +1,6 @@
 {
-	"version": "2.1.185",
-	"extractedAt": "2026-06-21T01:18:53.389Z",
+	"version": "2.1.186",
+	"extractedAt": "2026-06-23T01:05:11.199Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -29,6 +29,7 @@
 			"REPL",
 			"Read",
 			"ReadMcpResource",
+			"ReadMcpResourceDir",
 			"RemoteTrigger",
 			"ScheduleWakeup",
 			"SendMessage",
@@ -316,6 +317,7 @@
 			"requiredMaximumVersion",
 			"requiredMinimumVersion",
 			"respectGitignore",
+			"respondToBashCommands",
 			"sandbox",
 			"showClearContextOnPlanAccept",
 			"showMessageTimestamps",

@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.185",
-	"extractedAt": "2026-06-21T01:18:57.891Z",
+	"extractedFromClaudeCodeVersion": "2.1.186",
+	"extractedAt": "2026-06-23T01:05:15.883Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code SKILL.md frontmatter",
@@ -417,6 +417,12 @@
 			"settings": {
 				"description": "@internal"
 			},
+			"userConfig": {
+				"description": "@internal"
+			},
+			"defaultEnabled": {
+				"description": "@internal"
+			},
 			"experimental": {
 				"description": "@internal"
 			},
@@ -424,6 +430,24 @@
 				"description": "@internal"
 			},
 			"metadata": {
+				"description": "@internal"
+			},
+			"displayName": {
+				"description": "@internal"
+			},
+			"author": {
+				"description": "@internal"
+			},
+			"homepage": {
+				"description": "@internal"
+			},
+			"repository": {
+				"description": "@internal"
+			},
+			"license": {
+				"description": "@internal"
+			},
+			"keywords": {
 				"description": "@internal"
 			}
 		},
