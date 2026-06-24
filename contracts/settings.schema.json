@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.186",
-	"extractedAt": "2026-06-23T01:05:15.880Z",
+	"extractedFromClaudeCodeVersion": "2.1.187",
+	"extractedAt": "2026-06-24T01:03:04.825Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -2180,6 +2180,55 @@
 							"allowManagedReadPathsOnly": {
 								"type": "boolean",
 								"description": "When true (set in managed settings), only allowRead paths from policySettings are used."
+							}
+						}
+					},
+					"credentials": {
+						"type": "object",
+						"properties": {
+							"files": {
+								"type": "array",
+								"items": {
+									"type": "object",
+									"properties": {
+										"path": {
+											"type": "string",
+											"minLength": 1,
+											"description": "Path to a credential file or directory. Same resolution as sandbox.filesystem.* paths: absolute, ~ expanded, or relative to the settings file root (project root for project settings, ~/.claude for user settings)."
+										},
+										"mode": {
+											"const": "deny",
+											"description": "Access mode for this path. Only `deny` is supported."
+										}
+									},
+									"required": [
+										"path",
+										"mode"
+									]
+								},
+								"description": "Credential files or directories to protect. `deny` blocks reads inside the sandbox."
+							},
+							"envVars": {
+								"type": "array",
+								"items": {
+									"type": "object",
+									"properties": {
+										"name": {
+											"type": "string",
+											"pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+											"description": "Environment variable name."
+										},
+										"mode": {
+											"const": "deny",
+											"description": "Access mode for this environment variable. Only `deny` is supported."
+										}
+									},
+									"required": [
+										"name",
+										"mode"
+									]
+								},
+								"description": "Environment variables to protect. `deny` unsets the variable for sandboxed commands."
 							}
 						}
 					},
