@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.187",
-	"extractedAt": "2026-06-24T01:03:04.811Z",
+	"extractedFromClaudeCodeVersion": "2.1.190",
+	"extractedAt": "2026-06-24T18:43:28.708Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code .lsp.json",
