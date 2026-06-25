@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.190 — extracted 2026-06-24T18:43:24.341Z
+// Claude Code v2.1.191 — extracted 2026-06-25T01:07:27.538Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -192,6 +192,7 @@ export const MCP_SERVER_FIELDS = new Set<string>([
 	"role",
 	"timeout",
 	"toolPermissions",
+	"tools",
 	"type",
 	"url",
 ]);

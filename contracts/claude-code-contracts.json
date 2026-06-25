@@ -1,6 +1,6 @@
 {
-	"version": "2.1.190",
-	"extractedAt": "2026-06-24T18:43:24.341Z",
+	"version": "2.1.191",
+	"extractedAt": "2026-06-25T01:07:27.538Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -183,6 +183,7 @@
 			"role",
 			"timeout",
 			"toolPermissions",
+			"tools",
 			"type",
 			"url"
 		],

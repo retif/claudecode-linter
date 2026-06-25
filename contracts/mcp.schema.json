@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.190",
-	"extractedAt": "2026-06-24T18:43:28.732Z",
+	"extractedFromClaudeCodeVersion": "2.1.191",
+	"extractedAt": "2026-06-25T01:07:32.091Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code .mcp.json",
@@ -89,6 +89,27 @@
 								},
 								"timeout": {
 									"type": "number"
+								},
+								"tools": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"name": {
+												"type": "string"
+											},
+											"permission_policy": {
+												"enum": [
+													"always_allow",
+													"always_ask",
+													"always_deny"
+												]
+											}
+										},
+										"required": [
+											"name"
+										]
+									}
 								},
 								"alwaysLoad": {
 									"type": "boolean"
@@ -222,6 +243,27 @@
 								},
 								"timeout": {
 									"type": "number"
+								},
+								"tools": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"name": {
+												"type": "string"
+											},
+											"permission_policy": {
+												"enum": [
+													"always_allow",
+													"always_ask",
+													"always_deny"
+												]
+											}
+										},
+										"required": [
+											"name"
+										]
+									}
 								},
 								"alwaysLoad": {
 									"type": "boolean"
