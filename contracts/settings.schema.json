@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.191",
-	"extractedAt": "2026-06-25T01:07:32.084Z",
+	"extractedFromClaudeCodeVersion": "2.1.193",
+	"extractedAt": "2026-06-26T01:10:14.625Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -961,7 +961,7 @@
 										},
 										"hostPattern": {
 											"type": "string",
-											"description": "Regex pattern to match the host/domain extracted from any marketplace source type. For github sources, matches against \"github.com\". For git sources (SSH or HTTPS), extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all marketplaces from a specific host (e.g., \"^github\\\\.mycompany\\\\.com$\")."
+											"description": "Regex pattern to match the host/domain extracted from any marketplace source type. For github sources, matches against github.com. For git sources (SSH or HTTPS), extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all marketplaces from a specific host (e.g., \"^github\\\\.mycompany\\\\.com$\")."
 										}
 									},
 									"required": [
@@ -1371,7 +1371,7 @@
 								},
 								"hostPattern": {
 									"type": "string",
-									"description": "Regex pattern to match the host/domain extracted from any marketplace source type. For github sources, matches against \"github.com\". For git sources (SSH or HTTPS), extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all marketplaces from a specific host (e.g., \"^github\\\\.mycompany\\\\.com$\")."
+									"description": "Regex pattern to match the host/domain extracted from any marketplace source type. For github sources, matches against github.com. For git sources (SSH or HTTPS), extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all marketplaces from a specific host (e.g., \"^github\\\\.mycompany\\\\.com$\")."
 								}
 							},
 							"required": [
@@ -1767,7 +1767,7 @@
 								},
 								"hostPattern": {
 									"type": "string",
-									"description": "Regex pattern to match the host/domain extracted from any marketplace source type. For github sources, matches against \"github.com\". For git sources (SSH or HTTPS), extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all marketplaces from a specific host (e.g., \"^github\\\\.mycompany\\\\.com$\")."
+									"description": "Regex pattern to match the host/domain extracted from any marketplace source type. For github sources, matches against github.com. For git sources (SSH or HTTPS), extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all marketplaces from a specific host (e.g., \"^github\\\\.mycompany\\\\.com$\")."
 								}
 							},
 							"required": [
@@ -1996,6 +1996,10 @@
 					]
 				},
 				"description": "Enterprise blocklist of marketplace sources. When set in managed settings, these exact sources are blocked from being added as marketplaces. The check happens BEFORE downloading, so blocked sources never touch the filesystem."
+			},
+			"disableSideloadFlags": {
+				"type": "boolean",
+				"description": "When true (and set in managed settings), rejects the --plugin-dir, --plugin-url, --agents, and non-sdk --mcp-config CLI flags at startup. Closes the CLI-flag bypass of strictKnownMarketplaces. Pair with allowedMcpServers for per-server MCP control; this setting does not gate other MCP entry points (SDK setMcpServers, claude mcp add, .mcp.json). Also blocks surfaces that spawn the CLI with these flags internally (see settings documentation). Only honored from managed settings; ignored in user/project/local settings."
 			},
 			"pluginSuggestionMarketplaces": {
 				"type": "array",
