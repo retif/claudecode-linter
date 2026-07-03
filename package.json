@@ -68,7 +68,7 @@
 		"yaml": "^2.8.3"
 	},
 	"devDependencies": {
-		"@types/node": "^25.3.3",
+		"@types/node": "^26.1.0",
 		"@types/semver": "^7.7.1",
 		"acorn": "^8.16.0",
 		"acorn-walk": "^8.3.5",
