@@ -468,6 +468,18 @@ describe("type-string dispatch master detection (2.1.197+)", () => {
 		]);
 		expect(schema.required).toEqual(["name"]);
 	});
+
+	it("tolerates a single-quoted type string and a function-expression validator", () => {
+		// Same dispatch shape, but the validator is bound as a function
+		// expression and dispatched with a single-quoted type literal.
+		const src =
+			`var coreSchema=CH(()=>E.object({name:E.string().min(1)})),` +
+			`masterSchema=CH(()=>E.object({...coreSchema().shape}));` +
+			`var KWe=function(e,t){let a=masterSchema().safeParse(e);return a};` +
+			`function lint(m){KWe(m,'plugin-json');` +
+			`if(!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(m.name))push("is not kebab-case")}`;
+		expect(findMasterSchemaName(indexDefinitions(src))).toBe("masterSchema");
+	});
 });
 
 describe("numeric constraint guard", () => {

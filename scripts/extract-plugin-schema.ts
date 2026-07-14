@@ -572,15 +572,16 @@ function findMasterViaKebabAnchor(source: string): string | null {
 function findMasterViaTypeDispatch(source: string): string | null {
 	const validator = findValidatorCallName(source, "plugin-json");
 	if (!validator) return null;
-	// The validator may be declared as `function <V>(…)` or `<V>=(…)=>{…}`.
-	let defIdx = source.indexOf(`function ${validator}(`);
-	if (defIdx === -1) {
-		const arrow = new RegExp(`\\b${validator}\\s*=\\s*(?:async\\s*)?\\(`).exec(
-			source,
-		);
-		if (arrow) defIdx = arrow.index;
-	}
-	if (defIdx === -1) return null;
+	// The validator may be declared as a statement (`function <V>(…)`) or bound
+	// to a variable as an arrow / function expression
+	// (`<V>=(…)=>{…}`, `<V>=async(…)=>{…}`, `<V>=function(…){…}`).
+	const esc = validator.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const defRe = new RegExp(
+		`(?:function\\s+${esc}\\s*\\(|\\b${esc}\\s*=\\s*(?:async\\s*)?(?:function\\s*)?\\()`,
+	);
+	const def = defRe.exec(source);
+	if (!def) return null;
+	const defIdx = def.index;
 	const body = source.slice(defIdx, defIdx + 4000);
 	const sp = body.match(/([\w$]+)\(\)\.safeParse\(/);
 	return sp ? sp[1] : null;
@@ -596,30 +597,33 @@ function findValidatorCallName(
 	source: string,
 	typeString: string,
 ): string | null {
-	const needle = `"${typeString}"`;
-	let from = 0;
-	let idx: number;
-	while ((idx = source.indexOf(needle, from)) !== -1) {
-		from = idx + 1;
-		// Walk back across balanced brackets to the enclosing call's `(`.
-		let depth = 0;
-		let i = idx - 1;
-		for (; i >= 0; i--) {
-			const c = source[i];
-			if (c === ")" || c === "]" || c === "}") depth++;
-			else if (c === "[" || c === "{") {
-				if (depth === 0) break; // hit an object/array literal — not a call
-				depth--;
-			} else if (c === "(") {
-				if (depth === 0) break; // enclosing call paren
-				depth--;
+	// The minifier usually emits double-quoted strings, but tolerate single
+	// quotes too so a quote-style rotation can't silently break extraction.
+	for (const needle of [`"${typeString}"`, `'${typeString}'`]) {
+		let from = 0;
+		let idx: number;
+		while ((idx = source.indexOf(needle, from)) !== -1) {
+			from = idx + 1;
+			// Walk back across balanced brackets to the enclosing call's `(`.
+			let depth = 0;
+			let i = idx - 1;
+			for (; i >= 0; i--) {
+				const c = source[i];
+				if (c === ")" || c === "]" || c === "}") depth++;
+				else if (c === "[" || c === "{") {
+					if (depth === 0) break; // hit an object/array literal — not a call
+					depth--;
+				} else if (c === "(") {
+					if (depth === 0) break; // enclosing call paren
+					depth--;
+				}
 			}
+			if (i < 0 || source[i] !== "(") continue;
+			const nameEnd = i;
+			let nameStart = nameEnd;
+			while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
+			if (nameStart < nameEnd) return source.slice(nameStart, nameEnd);
 		}
-		if (i < 0 || source[i] !== "(") continue;
-		let nameEnd = i;
-		let nameStart = nameEnd;
-		while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
-		if (nameStart < nameEnd) return source.slice(nameStart, nameEnd);
 	}
 	return null;
 }
@@ -1311,9 +1315,11 @@ function applyMethod(
 		}
 		case "length": {
 			const n = numericArg(args[0]);
-			if (n !== null && schema.type === "string") {
+			if (n === null) return schema;
+			if (schema.type === "string")
 				return { ...schema, minLength: n, maxLength: n };
-			}
+			if (schema.type === "array")
+				return { ...schema, minItems: n, maxItems: n };
 			return schema;
 		}
 		case "regex":
