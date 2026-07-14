@@ -1,13 +1,13 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.150",
-	"extractedAt": "2026-05-23T18:30:08.375Z",
+	"extractedFromClaudeCodeVersion": "2.1.193",
+	"extractedAt": "2026-06-26T01:10:14.625Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
 		"type": "object",
 		"properties": {
 			"$schema": {
-				"const": "https://json.schemastore.org/claude-code-settings.json",
+				"type": "string",
 				"description": "JSON Schema reference for Claude Code settings"
 			},
 			"apiKeyHelper": {
@@ -151,6 +151,10 @@
 					"pr": {
 						"type": "string",
 						"description": "Attribution text for pull request descriptions. Empty string hides attribution."
+					},
+					"sessionUrl": {
+						"type": "boolean",
+						"description": "Whether to append the claude.ai session link to commits and PRs created from web or Remote Control sessions (default: true). Set to false to omit the Claude-Session trailer and PR-body link."
 					}
 				},
 				"description": "Customize attribution text for commits and PRs. Each field defaults to the standard Claude Code attribution if not set."
@@ -170,12 +174,23 @@
 				"type": "string",
 				"description": "Override the default model used by Claude Code"
 			},
+			"fallbackModel": {
+				"type": "array",
+				"items": {
+					"type": "string"
+				},
+				"description": "Fallback model(s) tried in order when the primary model is overloaded or unavailable. Each element accepts a model name or alias; \"default\" expands to the default model. CLI --fallback-model takes precedence."
+			},
 			"availableModels": {
 				"type": "array",
 				"items": {
 					"type": "string"
 				},
 				"description": "Allowlist of models that users can select. Accepts family aliases (\"opus\" allows any opus version), version prefixes (\"opus-4-5\" allows only that version), and full model IDs. If undefined, all models are available. If empty array, only the default model is available. Typically set in managed settings by enterprise administrators."
+			},
+			"enforceAvailableModels": {
+				"type": "boolean",
+				"description": "When true and availableModels is a non-empty array, the Default model selection is also constrained: if the default model for the user tier is not in availableModels, Default resolves to the first allowed availableModels entry instead. Has no effect when availableModels is unset or an empty array. Typically set in managed settings by enterprise administrators."
 			},
 			"modelOverrides": {
 				"type": "object",
@@ -202,6 +217,10 @@
 				},
 				"description": "List of rejected MCP servers from .mcp.json"
 			},
+			"disableClaudeAiConnectors": {
+				"type": "boolean",
+				"description": "When true in any settings source, claude.ai MCP cloud connectors are not auto-fetched or connected. \"+\"Only gates auto-fetched connectors \\u2014 a claudeai-proxy server passed explicitly \"+\"(e.g. via --mcp-config or the SDK mcpServers option) still follows the normal MCP config trust flow. Any-source-true wins: a project can opt out, but a project-level false cannot override a user-level true."
+			},
 			"skillOverrides": {
 				"type": "object",
 				"additionalProperties": {
@@ -213,6 +232,10 @@
 					]
 				},
 				"description": "Per-skill listing overrides keyed by skill name. \"name-only\" lists the skill without its description; \"user-invocable-only\" hides it from the model but keeps /name; \"off\" hides it from both. Absent = on."
+			},
+			"disableBundledSkills": {
+				"type": "boolean",
+				"description": "Disable the skills and workflows that ship with Claude Code: bundled skills and workflows are removed entirely; built-in slash commands stay typable but are hidden from the model. Plugins, .claude/skills/, and .claude/commands/ are unaffected. Equivalent to CLAUDE_CODE_DISABLE_BUNDLED_SKILLS=1."
 			},
 			"allowedMcpServers": {
 				"type": "array",
@@ -247,7 +270,7 @@
 					"properties": {
 						"serverName": {
 							"type": "string",
-							"pattern": "^[a-zA-Z0-9_-]+$",
+							"minLength": 1,
 							"description": "Name of the MCP server that is explicitly blocked"
 						},
 						"serverCommand": {
@@ -573,6 +596,22 @@
 				"type": "boolean",
 				"description": "Disable Remote Control (claude.ai/code, `claude remote-control`, `--remote-control`/`--rc`, auto-start, and the in-session toggle). Typically set in managed settings."
 			},
+			"disableWorkflows": {
+				"type": "boolean",
+				"description": "Disable the Workflows feature (also via CLAUDE_CODE_DISABLE_WORKFLOWS)."
+			},
+			"disableArtifact": {
+				"type": "boolean",
+				"description": "Disable the Artifact tool (also via CLAUDE_CODE_DISABLE_ARTIFACT)."
+			},
+			"enableWorkflows": {
+				"type": "boolean",
+				"description": "Enable or disable the Workflows feature for this user. Unset = default by plan once the feature is available."
+			},
+			"workflowKeywordTriggerEnabled": {
+				"type": "boolean",
+				"description": "Enable the \"ultracode\" keyword trigger: including the keyword in a prompt opts that turn into the Workflow tool. Set to false to disable the trigger. Default: true."
+			},
 			"disableSkillShellExecution": {
 				"type": "boolean",
 				"description": "Disable inline shell execution in skills and custom slash commands from user, project, or plugin sources. Commands are replaced with a placeholder instead of being run."
@@ -583,6 +622,10 @@
 					"powershell"
 				],
 				"description": "Default shell for input-box ! commands. Defaults to 'bash' on all platforms (no Windows auto-flip)."
+			},
+			"respondToBashCommands": {
+				"type": "boolean",
+				"description": "Whether Claude responds after an input-box ! bash command runs. Set to false to add the command output to context without a response. Default: true."
 			},
 			"allowManagedHooksOnly": {
 				"type": "boolean",
@@ -663,7 +706,55 @@
 			},
 			"prUrlTemplate": {
 				"type": "string",
-				"description": "URL template for PR links in the footer badge and inline messages. Placeholders: {host} {owner} {repo} {number} {url}. Example: \"https://reviews.example.com/{owner}/{repo}/pull/{number}\""
+				"description": "URL template for PR links in the footer link badges and inline messages. The detected git PR is rendered as the first footer-link badge. Placeholders: {host} {owner} {repo} {number} {url}. Example: \"https://reviews.example.com/{owner}/{repo}/pull/{number}\""
+			},
+			"footerLinksRegexes": {
+				"type": "array",
+				"items": {
+					"anyOf": [
+						{
+							"type": "object",
+							"properties": {
+								"type": {
+									"const": "regex",
+									"description": "Config variant. This client understands \"regex\": matches turn output and builds a URL from named capture groups. Entries with other variants are preserved but skipped at runtime."
+								},
+								"pattern": {
+									"type": "string",
+									"description": "Regex matched against turn output (tool results and assistant text)"
+								},
+								"url": {
+									"type": "string",
+									"description": "Link target. {name} placeholders are filled from named regex capture groups, e.g. (?<id>...) -> {id}. Values are URL-encoded; the origin must be literal in the template. The scheme must be https, http, or a recognized editor or workspace deep-link scheme: vscode, vscode-insiders, cursor, windsurf, zed, jetbrains, idea, slack, linear, notion, figma."
+								},
+								"label": {
+									"type": "string",
+									"description": "Badge text. {name} placeholders filled from named capture groups; defaults to the full match."
+								}
+							},
+							"required": [
+								"type",
+								"pattern",
+								"url"
+							],
+							"additionalProperties": true
+						},
+						{
+							"type": "object",
+							"properties": {
+								"type": {
+									"type": "string",
+									"description": "Config variant discriminator for entries this client does not understand; the entry is preserved as-is and skipped at runtime."
+								}
+							},
+							"required": [
+								"type"
+							],
+							"additionalProperties": true
+						}
+					]
+				},
+				"description": "Extra clickable footer badges that appear when a regex matches turn output (tool results and assistant responses). Read from user, flag, and managed settings only; ignored in project .claude/settings.json and local .claude/settings.local.json. At most 5 badges render; the oldest is displaced by newer matches and /clear removes them. Use to surface IDs printed by project CLIs as session links."
 			},
 			"subagentStatusLine": {
 				"type": "object",
@@ -756,6 +847,10 @@
 												"type": "string"
 											},
 											"description": "Directories to include via git sparse-checkout (cone mode). Use for monorepos where the marketplace lives in a subdirectory. Example: [\".claude-plugin\", \"plugins\"]. If omitted, the full repository is cloned."
+										},
+										"skipLfs": {
+											"type": "boolean",
+											"description": "Skip Git LFS smudge during clone and update (sets GIT_LFS_SKIP_SMUDGE=1) so LFS pointer files stay as pointers instead of downloading their content. Use for marketplaces hosted in repos with large LFS objects."
 										}
 									},
 									"required": [
@@ -787,6 +882,10 @@
 												"type": "string"
 											},
 											"description": "Directories to include via git sparse-checkout (cone mode). Use for monorepos where the marketplace lives in a subdirectory. Example: [\".claude-plugin\", \"plugins\"]. If omitted, the full repository is cloned."
+										},
+										"skipLfs": {
+											"type": "boolean",
+											"description": "Skip Git LFS smudge during clone and update (sets GIT_LFS_SKIP_SMUDGE=1) so LFS pointer files stay as pointers instead of downloading their content. Use for marketplaces hosted in repos with large LFS objects."
 										}
 									},
 									"required": [
@@ -862,7 +961,7 @@
 										},
 										"hostPattern": {
 											"type": "string",
-											"description": "Regex pattern to match the host/domain extracted from any marketplace source type. For github sources, matches against \"github.com\". For git sources (SSH or HTTPS), extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all marketplaces from a specific host (e.g., \"^github\\\\.mycompany\\\\.com$\")."
+											"description": "Regex pattern to match the host/domain extracted from any marketplace source type. For github sources, matches against github.com. For git sources (SSH or HTTPS), extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all marketplaces from a specific host (e.g., \"^github\\\\.mycompany\\\\.com$\")."
 										}
 									},
 									"required": [
@@ -1158,6 +1257,10 @@
 										"type": "string"
 									},
 									"description": "Directories to include via git sparse-checkout (cone mode). Use for monorepos where the marketplace lives in a subdirectory. Example: [\".claude-plugin\", \"plugins\"]. If omitted, the full repository is cloned."
+								},
+								"skipLfs": {
+									"type": "boolean",
+									"description": "Skip Git LFS smudge during clone and update (sets GIT_LFS_SKIP_SMUDGE=1) so LFS pointer files stay as pointers instead of downloading their content. Use for marketplaces hosted in repos with large LFS objects."
 								}
 							},
 							"required": [
@@ -1189,6 +1292,10 @@
 										"type": "string"
 									},
 									"description": "Directories to include via git sparse-checkout (cone mode). Use for monorepos where the marketplace lives in a subdirectory. Example: [\".claude-plugin\", \"plugins\"]. If omitted, the full repository is cloned."
+								},
+								"skipLfs": {
+									"type": "boolean",
+									"description": "Skip Git LFS smudge during clone and update (sets GIT_LFS_SKIP_SMUDGE=1) so LFS pointer files stay as pointers instead of downloading their content. Use for marketplaces hosted in repos with large LFS objects."
 								}
 							},
 							"required": [
@@ -1264,7 +1371,7 @@
 								},
 								"hostPattern": {
 									"type": "string",
-									"description": "Regex pattern to match the host/domain extracted from any marketplace source type. For github sources, matches against \"github.com\". For git sources (SSH or HTTPS), extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all marketplaces from a specific host (e.g., \"^github\\\\.mycompany\\\\.com$\")."
+									"description": "Regex pattern to match the host/domain extracted from any marketplace source type. For github sources, matches against github.com. For git sources (SSH or HTTPS), extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all marketplaces from a specific host (e.g., \"^github\\\\.mycompany\\\\.com$\")."
 								}
 							},
 							"required": [
@@ -1546,6 +1653,10 @@
 										"type": "string"
 									},
 									"description": "Directories to include via git sparse-checkout (cone mode). Use for monorepos where the marketplace lives in a subdirectory. Example: [\".claude-plugin\", \"plugins\"]. If omitted, the full repository is cloned."
+								},
+								"skipLfs": {
+									"type": "boolean",
+									"description": "Skip Git LFS smudge during clone and update (sets GIT_LFS_SKIP_SMUDGE=1) so LFS pointer files stay as pointers instead of downloading their content. Use for marketplaces hosted in repos with large LFS objects."
 								}
 							},
 							"required": [
@@ -1577,6 +1688,10 @@
 										"type": "string"
 									},
 									"description": "Directories to include via git sparse-checkout (cone mode). Use for monorepos where the marketplace lives in a subdirectory. Example: [\".claude-plugin\", \"plugins\"]. If omitted, the full repository is cloned."
+								},
+								"skipLfs": {
+									"type": "boolean",
+									"description": "Skip Git LFS smudge during clone and update (sets GIT_LFS_SKIP_SMUDGE=1) so LFS pointer files stay as pointers instead of downloading their content. Use for marketplaces hosted in repos with large LFS objects."
 								}
 							},
 							"required": [
@@ -1652,7 +1767,7 @@
 								},
 								"hostPattern": {
 									"type": "string",
-									"description": "Regex pattern to match the host/domain extracted from any marketplace source type. For github sources, matches against \"github.com\". For git sources (SSH or HTTPS), extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all marketplaces from a specific host (e.g., \"^github\\\\.mycompany\\\\.com$\")."
+									"description": "Regex pattern to match the host/domain extracted from any marketplace source type. For github sources, matches against github.com. For git sources (SSH or HTTPS), extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all marketplaces from a specific host (e.g., \"^github\\\\.mycompany\\\\.com$\")."
 								}
 							},
 							"required": [
@@ -1882,12 +1997,29 @@
 				},
 				"description": "Enterprise blocklist of marketplace sources. When set in managed settings, these exact sources are blocked from being added as marketplaces. The check happens BEFORE downloading, so blocked sources never touch the filesystem."
 			},
+			"disableSideloadFlags": {
+				"type": "boolean",
+				"description": "When true (and set in managed settings), rejects the --plugin-dir, --plugin-url, --agents, and non-sdk --mcp-config CLI flags at startup. Closes the CLI-flag bypass of strictKnownMarketplaces. Pair with allowedMcpServers for per-server MCP control; this setting does not gate other MCP entry points (SDK setMcpServers, claude mcp add, .mcp.json). Also blocks surfaces that spawn the CLI with these flags internally (see settings documentation). Only honored from managed settings; ignored in user/project/local settings."
+			},
+			"pluginSuggestionMarketplaces": {
+				"type": "array",
+				"items": {
+					"type": "string"
+				},
+				"description": "Marketplace names whose plugins may surface as contextual install suggestions (relevance-based tips). No marketplace-declared suggestions surface without this allowlist; the built-in first-party frontend-design tip is unaffected. Only honored when set in managed settings (policy scope); the key is ignored in user, project, and local settings. A name only takes effect when the marketplace is registered on the machine AND its registered source is also declared in managed settings, either as the extraKnownMarketplaces entry for that name or as an entry of strictKnownMarketplaces. A marketplace registered from a different source under an allowlisted name is ignored. The official marketplace is exempt from the source requirement: allowlisting its name alone suffices, since that name can only register from the official Anthropic source."
+			},
 			"forceLoginMethod": {
 				"enum": [
 					"claudeai",
-					"console"
+					"console",
+					"gateway"
 				],
-				"description": "Force a specific login method: \"claudeai\" for Claude Pro/Max, \"console\" for Console billing"
+				"description": "Force a specific login method: \"claudeai\" for Claude Pro/Max, \"console\" for Console billing, \"gateway\" for the Cloud gateway OIDC device flow"
+			},
+			"forceLoginGatewayUrl": {
+				"type": "string",
+				"format": "uri",
+				"description": "@internal Cloud gateway URL to pre-fill and auto-connect to during login. Typically set in local managed settings alongside forceLoginMethod: \"gateway\" so users never type the URL. Hidden from public SDK types until Cloud gateway is documented."
 			},
 			"parentSettingsBehavior": {
 				"enum": [
@@ -2055,6 +2187,55 @@
 							}
 						}
 					},
+					"credentials": {
+						"type": "object",
+						"properties": {
+							"files": {
+								"type": "array",
+								"items": {
+									"type": "object",
+									"properties": {
+										"path": {
+											"type": "string",
+											"minLength": 1,
+											"description": "Path to a credential file or directory. Same resolution as sandbox.filesystem.* paths: absolute, ~ expanded, or relative to the settings file root (project root for project settings, ~/.claude for user settings)."
+										},
+										"mode": {
+											"const": "deny",
+											"description": "Access mode for this path. Only `deny` is supported."
+										}
+									},
+									"required": [
+										"path",
+										"mode"
+									]
+								},
+								"description": "Credential files or directories to protect. `deny` blocks reads inside the sandbox."
+							},
+							"envVars": {
+								"type": "array",
+								"items": {
+									"type": "object",
+									"properties": {
+										"name": {
+											"type": "string",
+											"pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
+											"description": "Environment variable name."
+										},
+										"mode": {
+											"const": "deny",
+											"description": "Access mode for this environment variable. Only `deny` is supported."
+										}
+									},
+									"required": [
+										"name",
+										"mode"
+									]
+								},
+								"description": "Environment variables to protect. `deny` unsets the variable for sandboxed commands."
+							}
+						}
+					},
 					"ignoreViolations": {
 						"type": "object",
 						"additionalProperties": {
@@ -2070,6 +2251,10 @@
 					"enableWeakerNetworkIsolation": {
 						"type": "boolean",
 						"description": "macOS only: Allow access to com.apple.trustd.agent in the sandbox. Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates when using httpProxyPort with a MITM proxy and custom CA. \"+\"**Reduces security** \\u2014 opens a potential data exfiltration vector through the trustd service. Default: false"
+					},
+					"allowAppleEvents": {
+						"type": "boolean",
+						"description": "macOS only: Allow sandboxed commands to send Apple Events (and look up the appleeventsd Mach service). Needed for `open`, `osascript`, and browser-based auth flows that open URLs. \"+\"**Removes code-execution isolation** \\u2014 sandboxed commands can launch other applications \"+\"unsandboxed with no user prompt, and can script running apps (e.g. Terminal) subject to the user's per-app TCC automation consent. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+\"project settings (.claude/settings.json and .claude/settings.local.json) are ignored. Default: false"
 					},
 					"excludedCommands": {
 						"type": "array",
@@ -2177,6 +2362,10 @@
 				],
 				"description": "Persisted effort level for supported models."
 			},
+			"ultracode": {
+				"type": "boolean",
+				"description": "Enable ultracode for the session: xhigh effort plus standing dynamic-workflow orchestration. \"+\"Session-scoped \\u2014 typically provided via --settings or the apply_flag_settings control request; \"+\"interactive toggles never persist it. Requires workflows to be enabled and an xhigh-capable model."
+			},
 			"autoCompactWindow": {
 				"type": "number",
 				"minimum": 100000,
@@ -2281,10 +2470,10 @@
 				"properties": {
 					"defaultEnvironmentId": {
 						"type": "string",
-						"description": "Default environment ID to use for remote sessions"
+						"description": "Default environment ID to use for cloud sessions"
 					}
 				},
-				"description": "Remote session configuration"
+				"description": "Cloud session configuration"
 			},
 			"autoUpdatesChannel": {
 				"enum": [
@@ -2297,6 +2486,14 @@
 			"minimumVersion": {
 				"type": "string",
 				"description": "Minimum version to stay on - prevents downgrades when switching to stable channel"
+			},
+			"requiredMinimumVersion": {
+				"type": "string",
+				"description": "Minimum Claude Code version required to start. If the running version is older, Claude Code exits at startup with instructions to update. Only enforced from managed (policy) settings."
+			},
+			"requiredMaximumVersion": {
+				"type": "string",
+				"description": "Maximum Claude Code version allowed to start. If the running version is newer, Claude Code exits at startup with instructions to install an approved version. Only enforced from managed (policy) settings."
 			},
 			"plansDirectory": {
 				"type": "string",
@@ -2360,6 +2557,15 @@
 				"type": "boolean",
 				"description": "@internal When true, Claude keeps working until the PR is ready for you to merge, a cron/Monitor is armed to resume later, or it hands you a self-contained next step."
 			},
+			"totalTokensReminder": {
+				"enum": [
+					"off",
+					"infinite",
+					"fixed",
+					"countdown"
+				],
+				"description": "@internal Emit a <total_tokens>N tokens left</total_tokens> block in the system prompt and after each tool result. 'infinite' uses the literal value Infinite, 'fixed' uses 5000000, 'countdown' uses the live remaining context-window tokens. Defaults to off. Env var CLAUDE_CODE_TOTAL_TOKENS_REMINDER overrides."
+			},
 			"autoMemoryEnabled": {
 				"type": "boolean",
 				"description": "Enable auto-memory for this project. When false, Claude will not read from or write to the auto-memory directory."
@@ -2374,11 +2580,15 @@
 			},
 			"showThinkingSummaries": {
 				"type": "boolean",
-				"description": "Show thinking summaries in the transcript view (ctrl+o). Default: false."
+				"description": "Request API-side thinking summaries and show them in the conversation and in the transcript view (ctrl+o). Set explicitly to override the default for your install."
 			},
 			"skipDangerousModePermissionPrompt": {
 				"type": "boolean",
 				"description": "Whether the user has accepted the bypass permissions mode dialog"
+			},
+			"skipWorkflowUsageWarning": {
+				"type": "boolean",
+				"description": "@internal Whether the user has accepted the multi-agent workflow usage warning. Until set, auto permission mode prompts before running a workflow."
 			},
 			"disableAutoMode": {
 				"enum": [
@@ -2475,9 +2685,21 @@
 				"type": "boolean",
 				"description": "Automatically compact conversation when context fills"
 			},
+			"precomputeCompactionEnabled": {
+				"type": "boolean",
+				"description": "@internal Precompute the compaction summary in the background before it is needed. Only applies when auto-compact is on."
+			},
+			"switchModelsOnFlag": {
+				"type": "boolean",
+				"description": "When safety measures flag a message, automatically switch to a different model to keep chatting. When off, your session will pause instead."
+			},
 			"autoScrollEnabled": {
 				"type": "boolean",
 				"description": "Auto-scroll the conversation view to bottom (fullscreen mode only)"
+			},
+			"wheelScrollAccelerationEnabled": {
+				"type": "boolean",
+				"description": "Ramp mouse-wheel scroll speed during fast scrolls (fullscreen mode only)"
 			},
 			"fileCheckpointingEnabled": {
 				"type": "boolean",
@@ -2503,9 +2725,10 @@
 				"enum": [
 					"auto",
 					"tmux",
+					"iterm2",
 					"in-process"
 				],
-				"description": "How spawned teammates execute (tmux, in-process, auto)"
+				"description": "How spawned teammates execute (tmux, iterm2, in-process, auto)"
 			},
 			"remoteControlAtStartup": {
 				"type": "boolean",

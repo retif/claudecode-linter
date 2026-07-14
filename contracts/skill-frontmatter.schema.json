@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.150",
-	"extractedAt": "2026-05-23T18:30:08.380Z",
+	"extractedFromClaudeCodeVersion": "2.1.193",
+	"extractedAt": "2026-06-26T01:10:14.628Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code SKILL.md frontmatter",
@@ -55,7 +55,7 @@
 						"type": "null"
 					}
 				],
-				"description": "Model override (`haiku`, `sonnet`, `opus`, or a full ID). Use `inherit` to match the parent conversation."
+				"description": "Model override (`haiku`, `sonnet`, `opus`, `fable`, or a full ID). Use `inherit` to match the parent conversation."
 			},
 			"allowed-tools": {
 				"anyOf": [
@@ -83,6 +83,60 @@
 					}
 				],
 				"description": "Tools available to the model while this file is active. Comma-separated string or YAML list."
+			},
+			"disallowed-tools": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				],
+				"description": "Tools removed from the model while this file is active. Comma-separated string or YAML list. Cleared when the user sends the next message."
+			},
+			"disallowedTools": {
+				"anyOf": [
+					{
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						]
+					},
+					{
+						"type": "array",
+						"items": {
+							"type": "string"
+						}
+					}
+				],
+				"description": "Canonical (normalized) alias of `disallowed-tools`."
 			},
 			"argument-hint": {
 				"anyOf": [
@@ -363,6 +417,12 @@
 			"settings": {
 				"description": "@internal"
 			},
+			"userConfig": {
+				"description": "@internal"
+			},
+			"defaultEnabled": {
+				"description": "@internal"
+			},
 			"experimental": {
 				"description": "@internal"
 			},
@@ -370,6 +430,24 @@
 				"description": "@internal"
 			},
 			"metadata": {
+				"description": "@internal"
+			},
+			"displayName": {
+				"description": "@internal"
+			},
+			"author": {
+				"description": "@internal"
+			},
+			"homepage": {
+				"description": "@internal"
+			},
+			"repository": {
+				"description": "@internal"
+			},
+			"license": {
+				"description": "@internal"
+			},
+			"keywords": {
 				"description": "@internal"
 			}
 		},

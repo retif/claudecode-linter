@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.150",
-	"extractedAt": "2026-05-23T18:30:08.356Z",
+	"extractedFromClaudeCodeVersion": "2.1.193",
+	"extractedAt": "2026-06-26T01:10:14.606Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code plugin.json",
@@ -68,6 +68,10 @@
 					"type": "string"
 				},
 				"description": "Tags for plugin discovery and categorization"
+			},
+			"defaultEnabled": {
+				"type": "boolean",
+				"description": "Whether the plugin starts enabled when the user has no explicit enabled/disabled setting for it (default: true). Explicit enabledPlugins values always win, and a plugin required by an enabled dependent is enabled regardless of this value."
 			},
 			"dependencies": {
 				"type": "array",
@@ -732,15 +736,15 @@
 				"anyOf": [
 					{
 						"type": "string",
-						"description": "Path to a skill directory, relative to the plugin root. Loaded in addition to the skills/ directory."
+						"description": "Path to a skill directory, relative to the plugin root. Loaded in addition to the skills/ directory (except: for a marketplace entry whose source resolves to the marketplace root, declaring a specific subdirectory replaces the skills/ scan)."
 					},
 					{
 						"type": "array",
 						"items": {
 							"type": "string",
-							"description": "Path to a skill directory, relative to the plugin root. Loaded in addition to the skills/ directory."
+							"description": "Path to a skill directory, relative to the plugin root."
 						},
-						"description": "List of skill directory paths, loaded in addition to the skills/ directory."
+						"description": "List of skill directory paths, loaded in addition to the skills/ directory (except: for a marketplace entry whose source resolves to the marketplace root, declaring specific subdirectories replaces the skills/ scan)."
 					}
 				]
 			},
@@ -991,11 +995,42 @@
 										"timeout": {
 											"type": "number"
 										},
+										"tools": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"name": {
+														"type": "string"
+													},
+													"permission_policy": {
+														"enum": [
+															"always_allow",
+															"always_ask",
+															"always_deny"
+														]
+													}
+												},
+												"required": [
+													"name"
+												]
+											}
+										},
 										"alwaysLoad": {
 											"type": "boolean"
 										},
 										"role": {
 											"const": "comms"
+										},
+										"toolPermissions": {
+											"type": "object",
+											"additionalProperties": {
+												"enum": [
+													"allow",
+													"ask",
+													"blocked"
+												]
+											}
 										}
 									},
 									"required": [
@@ -1114,11 +1149,42 @@
 										"timeout": {
 											"type": "number"
 										},
+										"tools": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"name": {
+														"type": "string"
+													},
+													"permission_policy": {
+														"enum": [
+															"always_allow",
+															"always_ask",
+															"always_deny"
+														]
+													}
+												},
+												"required": [
+													"name"
+												]
+											}
+										},
 										"alwaysLoad": {
 											"type": "boolean"
 										},
 										"role": {
 											"const": "comms"
+										},
+										"toolPermissions": {
+											"type": "object",
+											"additionalProperties": {
+												"enum": [
+													"allow",
+													"ask",
+													"blocked"
+												]
+											}
 										}
 									},
 									"required": [
@@ -1192,6 +1258,12 @@
 										"id": {
 											"type": "string"
 										},
+										"displayName": {
+											"type": "string"
+										},
+										"iconUrl": {
+											"type": "string"
+										},
 										"timeout": {
 											"type": "number"
 										},
@@ -1207,6 +1279,13 @@
 													"blocked"
 												]
 											}
+										},
+										"stateless": {
+											"type": "boolean"
+										},
+										"cachedInitResponse": {
+											"type": "object",
+											"additionalProperties": {}
 										}
 									},
 									"required": [
@@ -1325,11 +1404,42 @@
 													"timeout": {
 														"type": "number"
 													},
+													"tools": {
+														"type": "array",
+														"items": {
+															"type": "object",
+															"properties": {
+																"name": {
+																	"type": "string"
+																},
+																"permission_policy": {
+																	"enum": [
+																		"always_allow",
+																		"always_ask",
+																		"always_deny"
+																	]
+																}
+															},
+															"required": [
+																"name"
+															]
+														}
+													},
 													"alwaysLoad": {
 														"type": "boolean"
 													},
 													"role": {
 														"const": "comms"
+													},
+													"toolPermissions": {
+														"type": "object",
+														"additionalProperties": {
+															"enum": [
+																"allow",
+																"ask",
+																"blocked"
+															]
+														}
 													}
 												},
 												"required": [
@@ -1448,11 +1558,42 @@
 													"timeout": {
 														"type": "number"
 													},
+													"tools": {
+														"type": "array",
+														"items": {
+															"type": "object",
+															"properties": {
+																"name": {
+																	"type": "string"
+																},
+																"permission_policy": {
+																	"enum": [
+																		"always_allow",
+																		"always_ask",
+																		"always_deny"
+																	]
+																}
+															},
+															"required": [
+																"name"
+															]
+														}
+													},
 													"alwaysLoad": {
 														"type": "boolean"
 													},
 													"role": {
 														"const": "comms"
+													},
+													"toolPermissions": {
+														"type": "object",
+														"additionalProperties": {
+															"enum": [
+																"allow",
+																"ask",
+																"blocked"
+															]
+														}
 													}
 												},
 												"required": [
@@ -1526,6 +1667,12 @@
 													"id": {
 														"type": "string"
 													},
+													"displayName": {
+														"type": "string"
+													},
+													"iconUrl": {
+														"type": "string"
+													},
 													"timeout": {
 														"type": "number"
 													},
@@ -1541,6 +1688,13 @@
 																"blocked"
 															]
 														}
+													},
+													"stateless": {
+														"type": "boolean"
+													},
+													"cachedInitResponse": {
+														"type": "object",
+														"additionalProperties": {}
 													}
 												},
 												"required": [
@@ -1631,6 +1785,10 @@
 								"maxRestarts": {
 									"type": "number",
 									"description": "Maximum number of restart attempts before giving up"
+								},
+								"diagnostics": {
+									"type": "boolean",
+									"description": "Whether to push publishDiagnostics into the agent context after edits. Set to false to keep LSP navigation (goToDefinition, hover, etc.) but suppress automatic diagnostic injection. Defaults to true."
 								}
 							},
 							"required": [
@@ -1715,6 +1873,10 @@
 											"maxRestarts": {
 												"type": "number",
 												"description": "Maximum number of restart attempts before giving up"
+											},
+											"diagnostics": {
+												"type": "boolean",
+												"description": "Whether to push publishDiagnostics into the agent context after edits. Set to false to keep LSP navigation (goToDefinition, hover, etc.) but suppress automatic diagnostic injection. Defaults to true."
 											}
 										},
 										"required": [
@@ -1959,6 +2121,7 @@
 						"description": "Path(s) to evaluation query files for `claude plugin eval`. Defaults to `evals/`."
 					}
 				},
+				"additionalProperties": true,
 				"description": "Components whose manifest shape may change without a deprecation cycle. Move a key out of here once it is promoted to stable."
 			}
 		},

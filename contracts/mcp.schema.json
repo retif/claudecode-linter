@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.150",
-	"extractedAt": "2026-05-23T18:30:08.385Z",
+	"extractedFromClaudeCodeVersion": "2.1.193",
+	"extractedAt": "2026-06-26T01:10:14.632Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code .mcp.json",
@@ -90,11 +90,42 @@
 								"timeout": {
 									"type": "number"
 								},
+								"tools": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"name": {
+												"type": "string"
+											},
+											"permission_policy": {
+												"enum": [
+													"always_allow",
+													"always_ask",
+													"always_deny"
+												]
+											}
+										},
+										"required": [
+											"name"
+										]
+									}
+								},
 								"alwaysLoad": {
 									"type": "boolean"
 								},
 								"role": {
 									"const": "comms"
+								},
+								"toolPermissions": {
+									"type": "object",
+									"additionalProperties": {
+										"enum": [
+											"allow",
+											"ask",
+											"blocked"
+										]
+									}
 								}
 							},
 							"required": [
@@ -213,11 +244,42 @@
 								"timeout": {
 									"type": "number"
 								},
+								"tools": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"name": {
+												"type": "string"
+											},
+											"permission_policy": {
+												"enum": [
+													"always_allow",
+													"always_ask",
+													"always_deny"
+												]
+											}
+										},
+										"required": [
+											"name"
+										]
+									}
+								},
 								"alwaysLoad": {
 									"type": "boolean"
 								},
 								"role": {
 									"const": "comms"
+								},
+								"toolPermissions": {
+									"type": "object",
+									"additionalProperties": {
+										"enum": [
+											"allow",
+											"ask",
+											"blocked"
+										]
+									}
 								}
 							},
 							"required": [
@@ -291,6 +353,12 @@
 								"id": {
 									"type": "string"
 								},
+								"displayName": {
+									"type": "string"
+								},
+								"iconUrl": {
+									"type": "string"
+								},
 								"timeout": {
 									"type": "number"
 								},
@@ -306,6 +374,13 @@
 											"blocked"
 										]
 									}
+								},
+								"stateless": {
+									"type": "boolean"
+								},
+								"cachedInitResponse": {
+									"type": "object",
+									"additionalProperties": {}
 								}
 							},
 							"required": [

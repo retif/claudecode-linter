@@ -1,6 +1,6 @@
 {
 	"name": "claudecode-linter",
-	"version": "2.1.150-patch.1",
+	"version": "2.1.193",
 	"description": "Standalone linter for Claude Code plugins and configuration files",
 	"type": "module",
 	"bin": {
@@ -76,6 +76,6 @@
 		"npm-check-updates": "^22.2.0",
 		"tsx": "^4.21.0",
 		"typescript": "^6.0.2",
-		"vitest": "4.1.7"
+		"vitest": "4.1.10"
 	}
 }

@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.150",
-	"extractedAt": "2026-05-23T18:30:08.358Z",
+	"extractedFromClaudeCodeVersion": "2.1.193",
+	"extractedAt": "2026-06-26T01:10:14.608Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code .lsp.json",
@@ -69,6 +69,10 @@
 				"maxRestarts": {
 					"type": "number",
 					"description": "Maximum number of restart attempts before giving up"
+				},
+				"diagnostics": {
+					"type": "boolean",
+					"description": "Whether to push publishDiagnostics into the agent context after edits. Set to false to keep LSP navigation (goToDefinition, hover, etc.) but suppress automatic diagnostic injection. Defaults to true."
 				}
 			},
 			"required": [
