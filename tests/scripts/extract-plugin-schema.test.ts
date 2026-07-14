@@ -16,6 +16,7 @@ import {
 	splitTopLevelArgs,
 	parseEntry,
 	findSymbolByAnchor,
+	findMasterSchemaName,
 	buildPluginSchema,
 } from "../../scripts/extract-plugin-schema.js";
 
@@ -415,5 +416,87 @@ describe("indexDefinitions + master parsing", () => {
 		// `name` required (from coreSchema which is NOT partial);
 		// extras (description, author) are .partial() → not required.
 		expect(schema.required).toEqual(["name"]);
+	});
+});
+
+/**
+ * Build a 2.1.197+-shaped bundle where the master schema is NO LONGER validated
+ * inline next to the "is not kebab-case" string. Instead a hand-rolled
+ * imperative linter owns that string, and the Zod schema is validated inside a
+ * generic validator (`KWe`) dispatched by artifact-type string
+ * (`KWe(candidate,"plugin-json",{…})`), whose body calls `<master>().safeParse`.
+ */
+function makeTypeDispatchBundle(): string {
+	const parts: string[] = [];
+	parts.push("var ");
+	parts.push(
+		`coreSchema=CH(()=>E.object({name:E.string().min(1),version:E.string().optional()}))`,
+	);
+	parts.push(
+		`,extrasSchema=CH(()=>E.object({description:E.string().optional()}))`,
+	);
+	parts.push(
+		`,masterSchema=CH(()=>E.object({...coreSchema().shape,...extrasSchema().partial().shape}))`,
+	);
+	parts.push(";");
+	// Generic validator, invoked with the "plugin-json" type string. Its body
+	// calls `masterSchema().safeParse(...)` — the only safeParse in the bundle.
+	parts.push(
+		`function KWe(e,t,n){let o={...e},a=masterSchema().safeParse(o);return a.success?{ok:!0}:{ok:!1}}`,
+	);
+	// Hand-rolled linter owning the kebab-case string, NOT adjacent to safeParse.
+	parts.push(
+		`function lintManifest(m,r){let i=KWe(m,"plugin-json",{manifestPath:r});if(!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(m.name))push({path:"name",message:\`Plugin name "\${m.name}" is not kebab-case.\`})}`,
+	);
+	return parts.join("");
+}
+
+describe("type-string dispatch master detection (2.1.197+)", () => {
+	const idx = indexDefinitions(makeTypeDispatchBundle());
+
+	it("falls back to the validator dispatch when kebab-case is not adjacent to safeParse", () => {
+		expect(findMasterSchemaName(idx)).toBe("masterSchema");
+	});
+
+	it("still composes the full plugin schema", () => {
+		const schema = buildPluginSchema(idx);
+		const props = schema.properties as Record<string, object>;
+		expect(Object.keys(props).sort()).toEqual([
+			"description",
+			"name",
+			"version",
+		]);
+		expect(schema.required).toEqual(["name"]);
+	});
+
+	it("tolerates a single-quoted type string and a function-expression validator", () => {
+		// Same dispatch shape, but the validator is bound as a function
+		// expression and dispatched with a single-quoted type literal.
+		const src =
+			`var coreSchema=CH(()=>E.object({name:E.string().min(1)})),` +
+			`masterSchema=CH(()=>E.object({...coreSchema().shape}));` +
+			`var KWe=function(e,t){let a=masterSchema().safeParse(e);return a};` +
+			`function lint(m){KWe(m,'plugin-json');` +
+			`if(!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(m.name))push("is not kebab-case")}`;
+		expect(findMasterSchemaName(indexDefinitions(src))).toBe("masterSchema");
+	});
+});
+
+describe("numeric constraint guard", () => {
+	// A `.max()` whose argument is an unresolved minified variable must NOT emit
+	// a `maxItems: null` (NaN) keyword that Ajv later rejects — the constraint is
+	// dropped instead.
+	const idx = indexDefinitions(
+		"var s=CH(()=>E.object({tags:E.array(E.string()).max(SOME_VAR).optional(),names:E.array(E.string()).max(5).optional()}))",
+	);
+
+	it("drops an array max with a non-literal bound but keeps a literal one", () => {
+		const schema = evalZod(idx.defs.get("s")!, {
+			index: idx,
+			resolving: new Set(),
+		});
+		const props = schema.properties as Record<string, Record<string, unknown>>;
+		expect(props.tags).not.toHaveProperty("maxItems");
+		expect(props.names.maxItems).toBe(5);
 	});
 });

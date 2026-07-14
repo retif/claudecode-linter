@@ -512,12 +512,34 @@ function detectZodAlias(source: string): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Find the plugin.json master schema by anchoring on `.strict().safeParse(`
- * adjacent to the "kebab-case" error string. The master schema's symbol name
- * appears immediately before that .strict() chain.
+ * Find the plugin.json master schema symbol.
+ *
+ * Two extraction strategies are tried in order, so the walker spans the
+ * releases that moved the anchor around:
+ *
+ *  1. **kebab-case adjacency** (≤ 2.1.196) — the master schema was validated
+ *     inline via `<master>().strict().safeParse(...)` (or the bare
+ *     `.safeParse(` form after 2.1.150) sitting right next to the
+ *     "is not kebab-case" name-validation error string.
+ *
+ *  2. **type-string dispatch** (2.1.197+) — Claude Code replaced the inline
+ *     validation with a hand-rolled imperative manifest linter, so the
+ *     "is not kebab-case" string no longer sits beside any `.safeParse(`.
+ *     The Zod schema is now validated inside a generic validator dispatched by
+ *     artifact-type string: `KWe(candidate,"plugin-json",{…})`, whose body
+ *     calls `<master>().safeParse(…)`. We locate the validator via the
+ *     "plugin-json" type-string call site, then read the master symbol from
+ *     its `<sym>().safeParse(` call.
  */
 export function findMasterSchemaName(index: DefinitionIndex): string | null {
-	const { source } = index;
+	return (
+		findMasterViaKebabAnchor(index.source) ??
+		findMasterViaTypeDispatch(index.source)
+	);
+}
+
+/** Strategy 1: `<master>().safeParse(` adjacent to the kebab-case error. */
+function findMasterViaKebabAnchor(source: string): string | null {
 	const anchor = "is not kebab-case";
 	const anchorIdx = source.indexOf(anchor);
 	if (anchorIdx === -1) return null;
@@ -525,25 +547,85 @@ export function findMasterSchemaName(index: DefinitionIndex): string | null {
 	// where `.strict()` is no longer chained inline (Claude Code 2.1.150+
 	// dropped it from the call site — the masterSchema's `.strict()` still
 	// lives inside its own definition), the bare `.safeParse(` form.
-	const search = source.slice(Math.max(0, anchorIdx - 4000), anchorIdx);
+	const windowStart = Math.max(0, anchorIdx - 4000);
+	const search = source.slice(windowStart, anchorIdx);
 	let callIdx = search.lastIndexOf(".strict().safeParse(");
-	let chainLen = ".strict().safeParse(".length;
-	if (callIdx === -1) {
-		callIdx = search.lastIndexOf(".safeParse(");
-		chainLen = ".safeParse(".length;
-	}
+	if (callIdx === -1) callIdx = search.lastIndexOf(".safeParse(");
 	if (callIdx === -1) return null;
-	void chainLen; // documented for clarity; not used below
-	const absoluteCallIdx = Math.max(0, anchorIdx - 4000) + callIdx;
+	const absoluteCallIdx = windowStart + callIdx;
 	// Walk back across `().` to find the symbol name.
-	let i = absoluteCallIdx - 1;
+	const i = absoluteCallIdx - 1;
 	// expect pattern: <name>()
 	if (source.slice(i - 1, i + 1) !== "()") return null;
-	let nameEnd = i - 1;
+	const nameEnd = i - 1;
 	let nameStart = nameEnd;
 	while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
 	if (nameStart === nameEnd) return null;
 	return source.slice(nameStart, nameEnd);
+}
+
+/**
+ * Strategy 2: locate the `"plugin-json"` artifact-type validator dispatch, then
+ * read the master schema symbol from the `<sym>().safeParse(` inside the
+ * validator's body.
+ */
+function findMasterViaTypeDispatch(source: string): string | null {
+	const validator = findValidatorCallName(source, "plugin-json");
+	if (!validator) return null;
+	// The validator may be declared as a statement (`function <V>(…)`) or bound
+	// to a variable as an arrow / function expression
+	// (`<V>=(…)=>{…}`, `<V>=async(…)=>{…}`, `<V>=function(…){…}`).
+	const esc = validator.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const defRe = new RegExp(
+		`(?:function\\s+${esc}\\s*\\(|\\b${esc}\\s*=\\s*(?:async\\s*)?(?:function\\s*)?\\()`,
+	);
+	const def = defRe.exec(source);
+	if (!def) return null;
+	const defIdx = def.index;
+	const body = source.slice(defIdx, defIdx + 4000);
+	const sp = body.match(/([\w$]+)\(\)\.safeParse\(/);
+	return sp ? sp[1] : null;
+}
+
+/**
+ * Find the identifier of the function called with `typeString` as one of its
+ * arguments, e.g. `KWe(candidate,"plugin-json",{…})` → `KWe`. Scans backward
+ * from the type-string literal across balanced brackets to the call's opening
+ * paren, then reads the identifier before it.
+ */
+function findValidatorCallName(
+	source: string,
+	typeString: string,
+): string | null {
+	// The minifier usually emits double-quoted strings, but tolerate single
+	// quotes too so a quote-style rotation can't silently break extraction.
+	for (const needle of [`"${typeString}"`, `'${typeString}'`]) {
+		let from = 0;
+		let idx: number;
+		while ((idx = source.indexOf(needle, from)) !== -1) {
+			from = idx + 1;
+			// Walk back across balanced brackets to the enclosing call's `(`.
+			let depth = 0;
+			let i = idx - 1;
+			for (; i >= 0; i--) {
+				const c = source[i];
+				if (c === ")" || c === "]" || c === "}") depth++;
+				else if (c === "[" || c === "{") {
+					if (depth === 0) break; // hit an object/array literal — not a call
+					depth--;
+				} else if (c === "(") {
+					if (depth === 0) break; // enclosing call paren
+					depth--;
+				}
+			}
+			if (i < 0 || source[i] !== "(") continue;
+			const nameEnd = i;
+			let nameStart = nameEnd;
+			while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
+			if (nameStart < nameEnd) return source.slice(nameStart, nameEnd);
+		}
+	}
+	return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -1131,6 +1213,18 @@ function isOptional(expr: string, ctx?: EvalContext, depth = 0): boolean {
 	return false;
 }
 
+/**
+ * Coerce a Zod numeric-constraint argument (`.min(n)`, `.max(n)`, `.length(n)`)
+ * to a finite number, or `null` when it is not a numeric literal — e.g. a
+ * minified variable the walker cannot resolve. Callers drop the constraint on
+ * `null` rather than emit a `NaN`/`null` JSON Schema keyword that Ajv rejects.
+ */
+function numericArg(arg: string | undefined): number | null {
+	if (arg === undefined) return null;
+	const n = Number(arg.trim());
+	return Number.isFinite(n) ? n : null;
+}
+
 function evalLiteralValue(expr: string): unknown {
 	expr = expr.trim();
 	if (expr === "true") return true;
@@ -1201,24 +1295,33 @@ function applyMethod(
 				schema = { ...schema, default: evalLiteralValue(args[0]) };
 			}
 			return schema;
-		case "min":
+		case "min": {
+			// Only emit the constraint when the bound resolves to a real number.
+			// Minified releases sometimes pass a variable (e.g. `.max(someVar)`)
+			// the walker can't resolve; `Number()` would yield NaN → an invalid
+			// (`null`) JSON Schema keyword. Drop it rather than emit garbage.
+			const n = numericArg(args[0]);
+			if (n === null) return schema;
+			if (schema.type === "string") return { ...schema, minLength: n };
+			if (schema.type === "array") return { ...schema, minItems: n };
+			return { ...schema, minimum: n };
+		}
+		case "max": {
+			const n = numericArg(args[0]);
+			if (n === null) return schema;
+			if (schema.type === "string") return { ...schema, maxLength: n };
+			if (schema.type === "array") return { ...schema, maxItems: n };
+			return { ...schema, maximum: n };
+		}
+		case "length": {
+			const n = numericArg(args[0]);
+			if (n === null) return schema;
 			if (schema.type === "string")
-				return { ...schema, minLength: Number(args[0] ?? 0) };
-			if (schema.type === "array")
-				return { ...schema, minItems: Number(args[0] ?? 0) };
-			return { ...schema, minimum: Number(args[0] ?? 0) };
-		case "max":
-			if (schema.type === "string")
-				return { ...schema, maxLength: Number(args[0] ?? 0) };
-			if (schema.type === "array")
-				return { ...schema, maxItems: Number(args[0] ?? 0) };
-			return { ...schema, maximum: Number(args[0] ?? 0) };
-		case "length":
-			if (schema.type === "string") {
-				const n = Number(args[0] ?? 0);
 				return { ...schema, minLength: n, maxLength: n };
-			}
+			if (schema.type === "array")
+				return { ...schema, minItems: n, maxItems: n };
 			return schema;
+		}
 		case "regex":
 			if (args.length > 0) {
 				const r = args[0].trim();
