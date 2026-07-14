@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.193",
-	"extractedAt": "2026-06-26T01:10:14.606Z",
+	"extractedFromClaudeCodeVersion": "2.1.197",
+	"extractedAt": "2026-07-14T19:27:08.358Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code plugin.json",
@@ -209,7 +209,7 @@
 														},
 														"model": {
 															"type": "string",
-															"description": "Model to use for this prompt hook (e.g., \"claude-sonnet-4-6\"). If not specified, uses the default small fast model."
+															"description": "Model to use for this prompt hook (e.g., \"claude-sonnet-5\"). If not specified, uses the default small fast model."
 														},
 														"continueOnBlock": {
 															"type": "boolean",
@@ -250,7 +250,7 @@
 														},
 														"model": {
 															"type": "string",
-															"description": "Model to use for this agent hook (e.g., \"claude-sonnet-4-6\"). If not specified, uses Haiku."
+															"description": "Model to use for this agent hook (e.g., \"claude-sonnet-5\"). If not specified, uses Haiku."
 														},
 														"statusMessage": {
 															"type": "string",
@@ -478,7 +478,7 @@
 																	},
 																	"model": {
 																		"type": "string",
-																		"description": "Model to use for this prompt hook (e.g., \"claude-sonnet-4-6\"). If not specified, uses the default small fast model."
+																		"description": "Model to use for this prompt hook (e.g., \"claude-sonnet-5\"). If not specified, uses the default small fast model."
 																	},
 																	"continueOnBlock": {
 																		"type": "boolean",
@@ -519,7 +519,7 @@
 																	},
 																	"model": {
 																		"type": "string",
-																		"description": "Model to use for this agent hook (e.g., \"claude-sonnet-4-6\"). If not specified, uses Haiku."
+																		"description": "Model to use for this agent hook (e.g., \"claude-sonnet-5\"). If not specified, uses Haiku."
 																	},
 																	"statusMessage": {
 																		"type": "string",
@@ -2020,6 +2020,9 @@
 					"additionalProperties": false
 				},
 				"description": "User-configurable values this plugin needs. Prompted at enable time. Non-sensitive values saved to settings.json; sensitive values to secure storage. Available as ${user_config.KEY} in MCP/LSP server config, hook commands, and (non-sensitive only) skill/agent content. Keep sensitive value counts small."
+			},
+			"binaries": {
+				"description": "sha256-pinned files to fetch into bin/ at install time, keyed by basename (target triple encoded in the name)"
 			},
 			"experimental": {
 				"type": "object",

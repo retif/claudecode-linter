@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.193",
-	"extractedAt": "2026-06-26T01:10:14.625Z",
+	"extractedFromClaudeCodeVersion": "2.1.197",
+	"extractedAt": "2026-07-14T19:27:08.380Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -390,7 +390,7 @@
 												},
 												"model": {
 													"type": "string",
-													"description": "Model to use for this prompt hook (e.g., \"claude-sonnet-4-6\"). If not specified, uses the default small fast model."
+													"description": "Model to use for this prompt hook (e.g., \"claude-sonnet-5\"). If not specified, uses the default small fast model."
 												},
 												"continueOnBlock": {
 													"type": "boolean",
@@ -431,7 +431,7 @@
 												},
 												"model": {
 													"type": "string",
-													"description": "Model to use for this agent hook (e.g., \"claude-sonnet-4-6\"). If not specified, uses Haiku."
+													"description": "Model to use for this agent hook (e.g., \"claude-sonnet-5\"). If not specified, uses Haiku."
 												},
 												"statusMessage": {
 													"type": "string",
@@ -603,6 +603,10 @@
 			"disableArtifact": {
 				"type": "boolean",
 				"description": "Disable the Artifact tool (also via CLAUDE_CODE_DISABLE_ARTIFACT)."
+			},
+			"enableArtifact": {
+				"type": "boolean",
+				"description": "Enable or disable the Artifact tool for this user. Unset = default by plan once the feature is available."
 			},
 			"enableWorkflows": {
 				"type": "boolean",
@@ -2562,9 +2566,14 @@
 					"off",
 					"infinite",
 					"fixed",
-					"countdown"
+					"countdown",
+					"padded-countdown"
 				],
-				"description": "@internal Emit a <total_tokens>N tokens left</total_tokens> block in the system prompt and after each tool result. 'infinite' uses the literal value Infinite, 'fixed' uses 5000000, 'countdown' uses the live remaining context-window tokens. Defaults to off. Env var CLAUDE_CODE_TOTAL_TOKENS_REMINDER overrides."
+				"description": "@internal Emit a <total_tokens>N tokens left</total_tokens> block in the system prompt and after each tool result. 'infinite' uses the literal value Infinite, 'fixed' uses 5000000, 'countdown' uses the live remaining context-window tokens, 'padded-countdown' counts down from totalTokensReminderBudget by per-agent cumulative context spend (monotonic across compaction and /clear). Defaults to off. Env var CLAUDE_CODE_TOTAL_TOKENS_REMINDER overrides."
+			},
+			"totalTokensReminderBudget": {
+				"type": "number",
+				"description": "@internal Starting budget (tokens) for totalTokensReminder 'padded-countdown' mode. Defaults to 15000000. Server-controlled via GrowthBook; env var CLAUDE_CODE_TOTAL_TOKENS_REMINDER_BUDGET overrides."
 			},
 			"autoMemoryEnabled": {
 				"type": "boolean",

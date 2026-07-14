@@ -1,6 +1,6 @@
 {
-	"version": "2.1.193",
-	"extractedAt": "2026-06-26T01:10:10.128Z",
+	"version": "2.1.197",
+	"extractedAt": "2026-07-14T19:27:03.530Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -31,6 +31,7 @@
 			"ReadMcpResource",
 			"ReadMcpResourceDir",
 			"RemoteTrigger",
+			"ReportFindings",
 			"ScheduleWakeup",
 			"SendMessage",
 			"ShowOnboardingRolePicker",
@@ -269,6 +270,7 @@
 			"editorMode",
 			"effortLevel",
 			"enableAllProjectMcpServers",
+			"enableArtifact",
 			"enableWorkflows",
 			"enabledMcpjsonServers",
 			"enabledPlugins",
@@ -348,6 +350,7 @@
 			"theme",
 			"todoFeatureEnabled",
 			"totalTokensReminder",
+			"totalTokensReminderBudget",
 			"tui",
 			"ultracode",
 			"verbose",

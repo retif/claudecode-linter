@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.193 — extracted 2026-06-26T01:10:10.128Z
+// Claude Code v2.1.197 — extracted 2026-07-14T19:27:03.530Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -31,6 +31,7 @@ export const TOOLS = new Set<string>([
 	"ReadMcpResource",
 	"ReadMcpResourceDir",
 	"RemoteTrigger",
+	"ReportFindings",
 	"ScheduleWakeup",
 	"SendMessage",
 	"ShowOnboardingRolePicker",
@@ -280,6 +281,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"editorMode",
 	"effortLevel",
 	"enableAllProjectMcpServers",
+	"enableArtifact",
 	"enableWorkflows",
 	"enabledMcpjsonServers",
 	"enabledPlugins",
@@ -359,6 +361,7 @@ export const SETTINGS_USER_FIELDS = new Set<string>([
 	"theme",
 	"todoFeatureEnabled",
 	"totalTokensReminder",
+	"totalTokensReminderBudget",
 	"tui",
 	"ultracode",
 	"verbose",
