@@ -73,7 +73,7 @@
 		"acorn": "^8.16.0",
 		"acorn-walk": "^8.3.5",
 		"knip": "^6.0.5",
-		"npm-check-updates": "^22.2.0",
+		"npm-check-updates": "^23.0.1",
 		"tsx": "^4.21.0",
 		"typescript": "^6.0.2",
 		"vitest": "4.1.10"
