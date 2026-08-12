@@ -7,3 +7,10 @@ CHANGELOG_ENTRY.md
 .claude-code-version
 *.tgz
 .stage/
+
+# spec-kit local/generated state (feature.json, extension-local config, integration scratch)
+.specify/feature.json
+.specify/extensions/*/local-config.yml
+.specify/extensions/.cache/
+.specify/extensions/.backup/
+.specify/.tmp-integration/
