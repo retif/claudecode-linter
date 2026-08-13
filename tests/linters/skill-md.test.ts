@@ -114,6 +114,38 @@ describe("skill-md linter", () => {
 		).toBe(true);
 	});
 
+	// oleks/claudecode-linter#12 — the fleet-wide ROUTING TRIGGERS sentinels are
+	// structural: codegen rewrites exactly the span between them and skips files
+	// that lack them. Since this linter only checks CHANGED files, flagging them
+	// left 5+ plugins permanently unpushable the moment anyone touched their
+	// SKILL.md, for a violation already on main.
+	it("does not report HTML comments in a description", () => {
+		const diags = lint(
+			'---\nname: test\ndescription: Use when testing. Trigger on <!-- BEGIN ROUTING TRIGGERS -->"run the tests", "lint this"<!-- END ROUTING TRIGGERS -->.\n---\n\n# Test',
+		);
+		expect(
+			diags.some((d) => d.rule === "skill-md/description-no-angle-brackets"),
+		).toBe(false);
+	});
+
+	it("still reports real markup alongside an HTML comment", () => {
+		const diags = lint(
+			"---\nname: test\ndescription: Use when testing <html> output. <!-- a comment -->\n---\n\n# Test",
+		);
+		expect(
+			diags.some((d) => d.rule === "skill-md/description-no-angle-brackets"),
+		).toBe(true);
+	});
+
+	it("still reports an unterminated HTML comment", () => {
+		const diags = lint(
+			"---\nname: test\ndescription: Use when testing. <!-- BEGIN ROUTING TRIGGERS\n---\n\n# Test",
+		);
+		expect(
+			diags.some((d) => d.rule === "skill-md/description-no-angle-brackets"),
+		).toBe(true);
+	});
+
 	it("does not report description without angle brackets", () => {
 		const diags = lint(
 			"---\nname: test\ndescription: This skill should be used when testing output.\n---\n\n# Test",
