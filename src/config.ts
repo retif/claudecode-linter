@@ -2,12 +2,56 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { parse as parseYaml } from "yaml";
-import type { LinterConfig, RuleConfig } from "./types.js";
+import type { LinterConfig, RuleConfig, Severity } from "./types.js";
 import { assetCandidates } from "./utils/asset-path.js";
 
 const DEFAULT_CONFIG: LinterConfig = {
   rules: {},
 };
+
+const SEVERITIES: readonly Severity[] = ["error", "warning", "info"];
+
+function isSeverity(value: unknown): value is Severity {
+  return typeof value === "string" && (SEVERITIES as readonly string[]).includes(value);
+}
+
+/**
+ * Normalise one `rules:` entry into the internal `RuleConfig | boolean` shape.
+ *
+ * Three surface forms are accepted, because all three are forms the shipped
+ * `.claudecode-lint.defaults.yaml` teaches by example:
+ *
+ *   rule: false                             -> disabled
+ *   rule: info                              -> enabled at that severity
+ *   rule: { enabled: true, severity: info } -> enabled at that severity
+ *
+ * The scalar severity form used to be dropped on the floor: every rule in the
+ * defaults file is written that way (`agent-md/valid-frontmatter: error`), so
+ * copying that file and changing a severity produced no error, no warning and
+ * no effect, while the sibling `false` scalar was honoured
+ * (oleks/claudecode-linter#14).
+ *
+ * `severity` without `enabled` is likewise treated as enabled. `enabled` is
+ * declared required on RuleConfig, so omitting it made `isRuleEnabled` read
+ * `undefined` and switch the rule OFF entirely — a request to DOWNGRADE a rule
+ * silently SILENCED it, the opposite of what was written.
+ *
+ * Returns undefined for a value that is none of these, so the caller can say so
+ * rather than ignore it.
+ */
+function normalizeRule(value: unknown): RuleConfig | boolean | undefined {
+  if (typeof value === "boolean") return value;
+  if (isSeverity(value)) return { enabled: true, severity: value };
+  if (typeof value === "object" && value !== null) {
+    const obj = value as { enabled?: unknown; severity?: unknown };
+    if (obj.severity !== undefined && !isSeverity(obj.severity)) return undefined;
+    if (obj.enabled !== undefined && typeof obj.enabled !== "boolean") return undefined;
+    const rule: RuleConfig = { enabled: obj.enabled ?? true };
+    if (obj.severity !== undefined) rule.severity = obj.severity as Severity;
+    return rule;
+  }
+  return undefined;
+}
 
 export function loadConfig(configPath?: string): LinterConfig {
   const path = configPath ?? findConfigFile();
@@ -22,16 +66,30 @@ export function loadConfig(configPath?: string): LinterConfig {
 
     if (parsed.rules && typeof parsed.rules === "object") {
       for (const [key, value] of Object.entries(parsed.rules)) {
-        if (typeof value === "boolean") {
-          config.rules[key] = value;
-        } else if (typeof value === "object" && value !== null) {
-          config.rules[key] = value as RuleConfig;
+        const rule = normalizeRule(value);
+        if (rule === undefined) {
+          // Never drop an override silently: an unusable entry looked exactly
+          // like an accepted one (oleks/claudecode-linter#14). stderr, so
+          // `--output json` stays machine-readable on stdout.
+          console.error(
+            `claudecode-linter: ignoring unusable config for rule "${key}" in ${path}: ` +
+              `expected false, one of ${SEVERITIES.join("/")}, or { enabled, severity }`,
+          );
+          continue;
         }
+        config.rules[key] = rule;
       }
     }
 
     return config;
-  } catch {
+  } catch (err) {
+    // An unreadable or malformed config silently degraded to "no overrides",
+    // which is indistinguishable from a config that was honoured — the same
+    // silent-no-op shape as the dropped scalar above.
+    console.error(
+      `claudecode-linter: ignoring unreadable config ${path}: ` +
+        `${err instanceof Error ? err.message : String(err)}`,
+    );
     return DEFAULT_CONFIG;
   }
 }
