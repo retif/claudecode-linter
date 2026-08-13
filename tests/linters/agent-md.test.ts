@@ -231,6 +231,129 @@ describe("agent-md linter", () => {
 		expect(errs.some((e) => e.message.includes('"wrong-plugin"'))).toBe(true);
 	});
 
+	// oleks/claudecode-linter#13: a plugin may grant its agents the tools of a
+	// plugin it DEPENDS on, and they resolve at runtime. Without reading
+	// plugin.json "dependencies" the rule could not tell that from a typo.
+	it("accepts an MCP tool from a plugin declared in dependencies", async () => {
+		const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
+		const { tmpdir } = await import("node:os");
+		const root = mkdtempSync(resolve(tmpdir(), "linter-test-"));
+		mkdirSync(resolve(root, ".claude-plugin"));
+		mkdirSync(resolve(root, "agents"));
+		writeFileSync(
+			resolve(root, ".claude-plugin/plugin.json"),
+			JSON.stringify({
+				name: "anxious",
+				version: "1.0.0",
+				dependencies: [{ name: "cluster", version: ">=0.34.2" }],
+			}),
+		);
+		const agentPath = resolve(root, "agents/test.md");
+		writeFileSync(
+			agentPath,
+			"---\nname: test-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\ntools: mcp__plugin_cluster_gitea-tools__issue_read\n---\n\nYou are a test agent.",
+		);
+		const diags = agentMdLinter.lint(
+			agentPath,
+			readFileSync(agentPath, "utf-8"),
+			CONFIG,
+		);
+		expect(
+			diags.filter((d) => d.rule === "agent-md/mcp-tools-resolve"),
+		).toHaveLength(0);
+	});
+
+	it("accepts a bare-string dependency entry too", async () => {
+		const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
+		const { tmpdir } = await import("node:os");
+		const root = mkdtempSync(resolve(tmpdir(), "linter-test-"));
+		mkdirSync(resolve(root, ".claude-plugin"));
+		mkdirSync(resolve(root, "agents"));
+		writeFileSync(
+			resolve(root, ".claude-plugin/plugin.json"),
+			JSON.stringify({ name: "anxious", version: "1.0.0", dependencies: ["cluster"] }),
+		);
+		const agentPath = resolve(root, "agents/test.md");
+		writeFileSync(
+			agentPath,
+			"---\nname: test-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\ntools: mcp__plugin_cluster_gitea-tools__issue_read\n---\n\nYou are a test agent.",
+		);
+		const diags = agentMdLinter.lint(
+			agentPath,
+			readFileSync(agentPath, "utf-8"),
+			CONFIG,
+		);
+		expect(
+			diags.filter((d) => d.rule === "agent-md/mcp-tools-resolve"),
+		).toHaveLength(0);
+	});
+
+	// The dependency's servers live in ITS .mcp.json, so ours says nothing about
+	// them — the server check must not fire on a cross-plugin tool either.
+	it("does not check our .mcp.json for a dependency's server", async () => {
+		const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
+		const { tmpdir } = await import("node:os");
+		const root = mkdtempSync(resolve(tmpdir(), "linter-test-"));
+		mkdirSync(resolve(root, ".claude-plugin"));
+		mkdirSync(resolve(root, "agents"));
+		writeFileSync(
+			resolve(root, ".claude-plugin/plugin.json"),
+			JSON.stringify({
+				name: "anxious",
+				version: "1.0.0",
+				dependencies: [{ name: "cluster", version: ">=0.34.2" }],
+			}),
+		);
+		writeFileSync(
+			resolve(root, ".mcp.json"),
+			JSON.stringify({ mcpServers: { "own-server": { command: "/x" } } }),
+		);
+		const agentPath = resolve(root, "agents/test.md");
+		writeFileSync(
+			agentPath,
+			"---\nname: test-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\ntools: mcp__plugin_cluster_gitea-tools__issue_read\n---\n\nYou are a test agent.",
+		);
+		const diags = agentMdLinter.lint(
+			agentPath,
+			readFileSync(agentPath, "utf-8"),
+			CONFIG,
+		);
+		expect(
+			diags.filter((d) => d.rule === "agent-md/mcp-tools-resolve"),
+		).toHaveLength(0);
+	});
+
+	// The negative control: an UNdeclared plugin is still an error, so the fix
+	// narrows the rule rather than defeating it.
+	it("still flags a plugin that is not declared in dependencies", async () => {
+		const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
+		const { tmpdir } = await import("node:os");
+		const root = mkdtempSync(resolve(tmpdir(), "linter-test-"));
+		mkdirSync(resolve(root, ".claude-plugin"));
+		mkdirSync(resolve(root, "agents"));
+		writeFileSync(
+			resolve(root, ".claude-plugin/plugin.json"),
+			JSON.stringify({
+				name: "anxious",
+				version: "1.0.0",
+				dependencies: [{ name: "cluster", version: ">=0.34.2" }],
+			}),
+		);
+		const agentPath = resolve(root, "agents/test.md");
+		writeFileSync(
+			agentPath,
+			"---\nname: test-agent\ndescription: |\n  <example>\n  user: test\n  </example>\nmodel: sonnet\ncolor: blue\ntools: mcp__plugin_clustr_gitea-tools__issue_read\n---\n\nYou are a test agent.",
+		);
+		const diags = agentMdLinter.lint(
+			agentPath,
+			readFileSync(agentPath, "utf-8"),
+			CONFIG,
+		);
+		const errs = diags.filter((d) => d.rule === "agent-md/mcp-tools-resolve");
+		expect(errs.length).toBeGreaterThan(0);
+		expect(errs.some((e) => e.message.includes('"clustr"'))).toBe(true);
+	});
+
 	it("flags MCP tool referencing undeclared server", async () => {
 		const { mkdtempSync, writeFileSync, mkdirSync } = await import("node:fs");
 		const { tmpdir } = await import("node:os");

@@ -54,6 +54,37 @@ function loadPluginName(pluginRoot: string): string | null {
 	return null;
 }
 
+/**
+ * Plugin names this plugin declares in `plugin.json` `dependencies`.
+ *
+ * A plugin that depends on another may grant its agents that plugin's MCP
+ * tools, and they resolve at runtime — `anxious` declares
+ * `{"name": "cluster", ...}` and its issuer/steward agents call
+ * `mcp__plugin_cluster_gitea-tools__*` successfully today. Without reading
+ * `dependencies`, mcp-tools-resolve cannot tell that declared grant apart from
+ * a typo, and reported all 10 of them as errors
+ * (oleks/claudecode-linter#13).
+ *
+ * Both the object form (`[{"name": "cluster", "version": ">=0.34.2"}]`) and a
+ * bare-string form are accepted, so a shape variation cannot silently turn the
+ * check back into a false positive.
+ */
+function loadPluginDependencies(pluginRoot: string): Set<string> {
+	const j = loadJson(join(pluginRoot, ".claude-plugin", "plugin.json"));
+	const out = new Set<string>();
+	if (!j || typeof j !== "object") return out;
+	const deps = (j as Record<string, unknown>).dependencies;
+	if (!Array.isArray(deps)) return out;
+	for (const d of deps) {
+		if (typeof d === "string") {
+			out.add(d);
+		} else if (d && typeof d === "object" && typeof (d as Record<string, unknown>).name === "string") {
+			out.add((d as { name: string }).name);
+		}
+	}
+	return out;
+}
+
 function loadMcpServerNames(pluginRoot: string): Set<string> {
 	const j = loadJson(join(pluginRoot, ".mcp.json"));
 	const out = new Set<string>();
@@ -426,6 +457,9 @@ export const agentMdLinter: Linter = {
 			const mcpServers = pluginRoot
 				? loadMcpServerNames(pluginRoot)
 				: new Set<string>();
+			const dependencies = pluginRoot
+				? loadPluginDependencies(pluginRoot)
+				: new Set<string>();
 
 			for (const t of declaredTools) {
 				if (t.startsWith("mcp__")) {
@@ -438,19 +472,28 @@ export const agentMdLinter: Linter = {
 					if (ns) {
 						const declaredPlugin = ns[1];
 						const declaredServer = ns[2];
-						if (pluginName && declaredPlugin !== pluginName) {
+						// A tool from a plugin this one DEPENDS on is a declared
+						// cross-plugin grant, not a typo — and it resolves at
+						// runtime (oleks/claudecode-linter#13).
+						const fromDependency =
+							declaredPlugin !== pluginName && dependencies.has(declaredPlugin);
+						if (pluginName && declaredPlugin !== pluginName && !fromDependency) {
 							push(
 								diag(
 									config,
 									filePath,
 									"agent-md/mcp-tools-resolve",
 									"error",
-									`Tool "${t}" references plugin "${declaredPlugin}", but this plugin is named "${pluginName}".`,
+									`Tool "${t}" references plugin "${declaredPlugin}", but this plugin is named "${pluginName}" and does not declare "${declaredPlugin}" in plugin.json "dependencies".`,
 								),
 							);
 						}
+						// The server behind a dependency's tool is declared in THAT
+						// plugin's .mcp.json, not ours, so our list says nothing
+						// about it.
 						if (
 							pluginRoot &&
+							!fromDependency &&
 							mcpServers.size > 0 &&
 							!mcpServers.has(declaredServer)
 						) {
