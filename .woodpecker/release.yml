@@ -3,6 +3,12 @@
 # Trigger: manual (will be cron in the future).
 # Secrets required:
 #   REGISTRY_TOKEN   — git push (Woodpecker secret still named gitea_token) + npm publish + release creation
+# oleks/fleet#230 — MANDATORY explicit arch label. Woodpecker's queue filter only
+# constrains labels a task DECLARES, so an unlabelled workflow matches EVERY agent,
+# including amd64-dispatch (407), whose step pods provision a paid ephemeral amd64
+# spot VM. Every pipeline must pin its arch explicitly.
+labels:
+  arch: arm64
 
 when:
   event: manual
