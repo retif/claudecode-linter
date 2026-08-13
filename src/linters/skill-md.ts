@@ -188,9 +188,30 @@ export const skillMdLinter: Linter = {
         push(diag(config, filePath, "skill-md/description-max-length", "error",
           `"description" must be at most 1024 characters (got ${desc.length})`));
       }
-      if (/<|>/.test(desc)) {
+      // Well-formed HTML comments are exempt. The rule targets raw markup in a
+      // description (`<html>`, a stray `<` that could break a consumer); it was
+      // never aimed at comments, which are inert to any reader of the text.
+      //
+      // The exemption is load-bearing, not a convenience: a widely-used plugin
+      // convention wraps a description's trigger phrases in
+      // `<!-- BEGIN ROUTING TRIGGERS -->…<!-- END ROUTING TRIGGERS -->`
+      // sentinels that codegen rewrites in place — `generate-descriptions.sh`
+      // matches on exactly that span, and SKIPS any file missing the markers as
+      // "one-time migration not done". Since this linter only checks CHANGED
+      // files, a repo could sit on main permanently unpushable and nobody would
+      // notice until an unrelated edit pulled the SKILL.md into scope, blocking
+      // a push on a frontmatter line it never touched (5+ plugins were in that
+      // state; oleks/claudecode-linter#12). The available workaround — stripping
+      // the markers — silently opts the file out of its own codegen, which is
+      // worse than the lint it silences.
+      //
+      // Only well-formed comments are removed, so `<!-- unterminated` still
+      // reports.
+      const descOutsideComments = desc.replace(/<!--[\s\S]*?-->/g, "");
+      if (/<|>/.test(descOutsideComments)) {
         push(diag(config, filePath, "skill-md/description-no-angle-brackets", "error",
-          "\"description\" must not contain angle brackets (< or >)"));
+          "\"description\" must not contain angle brackets (< or >) " +
+          "outside of HTML comments"));
       }
       if (!hasTriggerSignal(desc)) {
         push(diag(config, filePath, "skill-md/description-trigger-phrases", "warning",
