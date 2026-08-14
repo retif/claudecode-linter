@@ -30,13 +30,13 @@ labels:
 when:
   event: cron
 
-# Ancestry between the two tips is not computable in a shallow clone. The script
-# refuses to report success when it cannot compute the answer (exit 2), but a full
-# clone avoids the situation entirely.
-clone:
-  git:
-    settings:
-      depth: 0
+# NOTE ON SHALLOW CLONES: ancestry between the two tips is not computable in a
+# shallow clone. Overriding `clone:` to force full depth was tried and rejected —
+# `woodpecker-cli lint` rejects it ("Invalid or missing image") and pinning a clone
+# image also drops out of the netrc allow list, losing credential injection. So the
+# default clone stands and ci/check-mirror-drift.sh self-heals with `git fetch
+# --unshallow`; if that fails it exits 2 ("cannot determine") rather than reporting
+# a clean result it did not compute.
 
 steps:
   check-mirror-drift:
