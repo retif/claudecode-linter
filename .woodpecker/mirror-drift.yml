@@ -1,0 +1,45 @@
+# Woodpecker CI: detect merged-but-unreleasable commits (oleks/claudecode-linter#19).
+#
+# This repo's npmjs release pipelines (.github/workflows/{release,patch-release}.yml)
+# check out GITHUB, while PRs merge on GITEA, and nothing reconciles the two. A merged
+# fix is therefore invisible to every pipeline that could ship it — silently, and
+# indefinitely. That stranded #12, #13 and #14; see docs/RELEASING.md.
+#
+# This check runs on the GITEA side deliberately: the GitHub upstream is public, so it
+# can be read with no credentials, whereas the reverse (GitHub Actions reading the
+# private Gitea repo) is impossible without secrets.
+#
+# Trigger: cron (configure a schedule in the Woodpecker UI, e.g. daily) + manual.
+# A red pipeline here means: something is merged that cannot reach a release.
+#
+# Secrets required: none — both reads are unauthenticated (public GitHub over https;
+# the Gitea side is the checkout Woodpecker already made).
+
+# oleks/fleet#230 — MANDATORY explicit arch label. Woodpecker's queue filter only
+# constrains labels a task DECLARES, so an unlabelled workflow matches EVERY agent,
+# including a spot VM. Every pipeline must pin its arch explicitly.
+labels:
+  arch: arm64
+
+when:
+  event: [cron, manual]
+
+# Ancestry between the two tips is not computable in a shallow clone. The script
+# refuses to report success when it cannot compute the answer (exit 2), but a full
+# clone avoids the situation entirely.
+clone:
+  git:
+    settings:
+      depth: 0
+
+steps:
+  check-mirror-drift:
+    image: node:20
+    environment:
+      # Drift right after a merge is normal and clears when the release is cut.
+      # Drift that has SAT is the bug. Fail once the oldest unmirrored commit
+      # exceeds this age.
+      MAX_DRIFT_HOURS: "24"
+    commands:
+      - echo "▸ arch=$(uname -m)"
+      - bash ci/check-mirror-drift.sh

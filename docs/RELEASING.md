@@ -45,6 +45,25 @@ npm view claudecode-linter version                            # what consumers g
 
 A non-zero right-hand number means there are merged commits no release can see.
 
+**This is now checked automatically.** `ci/check-mirror-drift.sh` compares both tips
+in both directions and fails once the oldest unmirrored commit is older than
+`MAX_DRIFT_HOURS` (default 24) — drift right after a merge is expected and clears
+when you cut the release; drift that has *sat* is the bug. It runs from the Gitea
+side via `.woodpecker/mirror-drift.yml` (cron + manual), because the GitHub upstream
+is public and readable without credentials while the private Gitea repo is not.
+
+Run it locally any time:
+
+```bash
+bash ci/check-mirror-drift.sh              # exit 0 in sync, 1 drifted, 2 couldn't tell
+MAX_DRIFT_HOURS=0 bash ci/check-mirror-drift.sh   # strict: fail on any drift
+```
+
+Exit code 2 is deliberate: if the check cannot compute an answer (unreachable
+upstream, shallow clone with no common history) it reports "cannot determine" rather
+than success. A check that fails open is the same silent-failure class it exists to
+catch.
+
 ## Route A — contract sync (automatic)
 
 When Anthropic publishes a new Claude Code version, `release.yml` picks it up on
