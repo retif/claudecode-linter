@@ -139,6 +139,16 @@ CI pipelines automate releases:
 - **Patch release** (`.github/workflows/patch-release.yml`): Manual `workflow_dispatch` with reason. Auto-increments `-patch.N` suffix from existing tags → build → test → bump → tag → publish to npmjs → GitHub Release.
 - **Gitea release** (`.woodpecker/release.yml`): Manual trigger. Same full-release flow but publishes to Gitea npm registry and creates Gitea release.
 
+**These pipelines are not a chain.** Both npmjs-publishing workflows check out
+`origin` (github.com/retif); most PRs merge on `gitea`, and nothing pushes
+`gitea/main` → `origin/main`. A fix merged on Gitea is invisible to them, silently
+and indefinitely. The Woodpecker pipeline builds from Gitea but publishes to the
+Gitea npm registry, which consumers do not install from. Before claiming a fix is
+live, run `git rev-list --left-right --count origin/main...gitea/main` (want `0 0`)
+and check `npm view claudecode-linter version`. Full procedure — including the
+`patch-release.yml` escape hatch for fix-only changes and the emmett nix pin bump —
+in [`docs/RELEASING.md`](docs/RELEASING.md).
+
 ## Conventions
 
 - ESM (`"type": "module"`) — all imports use `.js` extensions

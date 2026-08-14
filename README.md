@@ -307,6 +307,12 @@ This linter's version tracks the Claude Code version it was extracted from:
 
 Pre-release versions sort below the base version in npm (`2.1.69-patch.1 < 2.1.69`), but `^2.1.68` will still resolve them. When the next Claude Code version is released (e.g., `2.1.70`), it supersedes all patches.
 
+> **Merging a fix does not release it.** npmjs releases are cut from the GitHub
+> remote, while most work merges on the Gitea mirror, and nothing reconciles the
+> two automatically. A linter-only fix also has no automatic release path at all —
+> the scheduled workflow keys on the Claude Code version and skips. See
+> [`docs/RELEASING.md`](docs/RELEASING.md) for the full path from merge to live.
+
 ## Development
 
 ```bash
