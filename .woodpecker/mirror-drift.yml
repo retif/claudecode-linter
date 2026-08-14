@@ -9,8 +9,14 @@
 # can be read with no credentials, whereas the reverse (GitHub Actions reading the
 # private Gitea repo) is impossible without secrets.
 #
-# Trigger: cron (configure a schedule in the Woodpecker UI, e.g. daily) + manual.
+# Trigger: cron ONLY (configure a schedule in the Woodpecker UI, e.g. daily).
 # A red pipeline here means: something is merged that cannot reach a release.
+#
+# Deliberately NOT `event: manual`, even though this check is harmless: a manual
+# pipeline run fires every workflow matching `manual`, and `.woodpecker/release.yml`
+# matches it — so offering a "manual" trigger here would advertise a safe button that
+# actually cuts a release. To run this on demand, run the script directly instead:
+#   bash ci/check-mirror-drift.sh
 #
 # Secrets required: none — both reads are unauthenticated (public GitHub over https;
 # the Gitea side is the checkout Woodpecker already made).
@@ -22,7 +28,7 @@ labels:
   arch: arm64
 
 when:
-  event: [cron, manual]
+  event: cron
 
 # Ancestry between the two tips is not computable in a shallow clone. The script
 # refuses to report success when it cannot compute the answer (exit 2), but a full

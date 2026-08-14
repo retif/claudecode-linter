@@ -49,8 +49,17 @@ A non-zero right-hand number means there are merged commits no release can see.
 in both directions and fails once the oldest unmirrored commit is older than
 `MAX_DRIFT_HOURS` (default 24) — drift right after a merge is expected and clears
 when you cut the release; drift that has *sat* is the bug. It runs from the Gitea
-side via `.woodpecker/mirror-drift.yml` (cron + manual), because the GitHub upstream
-is public and readable without credentials while the private Gitea repo is not.
+side via `.woodpecker/mirror-drift.yml` (cron only), because the GitHub upstream is
+public and readable without credentials while the private Gitea repo is not.
+
+> The cron **schedule itself is a one-time Woodpecker UI action** and is not in this
+> repo — the pipeline is inert until someone adds it. Check with
+> `woodpecker-cli cron ls oleks/claudecode-linter`.
+>
+> The pipeline deliberately does **not** offer `event: manual`: a manual run fires
+> every workflow matching `manual`, and `.woodpecker/release.yml` matches it, so a
+> "manual" button here would look safe while actually cutting a release. Run the
+> script directly for on-demand checks.
 
 Run it locally any time:
 
