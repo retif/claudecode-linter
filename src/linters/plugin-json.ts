@@ -1,4 +1,3 @@
-import semver from "semver";
 import { PLUGIN_JSON_FIELDS } from "../contracts.js";
 import {
 	formatAjvError,
@@ -8,6 +7,7 @@ import {
 import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { isKebabCase } from "../utils/kebab-case.js";
+import { isValidSemver } from "../utils/semver.js";
 
 const SPDX_COMMON = new Set([
   "MIT", "Apache-2.0", "GPL-2.0-only", "GPL-3.0-only",
@@ -140,7 +140,7 @@ export const pluginJsonLinter: Linter = {
 
     // version
     if ("version" in parsed) {
-      if (typeof parsed.version !== "string" || !semver.valid(parsed.version)) {
+      if (typeof parsed.version !== "string" || !isValidSemver(parsed.version)) {
         const p = pos("version");
         push(diag(config, filePath, "plugin-json/version-semver", "warning",
           `"version" should be valid semver (got "${parsed.version}")`, p?.line, p?.column));
