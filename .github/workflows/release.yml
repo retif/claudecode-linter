@@ -121,10 +121,9 @@ jobs:
 
       - name: Publish to npm
         if: steps.check.outputs.skip == 'false'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > ~/.npmrc
+          # Trusted publishing (OIDC) needs npm >= 11.5.1; setup-node's Node 20 ships npm 10.
+          npm install -g npm@latest
           npm publish --ignore-scripts --access public --provenance
 
       - name: Create GitHub Release
