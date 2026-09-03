@@ -1,6 +1,6 @@
 {
 	"extractedFromClaudeCodeVersion": "2.1.259",
-	"extractedAt": "2026-09-03T09:41:17.279Z",
+	"extractedAt": "2026-09-03T10:07:24.737Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -359,7 +359,258 @@
 							},
 							"hooks": {
 								"type": "array",
-								"items": {},
+								"items": {
+									"oneOf": [
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "command",
+													"description": "Shell command hook type"
+												},
+												"command": {
+													"type": "string",
+													"description": "Shell command to execute"
+												},
+												"args": {
+													"type": "array",
+													"items": {
+														"type": "string"
+													},
+													"description": "Argument list for exec form. When present, `command` is resolved as \"+\"an executable and spawned directly with these arguments \\u2014 no shell. \"+\"Path placeholders like ${CLAUDE_PLUGIN_ROOT} are substituted per-element as plain strings, so paths with quotes, $, or backticks never reach a shell parser. When absent, `command` runs through a shell (bash on POSIX, PowerShell on Windows without Git Bash)."
+												},
+												"if": {
+													"type": "string",
+													"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+												},
+												"shell": {
+													"enum": [
+														"bash",
+														"powershell"
+													],
+													"description": "Shell interpreter. 'bash' uses your $SHELL (bash/zsh/sh); 'powershell' uses pwsh. Defaults to bash (powershell on Windows without Git Bash)."
+												},
+												"timeout": {
+													"type": "number",
+													"description": "Timeout in seconds for this specific command"
+												},
+												"statusMessage": {
+													"type": "string",
+													"description": "Custom status message to display in spinner while hook runs"
+												},
+												"once": {
+													"type": "boolean",
+													"description": "If true, hook runs once and is removed after execution"
+												},
+												"async": {
+													"type": "boolean",
+													"description": "If true, hook runs in background without blocking"
+												},
+												"asyncRewake": {
+													"type": "boolean",
+													"description": "If true, hook runs in background and wakes the model on exit code 2 (blocking error). Implies async."
+												},
+												"rewakeMessage": {
+													"type": "string",
+													"minLength": 1,
+													"description": "@internal Custom prefix for the system-reminder shown to the model when an asyncRewake hook exits with code 2. The hook output is appended after this prefix."
+												},
+												"rewakeSummary": {
+													"type": "string",
+													"minLength": 1,
+													"description": "@internal One-line summary shown to the user in the terminal when an asyncRewake hook exits with code 2. Defaults to \"Stop hook feedback\"."
+												},
+												"cloud": {
+													"enum": [
+														"device",
+														"skip"
+													],
+													"description": "@internal Where this hook may run when a cloud session is driven from this machine. 'device': offer it to the cloud session and run it here even when its script sits where the cloud session can write on this machine or cannot be pinned — the author accepts that the session may have changed files this hook executes. 'skip': never offer it to cloud sessions. Omit for the default: a command hook whose script could be read and pinned and lies outside everything the cloud session can write here is offered; other command hooks are not. Applies to this entry only: the same hook written in another settings scope keeps its own setting. An unrecognised value reads as 'skip' (the file still loads; the hook stays on this machine)."
+												}
+											},
+											"required": [
+												"type",
+												"command"
+											]
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "prompt",
+													"description": "LLM prompt hook type"
+												},
+												"prompt": {
+													"type": "string",
+													"description": "Prompt to evaluate with LLM. Use $ARGUMENTS placeholder for hook input JSON."
+												},
+												"if": {
+													"type": "string",
+													"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+												},
+												"timeout": {
+													"type": "number",
+													"description": "Timeout in seconds for this specific prompt evaluation"
+												},
+												"model": {
+													"type": "string",
+													"description": "Model to use for this prompt hook (e.g., \"claude-sonnet-5\"). If not specified, uses the default small fast model."
+												},
+												"continueOnBlock": {
+													"type": "boolean",
+													"description": "`Sets the continue value for the decision:\"block\" produced when ok is false. Default false (turn ends). Whether continue:true lets the turn proceed depends on the event's decision:\"block\" semantics. On PostToolUse, the reason is fed back to Claude and the turn continues.`"
+												},
+												"statusMessage": {
+													"type": "string",
+													"description": "Custom status message to display in spinner while hook runs"
+												},
+												"once": {
+													"type": "boolean",
+													"description": "If true, hook runs once and is removed after execution"
+												}
+											},
+											"required": [
+												"type",
+												"prompt"
+											]
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "agent",
+													"description": "Agentic verifier hook type"
+												},
+												"prompt": {
+													"type": "string",
+													"description": "Prompt describing what to verify (e.g. \"Verify that unit tests ran and passed.\"). Use $ARGUMENTS placeholder for hook input JSON."
+												},
+												"if": {
+													"type": "string",
+													"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+												},
+												"timeout": {
+													"type": "number",
+													"description": "Timeout in seconds for agent execution (default 60)"
+												},
+												"model": {
+													"type": "string",
+													"description": "Model to use for this agent hook (e.g., \"claude-sonnet-5\"). If not specified, uses Haiku."
+												},
+												"statusMessage": {
+													"type": "string",
+													"description": "Custom status message to display in spinner while hook runs"
+												},
+												"once": {
+													"type": "boolean",
+													"description": "If true, hook runs once and is removed after execution"
+												}
+											},
+											"required": [
+												"type",
+												"prompt"
+											]
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "http",
+													"description": "HTTP hook type"
+												},
+												"url": {
+													"type": "string",
+													"format": "uri",
+													"description": "URL to POST the hook input JSON to"
+												},
+												"if": {
+													"type": "string",
+													"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+												},
+												"timeout": {
+													"type": "number",
+													"description": "Timeout in seconds for this specific request"
+												},
+												"headers": {
+													"type": "object",
+													"additionalProperties": {
+														"type": "string"
+													},
+													"description": "Additional headers to include in the request. Values may reference environment variables using $VAR_NAME or ${VAR_NAME} syntax (e.g., \"Authorization\": \"Bearer $MY_TOKEN\"). Only variables listed in allowedEnvVars will be interpolated."
+												},
+												"allowedEnvVars": {
+													"type": "array",
+													"items": {
+														"type": "string"
+													},
+													"description": "Explicit list of environment variable names that may be interpolated in header values. Only variables listed here will be resolved; all other $VAR references are left as empty strings. Required for env var interpolation to work."
+												},
+												"statusMessage": {
+													"type": "string",
+													"description": "Custom status message to display in spinner while hook runs"
+												},
+												"once": {
+													"type": "boolean",
+													"description": "If true, hook runs once and is removed after execution"
+												},
+												"cloud": {
+													"enum": [
+														"device",
+														"skip"
+													],
+													"description": "@internal Where this hook may run when a cloud session is driven from this machine. 'skip': never offer it to cloud sessions; 'device' or omitted: offered (an HTTP hook has no script to pin). Applies to this entry only. An unrecognised value reads as 'skip' (the file still loads)."
+												}
+											},
+											"required": [
+												"type",
+												"url"
+											]
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "mcp_tool",
+													"description": "MCP tool hook type"
+												},
+												"server": {
+													"type": "string",
+													"description": "Name of an already-configured MCP server to invoke"
+												},
+												"tool": {
+													"type": "string",
+													"description": "Name of the tool on that server to call"
+												},
+												"input": {
+													"type": "object",
+													"additionalProperties": {},
+													"description": "Arguments passed to the MCP tool. String values support ${path} interpolation from the hook input JSON (e.g. \"${tool_input.file_path}\")."
+												},
+												"if": {
+													"type": "string",
+													"description": "Permission rule syntax to filter when this hook runs (e.g., \"Bash(git *)\"). Only runs if the tool call matches the pattern. Avoids spawning hooks for non-matching commands."
+												},
+												"timeout": {
+													"type": "number",
+													"description": "Timeout in seconds for this specific tool call"
+												},
+												"statusMessage": {
+													"type": "string",
+													"description": "Custom status message to display in spinner while hook runs"
+												},
+												"once": {
+													"type": "boolean",
+													"description": "If true, hook runs once and is removed after execution"
+												}
+											},
+											"required": [
+												"type",
+												"server",
+												"tool"
+											]
+										}
+									]
+								},
 								"description": "List of hooks to execute when the matcher matches"
 							}
 						},
@@ -2678,6 +2929,24 @@
 								"type": "string"
 							},
 							"target": {
+								"type": "object",
+								"properties": {
+									"uuids": {
+										"type": "array",
+										"items": {
+											"type": "string",
+											"minLength": 1,
+											"maxLength": 64
+										},
+										"minItems": 1,
+										"maxItems": 32,
+										"description": "directoryUuid or server_id values to resolve."
+									}
+								},
+								"required": [
+									"uuids"
+								],
+								"additionalProperties": false,
 								"default": "last_message"
 							},
 							"pattern": {
@@ -2726,8 +2995,48 @@
 							"name": {
 								"type": "string"
 							},
-							"before": {},
-							"after": {},
+							"before": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string",
+										"minLength": 1,
+										"description": "Display name of the plugin author or organization"
+									},
+									"email": {
+										"type": "string",
+										"description": "Contact email for support or feedback"
+									},
+									"url": {
+										"type": "string",
+										"description": "Website, GitHub profile, or organization URL"
+									}
+								},
+								"required": [
+									"name"
+								]
+							},
+							"after": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string",
+										"minLength": 1,
+										"description": "Display name of the plugin author or organization"
+									},
+									"email": {
+										"type": "string",
+										"description": "Contact email for support or feedback"
+									},
+									"url": {
+										"type": "string",
+										"description": "Website, GitHub profile, or organization URL"
+									}
+								},
+								"required": [
+									"name"
+								]
+							},
 							"weight": {
 								"type": "number",
 								"default": 1
@@ -2821,6 +3130,24 @@
 								"type": "string"
 							},
 							"focus": {
+								"type": "object",
+								"properties": {
+									"uuids": {
+										"type": "array",
+										"items": {
+											"type": "string",
+											"minLength": 1,
+											"maxLength": 64
+										},
+										"minItems": 1,
+										"maxItems": 32,
+										"description": "directoryUuid or server_id values to resolve."
+									}
+								},
+								"required": [
+									"uuids"
+								],
+								"additionalProperties": false,
 								"default": "last_message"
 							},
 							"weight": {
@@ -3314,11 +3641,6 @@
 				"description": "Allow Claude to push proactive mobile notifications"
 			}
 		},
-		"required": [
-			"policyHelper",
-			"policyHelpers",
-			"autoCompactWindow"
-		],
 		"additionalProperties": true,
 		"description": "Claude Code settings.json / settings.local.json. Validates the structure of known fields; the top level is intentionally permissive (Claude Code's validator uses .passthrough()), so unknown top-level keys are not schema errors — the advisory settings-json/no-unknown-fields rule reports those separately."
 	}

@@ -414,6 +414,31 @@ export function splitObjectEntries(body: string): string[] {
 	return splitTopLevelArgs(body);
 }
 
+/**
+ * Split a union's branch-array body, flattening spreads of array literals.
+ *
+ * `z.union([A,B])` and `z.discriminatedUnion("type",[A,B])` normally hold their
+ * branches directly, but 2.1.259 writes the per-hook union as
+ * `discriminatedUnion("type",[...[e,n,o,s,r]])`. Splitting that at the top
+ * level yields the single element `...[e,n,o,s,r]`, which evaluates to a
+ * permissive `{}` — one hollow branch in place of command/prompt/agent/http/
+ * mcp_tool. Only a spread of a literal array is expanded; a spread of anything
+ * else (an identifier the walker cannot see through) is left alone rather than
+ * guessed at.
+ */
+export function splitUnionBranches(arrayBody: string): string[] {
+	const out: string[] = [];
+	for (const part of splitTopLevelArgs(arrayBody)) {
+		const inner = part.startsWith("...") ? part.slice(3).trim() : "";
+		if (inner.startsWith("[") && inner.endsWith("]")) {
+			out.push(...splitUnionBranches(inner.slice(1, -1)));
+		} else {
+			out.push(part);
+		}
+	}
+	return out;
+}
+
 /** Parse a `<key>:<value>` entry. Key may be identifier or quoted string. */
 export function parseEntry(
 	entry: string,
@@ -594,27 +619,58 @@ export function indexDefinitions(source: string): DefinitionIndex {
 	// chain, no call) so we only catch genuine `LW=z36`-style aliases.
 	const aliasRe =
 		/(?:^|[;,{(\s])([A-Za-z_$][\w$]*)=([A-Za-z_$][\w$]*)(?=[;,)}\s]|$)/g;
-	const aliasPairs = new Map<string, string>();
+	//
+	// EVERY binding of a name is kept, not just the first. The corpus is a
+	// concatenation of ~1,635 code-split modules whose minified symbols are
+	// module-scoped, so one short name is routinely bound in many modules —
+	// `u_` in seven of them on 2.1.259. First-binding-wins let an unrelated
+	// module's dead-end `u_=<non-factory>` shadow the skill module's
+	// `u_=aJe`, and `name`/`description` on skill, agent and command
+	// frontmatter degraded to permissive `{}` placeholders as a result.
+	// Trying each candidate and keeping the one that actually bottoms out in
+	// an indexed factory is both order-independent and conservative: a name
+	// with no factory-backed binding still resolves to nothing.
+	const aliasPairs = new Map<string, string[]>();
 	let alm: RegExpExecArray | null;
 	while ((alm = aliasRe.exec(source)) !== null) {
 		const name = alm[1];
 		const target = alm[2];
 		if (name === target) continue;
-		if (defs.has(name) || arrays.has(name)) continue;
-		if (!aliasPairs.has(name)) aliasPairs.set(name, target);
+		// Only an existing *definition* blocks an alias. An array binding must
+		// not: `defs` answers `<name>()` calls and `arrays` answers
+		// `<alias>.enum(<name>)`, so the two are read in different positions and
+		// a name may legitimately be both — across 1,635 modules it often is.
+		// On 2.1.259 an unrelated module's `u_=["stylesheet","stale-banner",
+		// "stamp-control"]` vetoed the skill module's `u_=aJe`, which is why
+		// `name`/`description` came out untyped on all three frontmatter
+		// schemas while the sibling alias `O1=aJe` resolved fine.
+		if (defs.has(name)) continue;
+		const targets = aliasPairs.get(name);
+		if (targets) {
+			if (!targets.includes(target)) targets.push(target);
+		} else {
+			aliasPairs.set(name, [target]);
+		}
 	}
 	// Resolve each alias to a factory-backed target, following alias chains.
-	for (const [name] of aliasPairs) {
-		const seen = new Set<string>([name]);
-		let target: string | undefined = aliasPairs.get(name);
-		while (target !== undefined && !seen.has(target)) {
-			if (defs.has(target)) {
-				// `LW()` is `target()` — calling the aliased factory.
-				defs.set(name, `${target}()`);
-				break;
+	for (const [name, candidates] of aliasPairs) {
+		for (const candidate of candidates) {
+			const seen = new Set<string>([name]);
+			let target: string | undefined = candidate;
+			let resolved = false;
+			while (target !== undefined && !seen.has(target)) {
+				if (defs.has(target)) {
+					// `LW()` is `target()` — calling the aliased factory.
+					defs.set(name, `${target}()`);
+					resolved = true;
+					break;
+				}
+				seen.add(target);
+				// Follow the chain through whichever binding of the next hop
+				// resolves; the same shadowing applies one link down.
+				target = aliasPairs.get(target)?.find((t) => !seen.has(t));
 			}
-			seen.add(target);
-			target = aliasPairs.get(target);
+			if (resolved) break;
 		}
 	}
 
@@ -1043,9 +1099,16 @@ function evalBlockBody(block: string, ctx: EvalContext): JSONSchema | null {
 	while ((dm = destructRe.exec(prelude)) !== null) {
 		const pairs = dm[1];
 		const fnName = dm[2];
-		const returned = evalFunctionReturnObject(fnName, ctx);
+		const parts = splitTopLevelArgs(pairs);
+		// The destructured keys identify which of the same-named functions is
+		// the one meant here — see `evalFunctionReturnObject`.
+		const wantedKeys = parts.map((part) => {
+			const entry = parseEntry(part);
+			return entry ? entry.key : part.trim();
+		});
+		const returned = evalFunctionReturnObject(fnName, ctx, wantedKeys);
 		if (!returned) continue;
-		for (const part of splitTopLevelArgs(pairs)) {
+		for (const part of parts) {
 			const entry = parseEntry(part);
 			// `{Key:local}` → bind `local`; `{Key}` shorthand → bind `Key`.
 			const returnKey = entry ? entry.key : part.trim();
@@ -1068,10 +1131,37 @@ function evalBlockBody(block: string, ctx: EvalContext): JSONSchema | null {
 function evalFunctionReturnObject(
 	fnName: string,
 	ctx: EvalContext,
+	wantedKeys: string[] = [],
 ): Map<string, string> | null {
 	const { source } = ctx.index;
-	const fnIdx = source.indexOf(`function ${fnName}(`);
-	if (fnIdx === -1) return null;
+	// EVERY `function <name>(` is tried, and the one that supplies the keys the
+	// caller asked for wins. The corpus concatenates ~1,635 code-split modules
+	// whose function names are module-scoped, so a short minified name is
+	// declared many times over: 2.1.259 has eleven `function Fl(`, and the
+	// first is an unrelated string helper while the hook-schema bundle is the
+	// second. Taking the first match dropped the whole per-hook discriminated
+	// union — command/prompt/http/agent/mcp_tool — leaving `hooks.items` as a
+	// permissive `{}` that accepts a malformed hook silently.
+	for (
+		let fnIdx = source.indexOf(`function ${fnName}(`);
+		fnIdx !== -1;
+		fnIdx = source.indexOf(`function ${fnName}(`, fnIdx + 1)
+	) {
+		const candidate = parseFunctionReturnObject(source, fnIdx);
+		if (!candidate) continue;
+		if (wantedKeys.every((k) => candidate.has(k))) return candidate;
+	}
+	return null;
+}
+
+/**
+ * Parse one `function …(){…}` occurrence at `fnIdx` into a `key → schemaExpr`
+ * map, or null when it does not return an object literal.
+ */
+function parseFunctionReturnObject(
+	source: string,
+	fnIdx: number,
+): Map<string, string> | null {
 	const braceIdx = source.indexOf("{", fnIdx);
 	if (braceIdx === -1) return null;
 	const body = extractBalanced(source, braceIdx, "{", "}");
@@ -1328,7 +1418,7 @@ function evalZodPrimitive(
 			if (args.length === 0) return {};
 			const arr = args[0];
 			if (arr.startsWith("[") && arr.endsWith("]")) {
-				const branches = splitTopLevelArgs(arr.slice(1, -1)).map((e) =>
+				const branches = splitUnionBranches(arr.slice(1, -1)).map((e) =>
 					evalZod(e, ctx),
 				);
 				return { anyOf: branches };
@@ -1340,7 +1430,7 @@ function evalZodPrimitive(
 			if (args.length < 2) return {};
 			const arr = args[1];
 			if (arr.startsWith("[") && arr.endsWith("]")) {
-				const branches = splitTopLevelArgs(arr.slice(1, -1)).map((e) =>
+				const branches = splitUnionBranches(arr.slice(1, -1)).map((e) =>
 					evalZod(e, ctx),
 				);
 				return { oneOf: branches };
@@ -1465,6 +1555,38 @@ function isOptional(expr: string, ctx?: EvalContext, depth = 0): boolean {
 		if (idCall && idCall[1] !== ctx.index.zodAlias) {
 			const def = ctx.index.defs.get(idCall[1]);
 			if (def) return isOptional(def, ctx, depth + 1);
+		}
+	}
+
+	// Look inside a wrapper call's arguments.
+	//
+	// Optionality is not always on the outer chain. Claude Code wraps fields in
+	// schema-to-schema combinators that carry the real schema as an argument:
+	//
+	//   metadata:  <alias>.pipe((e)=>…, <alias>.record(…).optional())
+	//   policyHelper:  s(Mt().optional(), (r)=>…)     // minified preprocess
+	//
+	// Both are optional, and reading only the outer chain calls them required —
+	// which is how a valid settings.json and a valid plugin.json came to be
+	// rejected. A combinator is transparent to optionality, so an optional
+	// argument makes the field optional.
+	//
+	// The head must actually BE a call (`<ident>(` or `<a>.<b>(`) for this to
+	// apply. That guard is what keeps an object literal from leaking its
+	// fields' optionality upward: in `<alias>.object({name:X.optional()})` the
+	// argument is `{name:X.optional()}`, whose own head is a brace and not a
+	// call, so the recursion stops there rather than declaring the object
+	// itself optional.
+	if (ctx && depth < 8) {
+		const head = chain[0]?.trim() ?? "";
+		if (/^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\(/.test(head)) {
+			const parenIdx = head.indexOf("(");
+			const args = extractBalanced(head, parenIdx, "(", ")");
+			if (args.length > 2) {
+				for (const arg of splitTopLevelArgs(args.slice(1, -1))) {
+					if (isOptional(arg, ctx, depth + 1)) return true;
+				}
+			}
 		}
 	}
 	return false;
@@ -1793,6 +1915,15 @@ export function buildSettingsSchema(index: DefinitionIndex): JSONSchema | null {
 	if (schema.additionalProperties === false) {
 		delete (schema as Record<string, unknown>).additionalProperties;
 	}
+	// Safety: settings.json has no required keys — every field is optional and
+	// `{}` is a valid settings file. Anything the walker reports as required is
+	// therefore an extraction artefact, not a contract, and emitting it makes
+	// the linter reject configs Claude Code accepts. On 2.1.259 the corpus
+	// binds `cc` in fourteen modules, so `autoCompactWindow:cc()` resolved
+	// through an unrelated module's non-optional definition and every valid
+	// settings file failed `settings-json/schema-valid`. Asserting the
+	// invariant is the fail-safe direction: a linter must never over-validate.
+	delete (schema as Record<string, unknown>).required;
 
 	return {
 		$schema: "https://json-schema.org/draft/2020-12/schema",
