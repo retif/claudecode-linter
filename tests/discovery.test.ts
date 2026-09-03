@@ -1,10 +1,20 @@
 import { describe, it, expect } from "vitest";
-import { resolve, relative } from "node:path";
+import { resolve, relative, join } from "node:path";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
+import { tmpdir, homedir } from "node:os";
 
 // Test classifyFile indirectly through discoverArtifacts with single file
 import { discoverArtifacts, detectArtifactTypes } from "../src/discovery.js";
 
 const FIXTURES = resolve(import.meta.dirname, "fixtures");
+
+/** Create `<dir>/.claude/settings.json`, making every parent as needed. */
+function writeClaudeSettings(dir: string): string {
+  mkdirSync(join(dir, ".claude"), { recursive: true });
+  const file = join(dir, ".claude", "settings.json");
+  writeFileSync(file, "{}\n");
+  return file;
+}
 
 describe("discovery", () => {
   describe("classifyFile for mcp.json", () => {
@@ -150,5 +160,87 @@ describe("project-local artifacts under .claude/", () => {
   it("reports project-local artifact types via detectArtifactTypes", () => {
     const types = detectArtifactTypes([PROJECT_LOCAL]);
     expect(types).toEqual(["command-md", "skill-md"]);
+  });
+});
+
+describe("scope is anchored on what was scanned, not on ancestors (#36)", () => {
+  // oleks/claudecode-linter#36: scope used to be decided by walking up from the
+  // artifact until *any* ancestor `.claude/` was found. That made the answer
+  // depend on directories nobody asked about — this repo's own untracked
+  // `.claude/` re-scoped every fixture beneath it, and `~/.claude` re-scoped
+  // every real project under $HOME. These pin that dependency out.
+
+  function withTree<T>(base: string, fn: (root: string) => T): T {
+    const root = mkdtempSync(join(base, "ccl36-scope-"));
+    try {
+      return fn(root);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  }
+
+  it("scopes a scanned root's .claude/ as project though an ancestor has one", () => {
+    withTree(tmpdir(), (root) => {
+      writeClaudeSettings(root); // the ancestor's own .claude/
+      const inner = join(root, "inner");
+      mkdirSync(inner);
+      writeClaudeSettings(inner);
+
+      const settings = discoverArtifacts(inner).find(
+        (a) => a.artifactType === "settings-json",
+      );
+      expect(settings).toBeDefined();
+      expect(settings!.scope).toBe("project");
+    });
+  });
+
+  it("scopes an identical tree identically wherever it is checked out", () => {
+    // The equivalence #36 is really about: the same tree must not scope
+    // differently because of what happens to sit above it on disk.
+    const scopeUnder = (base: string) =>
+      withTree(base, (root) => {
+        const proj = join(root, "proj");
+        mkdirSync(proj);
+        writeClaudeSettings(proj);
+        return discoverArtifacts(proj).find(
+          (a) => a.artifactType === "settings-json",
+        )?.scope;
+      });
+
+    // $HOME has `~/.claude` above it; the OS temp dir does not.
+    expect(scopeUnder(homedir())).toBe("project");
+    expect(scopeUnder(homedir())).toBe(scopeUnder(tmpdir()));
+  });
+
+  it("does not treat ~/.claude as a project containing everything below it", () => {
+    // Exercised only where the user config dir actually exists; where it does
+    // not there is no ancestor to be fooled by and the check is vacuous.
+    if (!existsSync(join(homedir(), ".claude"))) return;
+    withTree(homedir(), (root) => {
+      const proj = join(root, "proj");
+      mkdirSync(proj);
+      const file = writeClaudeSettings(proj);
+
+      // Named directly, so there is no scan root to fall back on and the
+      // upward walk — the part `~/.claude` used to poison — decides.
+      const artifacts = discoverArtifacts(file);
+      expect(artifacts).toHaveLength(1);
+      expect(artifacts[0].scope).toBe("project");
+    });
+  });
+
+  it("still reports subdirectory for a .claude/ nested under a project's own", () => {
+    // `subdirectory` must stay reachable: narrowing the walk is meant to stop
+    // false positives, not to delete the distinction.
+    withTree(tmpdir(), (root) => {
+      writeClaudeSettings(root); // the containing project's .claude/
+      const nested = join(root, "sub");
+      mkdirSync(nested);
+      const file = writeClaudeSettings(nested);
+
+      const artifacts = discoverArtifacts(file);
+      expect(artifacts).toHaveLength(1);
+      expect(artifacts[0].scope).toBe("subdirectory");
+    });
   });
 });

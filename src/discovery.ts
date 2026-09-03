@@ -120,7 +120,16 @@ export function detectArtifactTypes(
 	return [...found].sort();
 }
 
-function detectScope(filePath: string): ConfigScope | undefined {
+/**
+ * `scanRoot` is the directory the linter was pointed at, when there is one.
+ * A directory scan passes it so that scope follows what was asked about rather
+ * than what sits above it on disk; a single file named on its own has no such
+ * root and falls back to the markers found by walking up.
+ */
+function detectScope(
+	filePath: string,
+	scanRoot?: string,
+): ConfigScope | undefined {
 	const resolved = resolve(filePath);
 
 	// Inside ~/.claude/ itself (not a subdirectory project)
@@ -143,7 +152,7 @@ function detectScope(filePath: string): ConfigScope | undefined {
 
 	if (claudeDir !== undefined && claudeDir !== CLAUDE_USER_DIR) {
 		// Check if this .claude/ is inside another .claude/ (subdirectory scope)
-		if (isSubdirectoryProject(dirname(claudeDir))) {
+		if (isSubdirectoryProject(dirname(claudeDir), scanRoot)) {
 			return "subdirectory";
 		}
 		return "project";
@@ -211,12 +220,44 @@ function projectLocalClaudeDir(filePath: string): string | undefined {
 	return undefined;
 }
 
-function isSubdirectoryProject(dir: string): boolean {
-	// Walk up looking for a parent with .claude-plugin/ or another .claude/
-	let current = dirname(dir);
+/**
+ * True when the `.claude/` directory sitting in `dir` is nested inside a LARGER
+ * project — i.e. `dir` is not itself a project root, so Claude Code would not
+ * read that `.claude/` as the project's own configuration.
+ *
+ * Scope is anchored on what the caller asked about, never on whatever
+ * directories happen to exist on disk above it (oleks/claudecode-linter#36):
+ *
+ * - `scanRoot`, when given, is the path the linter was pointed at. That root is
+ *   a project root by definition — otherwise the same tree would scope
+ *   differently depending on where it happened to be checked out.
+ * - A directory carrying its own repository / plugin marker is a project root
+ *   too, whether or not it was the scan root.
+ * - `~/.claude` is the USER's configuration, not a project containing this one.
+ *   It sits above every project under $HOME, so counting it mis-scoped every
+ *   real project a Claude Code user could have.
+ */
+function isSubdirectoryProject(dir: string, scanRoot?: string): boolean {
+	const resolvedDir = resolve(dir);
+
+	// The root the caller asked us to scan is a project root by definition.
+	if (scanRoot !== undefined && resolve(scanRoot) === resolvedDir) return false;
+
+	// So is a directory carrying its own repository / plugin marker.
+	if (
+		existsSync(join(resolvedDir, ".git")) ||
+		existsSync(join(resolvedDir, ".claude-plugin"))
+	) {
+		return false;
+	}
+
+	// Otherwise walk up: an ancestor holding a project's own `.claude/`, or a
+	// plugin's `.claude-plugin/`, means this one is nested inside it.
+	let current = dirname(resolvedDir);
 	for (let i = 0; i < 10; i++) {
 		if (existsSync(join(current, ".claude-plugin"))) return true;
-		if (existsSync(join(current, ".claude")) && current !== dir) return true;
+		const claudeHere = join(current, ".claude");
+		if (claudeHere !== CLAUDE_USER_DIR && existsSync(claudeHere)) return true;
 		if (existsSync(join(current, ".git"))) return false; // reached git root
 		const parent = dirname(current);
 		if (parent === current) break;
@@ -248,7 +289,7 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 			artifacts.push({
 				filePath: f,
 				artifactType: "skill-md",
-				scope: detectScope(f),
+				scope: detectScope(f, dir),
 			});
 		}
 	}
@@ -263,7 +304,7 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 			artifacts.push({
 				filePath: f,
 				artifactType: "agent-md",
-				scope: detectScope(f),
+				scope: detectScope(f, dir),
 			});
 		}
 	}
@@ -278,7 +319,7 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 			artifacts.push({
 				filePath: f,
 				artifactType: "command-md",
-				scope: detectScope(f),
+				scope: detectScope(f, dir),
 			});
 		}
 	}
@@ -320,7 +361,7 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 			artifacts.push({
 				filePath: candidate,
 				artifactType: "keybindings-json",
-				scope: detectScope(candidate),
+				scope: detectScope(candidate, dir),
 			});
 		}
 	}
@@ -333,7 +374,7 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 			artifacts.push({
 				filePath: atRoot,
 				artifactType: "settings-json",
-				scope: detectScope(atRoot),
+				scope: detectScope(atRoot, dir),
 			});
 		}
 		// In .claude/ subdirectory (skip if we're already in ~/.claude/)
@@ -343,7 +384,7 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 				artifacts.push({
 					filePath: inClaude,
 					artifactType: "settings-json",
-					scope: detectScope(inClaude),
+					scope: detectScope(inClaude, dir),
 				});
 			}
 		}
@@ -355,7 +396,7 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 		artifacts.push({
 			filePath: mcpDot,
 			artifactType: "mcp-json",
-			scope: detectScope(mcpDot),
+			scope: detectScope(mcpDot, dir),
 		});
 	}
 	const mcpPlain = join(dir, "mcp.json");
@@ -363,7 +404,7 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 		artifacts.push({
 			filePath: mcpPlain,
 			artifactType: "mcp-json",
-			scope: detectScope(mcpPlain),
+			scope: detectScope(mcpPlain, dir),
 		});
 	}
 
@@ -373,7 +414,7 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 		artifacts.push({
 			filePath: claudeMd,
 			artifactType: "claude-md",
-			scope: detectScope(claudeMd),
+			scope: detectScope(claudeMd, dir),
 		});
 	}
 
