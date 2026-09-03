@@ -26,8 +26,17 @@ describe("nearestKnownTool", () => {
 	});
 
 	it("returns null for a name that resembles nothing known", () => {
-		expect(nearestKnownTool("ListAgents")).toBeNull();
 		expect(nearestKnownTool("EndConversation")).toBeNull();
+		expect(nearestKnownTool("Frobnicate")).toBeNull();
+	});
+
+	// ListAgents used to sit in this null case, because the extractor had been
+	// frozen at 2.1.197 and the registry had never seen the name
+	// (oleks/claudecode-linter#28). Now that contracts really are extracted from
+	// the current release it is a known tool, and asserting that keeps a silent
+	// re-freeze from passing the suite.
+	it("recognises a tool the frozen registry used to be missing", () => {
+		expect(nearestKnownTool("ListAgents")).toBe("ListAgents");
 	});
 
 	it("does not read a Tool-suffixed alias as a misspelling", () => {

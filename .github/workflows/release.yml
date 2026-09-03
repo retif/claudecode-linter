@@ -54,9 +54,18 @@ jobs:
         if: steps.check.outputs.skip == 'false'
         env:
           FORCE_CONTRACTS: ${{ inputs.force_contracts && '1' || '0' }}
+        # --version pins the extractor to the release this job already resolved.
+        # Without it the extractor re-resolved the `latest` dist-tag itself, and
+        # on 2026-09-03 the two resolutions disagreed (npm view -> 2.1.259,
+        # npm pack -> 2.1.197). Nothing compared them, so the job happily
+        # committed 2.1.197 contracts and tagged them v2.1.259 — the registry
+        # froze for ten-plus releases with every run green
+        # (oleks/claudecode-linter#28, oleks/claudecode-linter#30).
         run: |
-          npx tsx scripts/extract-contracts.ts --changelog
-          npx tsx scripts/extract-plugin-schema.ts
+          npx tsx scripts/extract-contracts.ts --changelog --version "${{ steps.check.outputs.latest }}"
+          # Known to fail on 2.1.259 — it has its own copy of the binary-slicing
+          # logic and the same layout change breaks it: oleks/claudecode-linter#31.
+          npx tsx scripts/extract-plugin-schema.ts --version "${{ steps.check.outputs.latest }}"
           npx tsx scripts/generate-contracts.ts
 
       - name: Fetch schemastore.org schemas

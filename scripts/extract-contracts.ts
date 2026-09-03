@@ -35,11 +35,16 @@ const walk = require("acorn-walk") as AcornWalk;
 // 1. Download and extract cli.js
 // ---------------------------------------------------------------------------
 
-function fetchCliSource(requestedVersion?: string): {
+export interface CliSource {
+	/** Every embedded JS module belonging to this Claude Code version. */
+	modules: string[];
+	/** All modules joined — the corpus the regex/anchor extractors scan. */
 	source: string;
 	version: string;
 	sdkToolsDts: string | null;
-} {
+}
+
+function fetchCliSource(requestedVersion?: string): CliSource {
 	const npmPkg = requestedVersion
 		? `@anthropic-ai/claude-code@${requestedVersion}`
 		: "@anthropic-ai/claude-code";
@@ -56,6 +61,8 @@ function fetchCliSource(requestedVersion?: string): {
 			readFileSync(join(tmp, "package", "package.json"), "utf8"),
 		);
 
+		assertResolvedVersion(pkg.version, requestedVersion);
+
 		let sdkToolsDts: string | null = null;
 		try {
 			sdkToolsDts = readFileSync(
@@ -69,20 +76,62 @@ function fetchCliSource(requestedVersion?: string): {
 		// Legacy layout (<= 2.1.112): package shipped cli.js directly.
 		const legacyCli = join(tmp, "package", "cli.js");
 		if (existsSync(legacyCli)) {
-			const source = readFileSync(legacyCli, "utf8");
-			return { source, version: pkg.version, sdkToolsDts };
+			const modules = [readFileSync(legacyCli, "utf8")];
+			return {
+				modules,
+				source: joinModules(modules),
+				version: pkg.version,
+				sdkToolsDts,
+			};
 		}
 
 		// New layout (>= 2.1.113): wrapper package + Bun-compiled native binary
 		// shipped in a platform-specific optional dependency.
-		const source = fetchCliSourceFromNativeBinary(tmp, pkg.version);
-		return { source, version: pkg.version, sdkToolsDts };
+		const modules = fetchModulesFromNativeBinary(tmp, pkg.version);
+		return {
+			modules,
+			source: joinModules(modules),
+			version: pkg.version,
+			sdkToolsDts,
+		};
 	} finally {
 		rmSync(tmp, { recursive: true, force: true });
 	}
 }
 
-function fetchCliSourceFromNativeBinary(tmp: string, version: string): string {
+/**
+ * Refuse a tarball that is not the release we asked for.
+ *
+ * The release workflow resolves the target version itself (`npm view`) and then
+ * tags, bumps and publishes against it, while the extractor used to re-resolve
+ * the `latest` dist-tag independently via `npm pack`. On 2026-09-03 those two
+ * resolutions disagreed — `npm view` said 2.1.259, `npm pack` served 2.1.197 —
+ * and because nothing compared them, the job succeeded, committed contracts
+ * stamped `"version": "2.1.197"` with a fresh `extractedAt`, and tagged the
+ * result v2.1.259. That is how the registry froze for ten-plus releases without
+ * anything failing (oleks/claudecode-linter#28, oleks/claudecode-linter#30).
+ *
+ * The workflow now passes `--version`, and a mismatch is fatal: extracting the
+ * wrong release under the right name is worse than not extracting at all.
+ */
+export function assertResolvedVersion(
+	resolvedVersion: string,
+	requestedVersion?: string,
+): void {
+	if (!requestedVersion) return;
+	if (resolvedVersion === requestedVersion) return;
+	throw new Error(
+		`Version mismatch: asked npm for @anthropic-ai/claude-code@${requestedVersion}, ` +
+			`got ${resolvedVersion}. Refusing to extract — the contracts would be ` +
+			`stamped with a version they were not taken from.`,
+	);
+}
+
+function joinModules(modules: string[]): string {
+	return modules.join("\n");
+}
+
+function fetchModulesFromNativeBinary(tmp: string, version: string): string[] {
 	const platformDir = join(tmp, "platform");
 	mkdirSync(platformDir);
 	const platformPkg = `@anthropic-ai/claude-code-linux-x64@${version}`;
@@ -98,47 +147,219 @@ function fetchCliSourceFromNativeBinary(tmp: string, version: string): string {
 	execSync(`tar xzf "${tgz}"`, { cwd: platformDir, stdio: "pipe" });
 
 	const binary = readFileSync(join(platformDir, "package", "claude"));
-	return extractBunEmbeddedJs(binary, version);
+	return extractBunEmbeddedModules(binary, version);
 }
 
-function extractBunEmbeddedJs(binary: Buffer, version: string): string {
-	// Anchor on the "// Version: X.Y.Z" banner that Claude Code prepends to its
-	// bundle; walk back to the preceding Bun CJS wrapper marker that opens the
-	// module. That is where the embedded JS starts.
-	const versionMarker = Buffer.from(`// Version: ${version}`);
-	const versionIdx = binary.indexOf(versionMarker);
-	if (versionIdx === -1) {
-		throw new Error(
-			`Could not locate "// Version: ${version}" marker in native binary`,
+// ---------------------------------------------------------------------------
+// 1b. Slicing the embedded JS out of the Bun binary
+// ---------------------------------------------------------------------------
+
+/** A corpus smaller than this cannot be the Claude Code bundle. */
+const MIN_CORPUS_BYTES = 2_000_000;
+
+/**
+ * How many distinct `userFacingName` tool accessors the corpus must contain.
+ *
+ * This is the assertion that actually catches a bad slice. A wrong-offset or
+ * truncated slice yields zero of them; only a corpus that really contains the
+ * tool definitions clears the floor. Deliberately well below the ~23 a healthy
+ * release harvests, so an upstream refactor shrinking the set is a warning
+ * elsewhere rather than a false failure here.
+ */
+const MIN_TOOL_DEFINITIONS = 5;
+
+/**
+ * Recover the JS modules Bun embedded in the native `claude` executable.
+ *
+ * Bun stores each module as a run of text terminated by a NUL byte. Claude Code
+ * prefixes every one of its own modules with a licence header ending in a
+ * `// Version: X.Y.Z` banner, so the banner both selects the modules that
+ * belong to this release and proves which release they came from.
+ *
+ * Two strategies, tried in order, each validated by `assertBundleUsable` before
+ * it is accepted:
+ *
+ *  1. **Banner runs** — every NUL-delimited run containing the version banner.
+ *     This is the layout of current releases, which ship a code-split bundle:
+ *     2.1.259 embeds 1,635 modules totalling ~32.5 MB, the largest only 5.6 MB.
+ *  2. **Legacy bun-cjs slice** — the single CJS module that older releases
+ *     (<= ~2.1.197) put the whole bundle in, found by walking back from the
+ *     banner to the `// @bun @bytecode @bun-cjs` marker.
+ *
+ * Strategy 2 alone was the previous implementation and it broke on 2.1.259:
+ * that binary contains exactly one `// @bun @bytecode @bun-cjs` marker, at
+ * offset 17,590,671, and it opens a 411,031-byte bootstrap shim — 160 MB before
+ * the bundle at 177,517,618. The slice therefore held no tool definitions at
+ * all, acorn hit the shim's trailing NULs 411,031 bytes in, and the run died
+ * (oleks/claudecode-linter#28).
+ */
+export function extractBunEmbeddedModules(
+	binary: Buffer,
+	version: string,
+): string[] {
+	const failures: string[] = [];
+
+	for (const strategy of [
+		{ name: "version-banner runs", run: () => sliceBannerRuns(binary, version) },
+		{ name: "legacy bun-cjs slice", run: () => sliceLegacyBunCjs(binary, version) },
+	]) {
+		let modules: string[];
+		try {
+			modules = strategy.run();
+		} catch (err) {
+			failures.push(`${strategy.name}: ${(err as Error).message}`);
+			continue;
+		}
+		try {
+			assertBundleUsable(modules, version);
+		} catch (err) {
+			failures.push(`${strategy.name}: ${(err as Error).message}`);
+			continue;
+		}
+		console.log(
+			pc.dim(
+				`  Bundle recovered via ${strategy.name} ` +
+					`(${modules.length} module(s), ${(joinModules(modules).length / 1e6).toFixed(1)}MB)`,
+			),
 		);
+		return modules;
+	}
+
+	throw new Error(
+		`Could not recover the Claude Code v${version} bundle from the native ` +
+			`binary. Every strategy failed:\n  - ${failures.join("\n  - ")}\n` +
+			`The binary layout has probably changed again; re-measure the marker ` +
+			`offsets before adjusting the strategies.`,
+	);
+}
+
+/**
+ * Every NUL-delimited run that carries the `// Version: X.Y.Z` banner, in file
+ * order and de-duplicated (a run may carry the banner more than once).
+ */
+function sliceBannerRuns(binary: Buffer, version: string): string[] {
+	const banner = Buffer.from(`// Version: ${version}`);
+	const seen = new Set<string>();
+	const runs: Array<[number, number]> = [];
+
+	for (let i = binary.indexOf(banner); i !== -1; i = binary.indexOf(banner, i + 1)) {
+		const start = binary.lastIndexOf(0, i) + 1;
+		const nextNul = binary.indexOf(0, i);
+		const end = nextNul === -1 ? binary.length : nextNul;
+		const key = `${start}:${end}`;
+		if (seen.has(key)) continue;
+		seen.add(key);
+		runs.push([start, end]);
+	}
+
+	if (runs.length === 0) {
+		throw new Error(`no NUL-delimited run carries "// Version: ${version}"`);
+	}
+
+	runs.sort((a, b) => a[0] - b[0]);
+	return runs.map(([start, end]) => binary.subarray(start, end).toString("utf8"));
+}
+
+/**
+ * The pre-code-splitting layout: one big CJS module opened by the
+ * `// @bun @bytecode @bun-cjs` marker that precedes the version banner. Acorn's
+ * first parse error marks the trailing NULs, so it doubles as the end offset.
+ */
+function sliceLegacyBunCjs(binary: Buffer, version: string): string[] {
+	const versionIdx = binary.indexOf(Buffer.from(`// Version: ${version}`));
+	if (versionIdx === -1) {
+		throw new Error(`no "// Version: ${version}" banner in the binary`);
 	}
 	const bunMarker = Buffer.from("// @bun @bytecode @bun-cjs");
 	const bundleStart = binary.lastIndexOf(bunMarker, versionIdx);
 	if (bundleStart === -1) {
-		throw new Error(
-			"Could not locate '// @bun @bytecode @bun-cjs' marker preceding version banner",
-		);
+		throw new Error("no '// @bun @bytecode @bun-cjs' marker precedes the banner");
 	}
 
-	// The surrounding binary contains the Bun runtime + embedded assets, so we
-	// can't just read to EOF. Take a generous slice (real bundle is ~14MB) and
-	// let acorn tell us where the valid JS ends — the first parse error is
-	// always the NUL bytes that follow the CJS wrapper.
 	const MAX_SLICE = 60_000_000;
-	const MIN_SOURCE = 1_000_000;
 	const slice = binary
 		.subarray(bundleStart, Math.min(bundleStart + MAX_SLICE, binary.length))
 		.toString("utf8");
 
 	try {
 		acorn.parse(slice, { sourceType: "module", ecmaVersion: "latest" });
-		return slice;
+		return [slice];
 	} catch (err: unknown) {
 		const pos = (err as { pos?: number }).pos;
-		if (typeof pos !== "number" || pos < MIN_SOURCE) {
-			throw err;
-		}
-		return slice.slice(0, pos);
+		if (typeof pos !== "number") throw err;
+		return [slice.slice(0, pos)];
+	}
+}
+
+/**
+ * The regression guard: refuse a slice that does not actually contain the
+ * bundle.
+ *
+ * This is the half of oleks/claudecode-linter#28 that matters. The extractor
+ * must never emit a plausible-but-partial contracts file, because a shrunken
+ * registry looks exactly like an upstream release that removed things, and the
+ * downstream drift gate then reads the shortfall as legitimate. A guard that
+ * only asked "did we get some text?" would reproduce the original defect, so
+ * this asserts on the presence of the tool definitions themselves.
+ */
+/**
+ * Refuse an extraction where acorn could not parse most of the corpus.
+ *
+ * Individual skips are expected — a banner-carrying run is not always a whole
+ * module. But if a minifier or layout change makes most modules unparseable,
+ * every AST-derived contract (tools, hook events, agent colours, all the
+ * object-key censuses) silently collapses to whatever the previous file held,
+ * which is precisely the quiet rot this issue is about. Measured on a healthy
+ * 2.1.259 extraction: 1,634 of 1,635 modules parse, 99.995% of the bytes.
+ */
+export function assertParseCoverage(
+	modules: string[],
+	unparsedLengths: number[],
+): void {
+	const MIN_PARSED_BYTE_RATIO = 0.9;
+	const total = modules.reduce((sum, m) => sum + m.length, 0);
+	if (total === 0) throw new Error("empty corpus — nothing to parse");
+
+	const skipped = unparsedLengths.reduce((sum, n) => sum + n, 0);
+	const ratio = (total - skipped) / total;
+	if (ratio < MIN_PARSED_BYTE_RATIO) {
+		throw new Error(
+			`Only ${(ratio * 100).toFixed(1)}% of the bundle parsed ` +
+				`(${unparsedLengths.length}/${modules.length} modules skipped, ` +
+				`${skipped} of ${total} bytes). Below the ` +
+				`${(MIN_PARSED_BYTE_RATIO * 100).toFixed(0)}% floor — refusing to write ` +
+				`contracts derived from a fraction of the bundle.`,
+		);
+	}
+}
+
+export function assertBundleUsable(modules: string[], version: string): void {
+	if (modules.length === 0) {
+		throw new Error("no modules recovered");
+	}
+
+	const source = joinModules(modules);
+	if (source.length < MIN_CORPUS_BYTES) {
+		throw new Error(
+			`corpus is ${source.length} bytes, below the ${MIN_CORPUS_BYTES}-byte floor ` +
+				`— this is a shim or a truncated slice, not the bundle`,
+		);
+	}
+
+	if (!source.includes(`// Version: ${version}`)) {
+		throw new Error(
+			`corpus carries no "// Version: ${version}" banner — it may belong to a ` +
+				`different release than the one being extracted`,
+		);
+	}
+
+	const toolNames = extractUserFacingToolNames(source);
+	if (toolNames.length < MIN_TOOL_DEFINITIONS) {
+		throw new Error(
+			`corpus yields ${toolNames.length} userFacingName tool definitions ` +
+				`(${toolNames.join(", ") || "none"}), below the floor of ` +
+				`${MIN_TOOL_DEFINITIONS} — the slice does not contain the tool registry`,
+		);
 	}
 }
 
@@ -164,7 +385,7 @@ function extractStringArrayElements(
 	return strings.length >= 2 ? strings : null;
 }
 
-function collectStringSets(ast: acorn.Program): StringSet[] {
+function collectStringSets(ast: acorn.Program, offset = 0): StringSet[] {
 	const results: StringSet[] = [];
 
 	walk.simple(ast, {
@@ -176,13 +397,13 @@ function collectStringSets(ast: acorn.Program): StringSet[] {
 				node.arguments[0].type === "ArrayExpression"
 			) {
 				const strings = extractStringArrayElements(node.arguments[0]);
-				if (strings) results.push({ values: strings, pos: node.start });
+				if (strings) results.push({ values: strings, pos: offset + node.start });
 			}
 		},
 		ArrayExpression(node: any) {
 			const strings = extractStringArrayElements(node);
 			if (strings && strings.length >= 3) {
-				results.push({ values: strings, pos: node.start });
+				results.push({ values: strings, pos: offset + node.start });
 			}
 		},
 	});
@@ -196,9 +417,12 @@ function collectStringSets(ast: acorn.Program): StringSet[] {
 
 export type ObjectKeySet = { keys: string[]; pos: number };
 
-export function collectObjectKeySets(ast: acorn.Program): ObjectKeySet[] {
+export function collectObjectKeySets(
+	ast: acorn.Program,
+	offset = 0,
+	seen = new Set<string>(),
+): ObjectKeySet[] {
 	const results: ObjectKeySet[] = [];
-	const seen = new Set<string>();
 
 	walk.simple(ast, {
 		ObjectExpression(node: any) {
@@ -221,7 +445,7 @@ export function collectObjectKeySets(ast: acorn.Program): ObjectKeySet[] {
 			if (seen.has(signature)) return;
 			seen.add(signature);
 
-			results.push({ keys, pos: node.start });
+			results.push({ keys, pos: offset + node.start });
 		},
 	});
 
@@ -686,25 +910,83 @@ function main() {
 	const requestedVersion =
 		versionIdx !== -1 ? process.argv[versionIdx + 1] : undefined;
 
-	const label = requestedVersion ? `v${requestedVersion}` : "latest";
-	console.log(pc.cyan(`▸ Fetching @anthropic-ai/claude-code (${label})...`));
-	const { source, version, sdkToolsDts } = fetchCliSource(requestedVersion);
+	// `--binary <path>` extracts from an already-downloaded platform binary
+	// instead of fetching one. The bundle is a 216 MB native executable, so
+	// reproducing an extraction problem — or checking that the guards fire —
+	// should not require re-downloading it each time.
+	const binaryIdx = process.argv.indexOf("--binary");
+	const binaryPath = binaryIdx !== -1 ? process.argv[binaryIdx + 1] : undefined;
+
+	let modules: string[];
+	let source: string;
+	let version: string;
+	let sdkToolsDts: string | null;
+
+	if (binaryPath) {
+		if (!requestedVersion) {
+			console.error(
+				pc.red("✗ --binary requires --version (the binary carries no manifest)"),
+			);
+			process.exit(1);
+		}
+		console.log(
+			pc.cyan(`▸ Reading local binary ${binaryPath} (v${requestedVersion})...`),
+		);
+		modules = extractBunEmbeddedModules(
+			readFileSync(binaryPath),
+			requestedVersion,
+		);
+		source = modules.join("\n");
+		version = requestedVersion;
+		sdkToolsDts = null;
+	} else {
+		const label = requestedVersion ? `v${requestedVersion}` : "latest";
+		console.log(pc.cyan(`▸ Fetching @anthropic-ai/claude-code (${label})...`));
+		({ modules, source, version, sdkToolsDts } =
+			fetchCliSource(requestedVersion));
+	}
 	console.log(
 		pc.cyan("▸ Parsing AST"),
-		pc.dim(`(v${version}, ${(source.length / 1e6).toFixed(1)}MB)`),
+		pc.dim(
+			`(v${version}, ${modules.length} module(s), ${(source.length / 1e6).toFixed(1)}MB)`,
+		),
 	);
 
-	const ast = acorn.parse(source, {
-		sourceType: "module",
-		ecmaVersion: "latest",
-	}) as acorn.Program;
+	// Current releases ship a code-split bundle — 1,600+ separate ESM modules
+	// rather than one file — so each is parsed on its own and the results are
+	// accumulated. Parsing the concatenation instead would fail immediately:
+	// every module redeclares the same minified identifiers.
+	const stringSets: StringSet[] = [];
+	const objectKeySets: ObjectKeySet[] = [];
+	const objectKeySeen = new Set<string>();
+	const unparsed: number[] = [];
+	let offset = 0;
+	for (const mod of modules) {
+		try {
+			const ast = acorn.parse(mod, {
+				sourceType: "module",
+				ecmaVersion: "latest",
+			}) as acorn.Program;
+			stringSets.push(...collectStringSets(ast, offset));
+			objectKeySets.push(...collectObjectKeySets(ast, offset, objectKeySeen));
+		} catch {
+			// A run that carries the banner is not guaranteed to be a whole module
+			// — the first one in 2.1.259 is a 1.5 KB fragment of the licence
+			// header. Skipping is fine; skipping *most* of them is not, which is
+			// what the ratio check below catches.
+			unparsed.push(mod.length);
+		}
+		offset += mod.length + 1;
+	}
 
-	const stringSets = collectStringSets(ast);
-	const objectKeySets = collectObjectKeySets(ast);
+	assertParseCoverage(modules, unparsed);
+
 	console.log(
 		pc.cyan("▸ Extracting contracts..."),
 		pc.dim(
-			`(${stringSets.length} string sets, ${objectKeySets.length} object-key sets)`,
+			`(${stringSets.length} string sets, ${objectKeySets.length} object-key sets` +
+				(unparsed.length > 0 ? `, ${unparsed.length} module(s) skipped` : "") +
+				")",
 		),
 	);
 
@@ -804,7 +1086,18 @@ function main() {
 		hookTypes: hookTypes.length > 0 ? hookTypes.sort() : undefined,
 		promptEvents: promptEvents.length > 0 ? promptEvents.sort() : undefined,
 		agentColors: (() => {
-			const colors = longestArray(classified.agentColors);
+			// 2.1.259 stopped declaring the agent palette as a string array and
+			// now keys an object by colour name
+			// (`{red:"red_FOR_SUBAGENTS_ONLY",…}`, read back via `Object.keys`),
+			// which the array/Set classifier cannot see at all. Union the
+			// object-key census in so a representation change costs nothing;
+			// without it the drift gate hard-fails at 100% loss.
+			const colors = [
+				...new Set([
+					...longestArray(classified.agentColors),
+					...classifyByOverlap(objectKeySets, prev["agentColors"] ?? []),
+				]),
+			];
 			if (colors.includes("purple") && !colors.includes("magenta"))
 				colors.push("magenta");
 			if (colors.includes("magenta") && !colors.includes("purple"))
