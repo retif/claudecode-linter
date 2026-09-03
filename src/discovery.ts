@@ -3,7 +3,10 @@ import { basename, dirname, resolve, join, relative } from "node:path";
 import { homedir } from "node:os";
 import { globSync } from "tinyglobby";
 import { minimatch } from "minimatch";
-import { CANONICAL_ARTIFACTS } from "./canonical-paths.js";
+import {
+	CANONICAL_ARTIFACTS,
+	isCanonicalLocation,
+} from "./canonical-paths.js";
 import type { ArtifactType, ConfigScope, DiscoveredArtifact } from "./types.js";
 
 const CLAUDE_USER_DIR = join(homedir(), ".claude");
@@ -357,10 +360,7 @@ function findMisplacedFiles(pluginRoot: string): DiscoveredArtifact[] {
 		});
 		for (const filePath of found) {
 			const rel = relative(pluginRoot, filePath);
-			const isCanonical = entry.expectedPattern
-				? minimatch(rel, entry.expectedPattern)
-				: rel === entry.expectedPath;
-			if (!isCanonical) {
+			if (!isCanonicalLocation(rel, entry)) {
 				out.push({ filePath, artifactType: "misplaced-file" });
 			}
 		}
