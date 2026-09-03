@@ -19,6 +19,7 @@
 		"check-deps": "tsx scripts/check-deps.ts",
 		"extract-contracts": "tsx scripts/extract-contracts.ts && tsx scripts/extract-plugin-schema.ts && tsx scripts/fetch-schemastore.ts",
 		"extract-plugin-schema": "tsx scripts/extract-plugin-schema.ts",
+		"fetch-module-replacements": "tsx scripts/fetch-module-replacements.ts",
 		"fetch-schemastore": "tsx scripts/fetch-schemastore.ts",
 		"generate-contracts": "tsx scripts/generate-contracts.ts"
 	},

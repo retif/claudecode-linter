@@ -1,0 +1,94 @@
+# Refresh the vendored es-tooling/module-replacements snapshot.
+#
+# `check-deps` reads a committed snapshot rather than fetching at gate time
+# (oleks/claudecode-linter#25), so upstream changes have to be pulled in
+# deliberately. This job does that on a schedule and opens a PR when the
+# snapshot moves, which makes a third-party edit a diff someone reviews rather
+# than a red build on `main` and every open PR.
+#
+# It fails loudly rather than quietly: an unreachable upstream, an unparseable
+# manifest, or a PR that cannot be opened all fail the job. A refresh that did
+# not happen must never look like "nothing changed".
+#
+# Note: a PR opened with GITHUB_TOKEN does not itself trigger the CI workflow.
+# The check-deps result for the new snapshot is reported by this job's own
+# verification step below, and CI runs in full on merge.
+name: Refresh module-replacements snapshot
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Upstream git ref to snapshot (branch, tag or commit SHA)"
+        required: false
+        default: main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch upstream manifests
+        run: npx tsx scripts/fetch-module-replacements.ts --ref "${{ inputs.ref || 'main' }}"
+
+      - name: Detect snapshot drift
+        id: drift
+        run: |
+          if git diff --quiet -- contracts/module-replacements/*.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Snapshot unchanged."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            git --no-pager diff --stat -- contracts/module-replacements/
+          fi
+
+      # Reported, never suppressed: if the new snapshot lists a production
+      # dependency, the PR body has to say so rather than the job passing and
+      # the surprise landing in CI later.
+      - name: Check the refreshed snapshot against our dependencies
+        if: steps.drift.outputs.changed == 'true'
+        id: check
+        continue-on-error: true
+        run: npm run check-deps 2>&1 | tee check-deps.txt
+
+      - name: Open a pull request
+        if: steps.drift.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          branch="chore/module-replacements-$(date -u +%Y%m%d)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add contracts/module-replacements/
+          git commit -m "chore(deps): refresh module-replacements snapshot"
+          git push --force-with-lease origin "$branch"
+          {
+            echo "Automated refresh of the vendored \`es-tooling/module-replacements\` snapshot."
+            echo
+            echo "\`npm run check-deps\` against the refreshed snapshot: **${{ steps.check.outcome }}**"
+            echo
+            echo '```'
+            cat check-deps.txt
+            echo '```'
+          } > pr-body.md
+          gh pr create \
+            --title "chore(deps): refresh module-replacements snapshot" \
+            --body-file pr-body.md \
+            --base main \
+            --head "$branch"

@@ -27,8 +27,12 @@ jobs:
       - name: Self-lint
         run: node dist/index.js tests/fixtures/valid-plugin/ || true
 
+      # Reads the vendored contracts/module-replacements/ snapshot — no
+      # network at gate time, so a third-party edit cannot redden this run
+      # (oleks/claudecode-linter#25). Refresh via the
+      # refresh-module-replacements workflow.
       - name: Check replaceable dependencies
-        run: npx tsx scripts/check-deps.ts
+        run: npm run check-deps
 
       - name: Find unused code
         run: npm run knip

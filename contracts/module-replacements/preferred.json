@@ -1,0 +1,6713 @@
+{
+	"mappings": {
+		"@75lb/deep-merge": {
+			"type": "module",
+			"moduleName": "@75lb/deep-merge",
+			"replacements": [
+				"defu",
+				"@fastify/deepmerge"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "deep-merge"
+			}
+		},
+		"@cypress/request": {
+			"type": "module",
+			"moduleName": "@cypress/request",
+			"replacements": [
+				"fetch",
+				"ofetch",
+				"ky"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"@img/colour": {
+			"type": "module",
+			"moduleName": "@img/colour",
+			"replacements": [
+				"color"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "img-colour"
+			}
+		},
+		"@jsdevtools/ez-spawn": {
+			"type": "module",
+			"moduleName": "@jsdevtools/ez-spawn",
+			"replacements": [
+				"tinyexec"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "ez-spawn"
+			}
+		},
+		"@ljharb/through": {
+			"type": "module",
+			"moduleName": "@ljharb/through",
+			"replacements": [
+				"node:stream"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "through"
+			}
+		},
+		"@supabase/node-fetch": {
+			"type": "module",
+			"moduleName": "@supabase/node-fetch",
+			"replacements": [
+				"fetch",
+				"ofetch",
+				"ky"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"@typescript/native-preview": {
+			"type": "module",
+			"moduleName": "@typescript/native-preview",
+			"replacements": [
+				"typescript"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "typescript-native-preview"
+			}
+		},
+		"@whatwg-node/fetch": {
+			"type": "module",
+			"moduleName": "@whatwg-node/fetch",
+			"replacements": [
+				"fetch"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"@whatwg-node/node-fetch": {
+			"type": "module",
+			"moduleName": "@whatwg-node/node-fetch",
+			"replacements": [
+				"fetch"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"arg": {
+			"type": "module",
+			"moduleName": "arg",
+			"replacements": [
+				"util.parseArgs",
+				"mri"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "parseargs"
+			}
+		},
+		"axios": {
+			"type": "module",
+			"moduleName": "axios",
+			"replacements": [
+				"fetch",
+				"ofetch",
+				"ky"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"bcrypt": {
+			"type": "module",
+			"moduleName": "bcrypt",
+			"replacements": [
+				"bcryptjs",
+				"node:crypto",
+				"crypto",
+				"Bun.CryptoHasher"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "bcrypt"
+			}
+		},
+		"bluebird": {
+			"type": "module",
+			"moduleName": "bluebird",
+			"replacements": [
+				"Promise",
+				"nativebird"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "bluebird-q"
+			}
+		},
+		"bluebird-lst": {
+			"type": "module",
+			"moduleName": "bluebird-lst",
+			"replacements": [
+				"Promise",
+				"nativebird"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "bluebird-q"
+			}
+		},
+		"body-parser": {
+			"type": "module",
+			"moduleName": "body-parser",
+			"replacements": [
+				"milliparsec"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "body-parser"
+			}
+		},
+		"buf-compare": {
+			"type": "module",
+			"moduleName": "buf-compare",
+			"replacements": [
+				"Buffer.compare"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "buf-compare"
+			}
+		},
+		"buffer-equal": {
+			"type": "module",
+			"moduleName": "buffer-equal",
+			"replacements": [
+				"Buffer.prototype.equals"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "buffer-equal"
+			}
+		},
+		"buffer-equal-constant-time": {
+			"type": "module",
+			"moduleName": "buffer-equal-constant-time",
+			"replacements": [
+				"crypto.timingSafeEqual"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "buffer-equal-constant-time"
+			}
+		},
+		"buffer-equals": {
+			"type": "module",
+			"moduleName": "buffer-equals",
+			"replacements": [
+				"Buffer.prototype.equals"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "buffer-equals"
+			}
+		},
+		"builtin-modules": {
+			"type": "module",
+			"moduleName": "builtin-modules",
+			"replacements": [
+				"builtinModules"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "builtin-modules"
+			}
+		},
+		"chalk": {
+			"type": "module",
+			"moduleName": "chalk",
+			"replacements": [
+				"util.styleText",
+				"picocolors",
+				"ansis"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "chalk"
+			}
+		},
+		"clean-webpack-plugin": {
+			"type": "module",
+			"moduleName": "clean-webpack-plugin",
+			"replacements": [
+				"webpack.output.clean"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "clean-webpack-plugin"
+			}
+		},
+		"cli-color": {
+			"type": "module",
+			"moduleName": "cli-color",
+			"replacements": [
+				"util.styleText",
+				"picocolors",
+				"ansis"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "chalk"
+			}
+		},
+		"clipboard": {
+			"type": "module",
+			"moduleName": "clipboard",
+			"replacements": [
+				"ClipboardAPI"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "clipboardy"
+			}
+		},
+		"clipboard-copy": {
+			"type": "module",
+			"moduleName": "clipboard-copy",
+			"replacements": [
+				"ClipboardAPI"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "clipboardy"
+			}
+		},
+		"clipboardy": {
+			"type": "module",
+			"moduleName": "clipboardy",
+			"replacements": [
+				"tinyclip",
+				"ClipboardAPI"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "clipboardy"
+			}
+		},
+		"coa": {
+			"type": "module",
+			"moduleName": "coa",
+			"replacements": [
+				"sade",
+				"cleye",
+				"cac"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "cli-builders"
+			}
+		},
+		"colors": {
+			"type": "module",
+			"moduleName": "colors",
+			"replacements": [
+				"util.styleText",
+				"picocolors",
+				"ansis"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "chalk"
+			}
+		},
+		"copy-paste": {
+			"type": "module",
+			"moduleName": "copy-paste",
+			"replacements": [
+				"tinyclip",
+				"ClipboardAPI"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "clipboardy"
+			}
+		},
+		"copy-text-to-clipboard": {
+			"type": "module",
+			"moduleName": "copy-text-to-clipboard",
+			"replacements": [
+				"ClipboardAPI"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "clipboardy"
+			}
+		},
+		"copy-to-clipboard": {
+			"type": "module",
+			"moduleName": "copy-to-clipboard",
+			"replacements": [
+				"ClipboardAPI"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "clipboardy"
+			}
+		},
+		"core-util-is": {
+			"type": "module",
+			"moduleName": "core-util-is",
+			"replacements": [
+				"util.types"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "core-util-is"
+			}
+		},
+		"cosmiconfig": {
+			"type": "module",
+			"moduleName": "cosmiconfig",
+			"replacements": [
+				"lilconfig"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "cosmiconfig"
+			}
+		},
+		"cpx": {
+			"type": "module",
+			"moduleName": "cpx",
+			"replacements": [
+				"cpx2"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "cpx"
+			}
+		},
+		"create-hmac": {
+			"type": "module",
+			"moduleName": "create-hmac",
+			"replacements": [
+				"crypto.createHmac",
+				"crypto.subtle.sign",
+				"@noble/hashes"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "create-hmac"
+			}
+		},
+		"cross-fetch": {
+			"type": "module",
+			"moduleName": "cross-fetch",
+			"replacements": [
+				"fetch",
+				"ofetch",
+				"ky"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"cross-spawn": {
+			"type": "module",
+			"moduleName": "cross-spawn",
+			"replacements": [
+				"tinyexec"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "cross-spawn"
+			}
+		},
+		"crypto-js": {
+			"type": "module",
+			"moduleName": "crypto-js",
+			"replacements": [
+				"node:crypto",
+				"crypto",
+				"Bun.CryptoHasher"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "crypto-js"
+			}
+		},
+		"cwd": {
+			"type": "module",
+			"moduleName": "cwd",
+			"replacements": [
+				"empathic"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "cwd"
+			}
+		},
+		"debug": {
+			"type": "module",
+			"moduleName": "debug",
+			"replacements": [
+				"obug"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "debug"
+			}
+		},
+		"deep-equal": {
+			"type": "module",
+			"moduleName": "deep-equal",
+			"replacements": [
+				"dequal",
+				"util.isDeepStrictEqual",
+				"Bun.deepEquals"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "deep-equal"
+			}
+		},
+		"deep-equal-json": {
+			"type": "module",
+			"moduleName": "deep-equal-json",
+			"replacements": [
+				"dequal",
+				"util.isDeepStrictEqual",
+				"Bun.deepEquals"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "deep-equal"
+			}
+		},
+		"deepmerge": {
+			"type": "module",
+			"moduleName": "deepmerge",
+			"replacements": [
+				"defu",
+				"@fastify/deepmerge"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "deep-merge"
+			}
+		},
+		"depcheck": {
+			"type": "module",
+			"moduleName": "depcheck",
+			"replacements": [
+				"knip"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "depcheck"
+			}
+		},
+		"detect-package-manager": {
+			"type": "module",
+			"moduleName": "detect-package-manager",
+			"replacements": [
+				"package-manager-detector"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "detect-package-manager"
+			}
+		},
+		"dev-null": {
+			"type": "module",
+			"moduleName": "dev-null",
+			"replacements": [
+				"node:stream"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "dev-null"
+			}
+		},
+		"dot-prop": {
+			"type": "module",
+			"moduleName": "dot-prop",
+			"replacements": [
+				"dlv"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "dot-prop"
+			}
+		},
+		"dotenv": {
+			"type": "module",
+			"moduleName": "dotenv",
+			"replacements": [
+				"process.loadEnvFile",
+				"--env-file"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "dotenv"
+			}
+		},
+		"dottie": {
+			"type": "module",
+			"moduleName": "dottie",
+			"replacements": [
+				"dlv",
+				"dset"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "dot-prop"
+			}
+		},
+		"emoji-regex": {
+			"type": "module",
+			"moduleName": "emoji-regex",
+			"replacements": [
+				"emoji-regex-xs",
+				"unicodeClassEscape"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "emoji-regex"
+			}
+		},
+		"error-stack-parser": {
+			"type": "module",
+			"moduleName": "error-stack-parser",
+			"replacements": [
+				"error-stack-parser-es"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "error-stack-parser"
+			}
+		},
+		"eslint-config-airbnb": {
+			"type": "module",
+			"moduleName": "eslint-config-airbnb",
+			"replacements": [
+				"eslint-config-airbnb-extended"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "eslint-config-airbnb"
+			}
+		},
+		"eslint-plugin-es": {
+			"type": "module",
+			"moduleName": "eslint-plugin-es",
+			"replacements": [
+				"eslint-plugin-es-x"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "eslint-plugin-es"
+			}
+		},
+		"eslint-plugin-eslint-comments": {
+			"type": "module",
+			"moduleName": "eslint-plugin-eslint-comments",
+			"replacements": [
+				"@eslint-community/eslint-plugin-eslint-comments"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "eslint-plugin-eslint-comments"
+			}
+		},
+		"eslint-plugin-import": {
+			"type": "module",
+			"moduleName": "eslint-plugin-import",
+			"replacements": [
+				"eslint-plugin-import-x",
+				"oxlint"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "eslint-plugin-import"
+			}
+		},
+		"eslint-plugin-node": {
+			"type": "module",
+			"moduleName": "eslint-plugin-node",
+			"replacements": [
+				"eslint-plugin-n"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "eslint-plugin-node"
+			}
+		},
+		"eslint-plugin-react": {
+			"type": "module",
+			"moduleName": "eslint-plugin-react",
+			"replacements": [
+				"@eslint-react/eslint-plugin",
+				"oxlint"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "eslint-plugin-react"
+			}
+		},
+		"eslint-plugin-vitest": {
+			"type": "module",
+			"moduleName": "eslint-plugin-vitest",
+			"replacements": [
+				"@vitest/eslint-plugin"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "eslint-plugin-vitest"
+			}
+		},
+		"event-stream": {
+			"type": "module",
+			"moduleName": "event-stream",
+			"replacements": [
+				"node:stream"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "event-stream"
+			}
+		},
+		"execa": {
+			"type": "module",
+			"moduleName": "execa",
+			"replacements": [
+				"tinyexec",
+				"nanoexec",
+				"Bun.Shell"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "execa"
+			}
+		},
+		"express": {
+			"type": "module",
+			"moduleName": "express",
+			"replacements": [
+				"h3",
+				"tinyhttp",
+				"hono",
+				"elysia"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "express"
+			}
+		},
+		"extend": {
+			"type": "module",
+			"moduleName": "extend",
+			"replacements": [
+				"structuredClone",
+				"defu"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "extend"
+			}
+		},
+		"ez-spawn": {
+			"type": "module",
+			"moduleName": "ez-spawn",
+			"replacements": [
+				"tinyexec"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "ez-spawn"
+			}
+		},
+		"ezspawn": {
+			"type": "module",
+			"moduleName": "ezspawn",
+			"replacements": [
+				"tinyexec"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "ez-spawn"
+			}
+		},
+		"faker": {
+			"type": "module",
+			"moduleName": "faker",
+			"replacements": [
+				"@faker-js/faker"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "faker"
+			}
+		},
+		"fast-glob": {
+			"type": "module",
+			"moduleName": "fast-glob",
+			"replacements": [
+				"tinyglobby"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fast-glob"
+			}
+		},
+		"feather-icons": {
+			"type": "module",
+			"moduleName": "feather-icons",
+			"replacements": [
+				"lucide"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "feather"
+			}
+		},
+		"find-cache-dir": {
+			"type": "module",
+			"moduleName": "find-cache-dir",
+			"replacements": [
+				"empathic"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "find-cache-dir"
+			}
+		},
+		"find-cache-directory": {
+			"type": "module",
+			"moduleName": "find-cache-directory",
+			"replacements": [
+				"empathic"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "find-cache-directory"
+			}
+		},
+		"find-file-up": {
+			"type": "module",
+			"moduleName": "find-file-up",
+			"replacements": [
+				"empathic"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "find-file-up"
+			}
+		},
+		"find-pkg": {
+			"type": "module",
+			"moduleName": "find-pkg",
+			"replacements": [
+				"empathic"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "find-pkg"
+			}
+		},
+		"find-up": {
+			"type": "module",
+			"moduleName": "find-up",
+			"replacements": [
+				"empathic",
+				"pkg-types"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "find-up"
+			}
+		},
+		"findup": {
+			"type": "module",
+			"moduleName": "findup",
+			"replacements": [
+				"empathic",
+				"pkg-types"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "find-up"
+			}
+		},
+		"fs-extra": {
+			"type": "module",
+			"moduleName": "fs-extra",
+			"replacements": [
+				"fs"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fs-extra"
+			}
+		},
+		"fs-temp": {
+			"type": "module",
+			"moduleName": "fs-temp",
+			"replacements": [
+				"fs.promises.mkdtempDisposable",
+				"fs.promises.mkdtemp",
+				"Deno.makeTempDir"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tempy"
+			}
+		},
+		"fs.extra": {
+			"type": "module",
+			"moduleName": "fs.extra",
+			"replacements": [
+				"fs"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fs-extra"
+			}
+		},
+		"gaxios": {
+			"type": "module",
+			"moduleName": "gaxios",
+			"replacements": [
+				"fetch",
+				"ofetch",
+				"ky"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"get-stream": {
+			"type": "module",
+			"moduleName": "get-stream",
+			"replacements": [
+				"Buffer"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "get-stream"
+			}
+		},
+		"get-value": {
+			"type": "module",
+			"moduleName": "get-value",
+			"replacements": [
+				"dlv"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "dot-prop"
+			}
+		},
+		"glob": {
+			"type": "module",
+			"moduleName": "glob",
+			"replacements": [
+				"tinyglobby",
+				"fs.promises.glob",
+				"fdir"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "glob"
+			}
+		},
+		"globby": {
+			"type": "module",
+			"moduleName": "globby",
+			"replacements": [
+				"tinyglobby"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "globby"
+			}
+		},
+		"globule": {
+			"type": "module",
+			"moduleName": "globule",
+			"replacements": [
+				"tinyglobby"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "globby"
+			}
+		},
+		"grapheme-splitter": {
+			"type": "module",
+			"moduleName": "grapheme-splitter",
+			"replacements": [
+				"Intl.Segmenter",
+				"unicode-segmenter"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "graphemer"
+			}
+		},
+		"graphemer": {
+			"type": "module",
+			"moduleName": "graphemer",
+			"replacements": [
+				"Intl.Segmenter",
+				"unicode-segmenter"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "graphemer"
+			}
+		},
+		"graphviz": {
+			"type": "module",
+			"moduleName": "graphviz",
+			"replacements": [
+				"ts-graphviz"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "graphviz"
+			}
+		},
+		"gray-matter": {
+			"type": "module",
+			"moduleName": "gray-matter",
+			"replacements": [
+				"@11ty/gray-matter"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "gray-matter"
+			}
+		},
+		"gzip-size": {
+			"type": "module",
+			"moduleName": "gzip-size",
+			"replacements": [
+				"zlib.gzipSync"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "gzip-size"
+			}
+		},
+		"has-yarn": {
+			"type": "module",
+			"moduleName": "has-yarn",
+			"replacements": [
+				"empathic"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "has-yarn"
+			}
+		},
+		"html-minifier": {
+			"type": "module",
+			"moduleName": "html-minifier",
+			"replacements": [
+				"html-minifier-next"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "html-minifier"
+			}
+		},
+		"http-proxy": {
+			"type": "module",
+			"moduleName": "http-proxy",
+			"replacements": [
+				"httpxy",
+				"http-proxy-3"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "http-proxy"
+			}
+		},
+		"invariant": {
+			"type": "module",
+			"moduleName": "invariant",
+			"replacements": [
+				"tiny-invariant"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "invariant"
+			}
+		},
+		"is-builtin-module": {
+			"type": "module",
+			"moduleName": "is-builtin-module",
+			"replacements": [
+				"isBuiltin",
+				"builtinModules"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "is-builtin-module"
+			}
+		},
+		"is-core-module": {
+			"type": "module",
+			"moduleName": "is-core-module",
+			"replacements": [
+				"isBuiltin",
+				"builtinModules"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "is-builtin-module"
+			}
+		},
+		"isomorphic-fetch": {
+			"type": "module",
+			"moduleName": "isomorphic-fetch",
+			"replacements": [
+				"fetch",
+				"ofetch",
+				"ky"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"istanbul-lib-coverage": {
+			"type": "module",
+			"moduleName": "istanbul-lib-coverage",
+			"replacements": [
+				"@vitest/istanbul-lib-coverage"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "istanbul-lib-coverage"
+			}
+		},
+		"jquery": {
+			"type": "module",
+			"moduleName": "jquery",
+			"replacements": [
+				"jquery"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "jquery"
+			}
+		},
+		"js-yaml": {
+			"type": "module",
+			"moduleName": "js-yaml",
+			"replacements": [
+				"yaml",
+				"Bun.YAML"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "js-yaml"
+			}
+		},
+		"jsonwebtoken": {
+			"type": "module",
+			"moduleName": "jsonwebtoken",
+			"replacements": [
+				"jose"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "jsonwebtoken"
+			}
+		},
+		"jsx-ast-utils": {
+			"type": "module",
+			"moduleName": "jsx-ast-utils",
+			"replacements": [
+				"jsx-ast-utils-x"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "jsx-ast-utils"
+			}
+		},
+		"lodash": {
+			"type": "module",
+			"moduleName": "lodash",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash-amd": {
+			"type": "module",
+			"moduleName": "lodash-amd",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash-compat": {
+			"type": "module",
+			"moduleName": "lodash-compat",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash-es": {
+			"type": "module",
+			"moduleName": "lodash-es",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash-fp": {
+			"type": "module",
+			"moduleName": "lodash-fp",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash-node": {
+			"type": "module",
+			"moduleName": "lodash-node",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.add": {
+			"type": "module",
+			"moduleName": "lodash.add",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.after": {
+			"type": "module",
+			"moduleName": "lodash.after",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.ary": {
+			"type": "module",
+			"moduleName": "lodash.ary",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.assign": {
+			"type": "module",
+			"moduleName": "lodash.assign",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.assignin": {
+			"type": "module",
+			"moduleName": "lodash.assignin",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.assigninwith": {
+			"type": "module",
+			"moduleName": "lodash.assigninwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.assignwith": {
+			"type": "module",
+			"moduleName": "lodash.assignwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.attempt": {
+			"type": "module",
+			"moduleName": "lodash.attempt",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.before": {
+			"type": "module",
+			"moduleName": "lodash.before",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.bind": {
+			"type": "module",
+			"moduleName": "lodash.bind",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.bindall": {
+			"type": "module",
+			"moduleName": "lodash.bindall",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.bindkey": {
+			"type": "module",
+			"moduleName": "lodash.bindkey",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.callback": {
+			"type": "module",
+			"moduleName": "lodash.callback",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.camelcase": {
+			"type": "module",
+			"moduleName": "lodash.camelcase",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.capitalize": {
+			"type": "module",
+			"moduleName": "lodash.capitalize",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.ceil": {
+			"type": "module",
+			"moduleName": "lodash.ceil",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.chunk": {
+			"type": "module",
+			"moduleName": "lodash.chunk",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.clamp": {
+			"type": "module",
+			"moduleName": "lodash.clamp",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.clonedeep": {
+			"type": "module",
+			"moduleName": "lodash.clonedeep",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.clonedeepwith": {
+			"type": "module",
+			"moduleName": "lodash.clonedeepwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.clonewith": {
+			"type": "module",
+			"moduleName": "lodash.clonewith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.compact": {
+			"type": "module",
+			"moduleName": "lodash.compact",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.compose": {
+			"type": "module",
+			"moduleName": "lodash.compose",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.concat": {
+			"type": "module",
+			"moduleName": "lodash.concat",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.cond": {
+			"type": "module",
+			"moduleName": "lodash.cond",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.conforms": {
+			"type": "module",
+			"moduleName": "lodash.conforms",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.conformsto": {
+			"type": "module",
+			"moduleName": "lodash.conformsto",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.constant": {
+			"type": "module",
+			"moduleName": "lodash.constant",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.contains": {
+			"type": "module",
+			"moduleName": "lodash.contains",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.countby": {
+			"type": "module",
+			"moduleName": "lodash.countby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.create": {
+			"type": "module",
+			"moduleName": "lodash.create",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.createcallback": {
+			"type": "module",
+			"moduleName": "lodash.createcallback",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.curry": {
+			"type": "module",
+			"moduleName": "lodash.curry",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.curryright": {
+			"type": "module",
+			"moduleName": "lodash.curryright",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.debounce": {
+			"type": "module",
+			"moduleName": "lodash.debounce",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.deburr": {
+			"type": "module",
+			"moduleName": "lodash.deburr",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.defaults": {
+			"type": "module",
+			"moduleName": "lodash.defaults",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.defaultsdeep": {
+			"type": "module",
+			"moduleName": "lodash.defaultsdeep",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.defaultto": {
+			"type": "module",
+			"moduleName": "lodash.defaultto",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.defer": {
+			"type": "module",
+			"moduleName": "lodash.defer",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.delay": {
+			"type": "module",
+			"moduleName": "lodash.delay",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.difference": {
+			"type": "module",
+			"moduleName": "lodash.difference",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.differenceby": {
+			"type": "module",
+			"moduleName": "lodash.differenceby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.differencewith": {
+			"type": "module",
+			"moduleName": "lodash.differencewith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.divide": {
+			"type": "module",
+			"moduleName": "lodash.divide",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.drop": {
+			"type": "module",
+			"moduleName": "lodash.drop",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.dropright": {
+			"type": "module",
+			"moduleName": "lodash.dropright",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.droprightwhile": {
+			"type": "module",
+			"moduleName": "lodash.droprightwhile",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.dropwhile": {
+			"type": "module",
+			"moduleName": "lodash.dropwhile",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.endswith": {
+			"type": "module",
+			"moduleName": "lodash.endswith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.escape": {
+			"type": "module",
+			"moduleName": "lodash.escape",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.every": {
+			"type": "module",
+			"moduleName": "lodash.every",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.filter": {
+			"type": "module",
+			"moduleName": "lodash.filter",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.find": {
+			"type": "module",
+			"moduleName": "lodash.find",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.findindex": {
+			"type": "module",
+			"moduleName": "lodash.findindex",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.findkey": {
+			"type": "module",
+			"moduleName": "lodash.findkey",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.findlast": {
+			"type": "module",
+			"moduleName": "lodash.findlast",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.findlastindex": {
+			"type": "module",
+			"moduleName": "lodash.findlastindex",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.findlastkey": {
+			"type": "module",
+			"moduleName": "lodash.findlastkey",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.findwhere": {
+			"type": "module",
+			"moduleName": "lodash.findwhere",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.first": {
+			"type": "module",
+			"moduleName": "lodash.first",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.flatmap": {
+			"type": "module",
+			"moduleName": "lodash.flatmap",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.flatmapdeep": {
+			"type": "module",
+			"moduleName": "lodash.flatmapdeep",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.flatmapdepth": {
+			"type": "module",
+			"moduleName": "lodash.flatmapdepth",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.flatten": {
+			"type": "module",
+			"moduleName": "lodash.flatten",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.flattendeep": {
+			"type": "module",
+			"moduleName": "lodash.flattendeep",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.flattendepth": {
+			"type": "module",
+			"moduleName": "lodash.flattendepth",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.flip": {
+			"type": "module",
+			"moduleName": "lodash.flip",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.floor": {
+			"type": "module",
+			"moduleName": "lodash.floor",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.flow": {
+			"type": "module",
+			"moduleName": "lodash.flow",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.flowright": {
+			"type": "module",
+			"moduleName": "lodash.flowright",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.foreach": {
+			"type": "module",
+			"moduleName": "lodash.foreach",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.foreachright": {
+			"type": "module",
+			"moduleName": "lodash.foreachright",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.forin": {
+			"type": "module",
+			"moduleName": "lodash.forin",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.forinright": {
+			"type": "module",
+			"moduleName": "lodash.forinright",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.forown": {
+			"type": "module",
+			"moduleName": "lodash.forown",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.forownright": {
+			"type": "module",
+			"moduleName": "lodash.forownright",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.frompairs": {
+			"type": "module",
+			"moduleName": "lodash.frompairs",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.functions": {
+			"type": "module",
+			"moduleName": "lodash.functions",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.functionsin": {
+			"type": "module",
+			"moduleName": "lodash.functionsin",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.gt": {
+			"type": "module",
+			"moduleName": "lodash.gt",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.gte": {
+			"type": "module",
+			"moduleName": "lodash.gte",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.has": {
+			"type": "module",
+			"moduleName": "lodash.has",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.hasin": {
+			"type": "module",
+			"moduleName": "lodash.hasin",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.head": {
+			"type": "module",
+			"moduleName": "lodash.head",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.identity": {
+			"type": "module",
+			"moduleName": "lodash.identity",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.includes": {
+			"type": "module",
+			"moduleName": "lodash.includes",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.indexby": {
+			"type": "module",
+			"moduleName": "lodash.indexby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.indexof": {
+			"type": "module",
+			"moduleName": "lodash.indexof",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.initial": {
+			"type": "module",
+			"moduleName": "lodash.initial",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.inrange": {
+			"type": "module",
+			"moduleName": "lodash.inrange",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.intersection": {
+			"type": "module",
+			"moduleName": "lodash.intersection",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.intersectionby": {
+			"type": "module",
+			"moduleName": "lodash.intersectionby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.intersectionwith": {
+			"type": "module",
+			"moduleName": "lodash.intersectionwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.invert": {
+			"type": "module",
+			"moduleName": "lodash.invert",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.invertby": {
+			"type": "module",
+			"moduleName": "lodash.invertby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.invoke": {
+			"type": "module",
+			"moduleName": "lodash.invoke",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.invokemap": {
+			"type": "module",
+			"moduleName": "lodash.invokemap",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.isarguments": {
+			"type": "module",
+			"moduleName": "lodash.isarguments",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.isarraylike": {
+			"type": "module",
+			"moduleName": "lodash.isarraylike",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.isarraylikeobject": {
+			"type": "module",
+			"moduleName": "lodash.isarraylikeobject",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.iselement": {
+			"type": "module",
+			"moduleName": "lodash.iselement",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.isempty": {
+			"type": "module",
+			"moduleName": "lodash.isempty",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.isequal": {
+			"type": "module",
+			"moduleName": "lodash.isequal",
+			"replacements": [
+				"util.isDeepStrictEqual",
+				"dequal",
+				"Bun.deepEquals"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "deep-equal"
+			}
+		},
+		"lodash.isequalwith": {
+			"type": "module",
+			"moduleName": "lodash.isequalwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.islength": {
+			"type": "module",
+			"moduleName": "lodash.islength",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.ismatch": {
+			"type": "module",
+			"moduleName": "lodash.ismatch",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.ismatchwith": {
+			"type": "module",
+			"moduleName": "lodash.ismatchwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.isnative": {
+			"type": "module",
+			"moduleName": "lodash.isnative",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.isobjectlike": {
+			"type": "module",
+			"moduleName": "lodash.isobjectlike",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.iteratee": {
+			"type": "module",
+			"moduleName": "lodash.iteratee",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.kebabcase": {
+			"type": "module",
+			"moduleName": "lodash.kebabcase",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.keyby": {
+			"type": "module",
+			"moduleName": "lodash.keyby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.keys": {
+			"type": "module",
+			"moduleName": "lodash.keys",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.keysin": {
+			"type": "module",
+			"moduleName": "lodash.keysin",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.last": {
+			"type": "module",
+			"moduleName": "lodash.last",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.lowercase": {
+			"type": "module",
+			"moduleName": "lodash.lowercase",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.lowerfirst": {
+			"type": "module",
+			"moduleName": "lodash.lowerfirst",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.lt": {
+			"type": "module",
+			"moduleName": "lodash.lt",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.lte": {
+			"type": "module",
+			"moduleName": "lodash.lte",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.map": {
+			"type": "module",
+			"moduleName": "lodash.map",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.mapkeys": {
+			"type": "module",
+			"moduleName": "lodash.mapkeys",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.mapvalues": {
+			"type": "module",
+			"moduleName": "lodash.mapvalues",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.matches": {
+			"type": "module",
+			"moduleName": "lodash.matches",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.matchesproperty": {
+			"type": "module",
+			"moduleName": "lodash.matchesproperty",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.max": {
+			"type": "module",
+			"moduleName": "lodash.max",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.maxby": {
+			"type": "module",
+			"moduleName": "lodash.maxby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.mean": {
+			"type": "module",
+			"moduleName": "lodash.mean",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.meanby": {
+			"type": "module",
+			"moduleName": "lodash.meanby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.memoize": {
+			"type": "module",
+			"moduleName": "lodash.memoize",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.merge": {
+			"type": "module",
+			"moduleName": "lodash.merge",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.mergewith": {
+			"type": "module",
+			"moduleName": "lodash.mergewith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.method": {
+			"type": "module",
+			"moduleName": "lodash.method",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.methodof": {
+			"type": "module",
+			"moduleName": "lodash.methodof",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.min": {
+			"type": "module",
+			"moduleName": "lodash.min",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.minby": {
+			"type": "module",
+			"moduleName": "lodash.minby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.mixin": {
+			"type": "module",
+			"moduleName": "lodash.mixin",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.modargs": {
+			"type": "module",
+			"moduleName": "lodash.modargs",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.multiply": {
+			"type": "module",
+			"moduleName": "lodash.multiply",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.negate": {
+			"type": "module",
+			"moduleName": "lodash.negate",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.now": {
+			"type": "module",
+			"moduleName": "lodash.now",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.nth": {
+			"type": "module",
+			"moduleName": "lodash.nth",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.ntharg": {
+			"type": "module",
+			"moduleName": "lodash.ntharg",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.omit": {
+			"type": "module",
+			"moduleName": "lodash.omit",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.omitby": {
+			"type": "module",
+			"moduleName": "lodash.omitby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.once": {
+			"type": "module",
+			"moduleName": "lodash.once",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.orderby": {
+			"type": "module",
+			"moduleName": "lodash.orderby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.over": {
+			"type": "module",
+			"moduleName": "lodash.over",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.overargs": {
+			"type": "module",
+			"moduleName": "lodash.overargs",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.overevery": {
+			"type": "module",
+			"moduleName": "lodash.overevery",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.oversome": {
+			"type": "module",
+			"moduleName": "lodash.oversome",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.pad": {
+			"type": "module",
+			"moduleName": "lodash.pad",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.padend": {
+			"type": "module",
+			"moduleName": "lodash.padend",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.padleft": {
+			"type": "module",
+			"moduleName": "lodash.padleft",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.padright": {
+			"type": "module",
+			"moduleName": "lodash.padright",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.padstart": {
+			"type": "module",
+			"moduleName": "lodash.padstart",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.pairs": {
+			"type": "module",
+			"moduleName": "lodash.pairs",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.parseint": {
+			"type": "module",
+			"moduleName": "lodash.parseint",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.partial": {
+			"type": "module",
+			"moduleName": "lodash.partial",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.partialright": {
+			"type": "module",
+			"moduleName": "lodash.partialright",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.partition": {
+			"type": "module",
+			"moduleName": "lodash.partition",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.pick": {
+			"type": "module",
+			"moduleName": "lodash.pick",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.pickby": {
+			"type": "module",
+			"moduleName": "lodash.pickby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.pluck": {
+			"type": "module",
+			"moduleName": "lodash.pluck",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.property": {
+			"type": "module",
+			"moduleName": "lodash.property",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.propertyof": {
+			"type": "module",
+			"moduleName": "lodash.propertyof",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.pull": {
+			"type": "module",
+			"moduleName": "lodash.pull",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.pullall": {
+			"type": "module",
+			"moduleName": "lodash.pullall",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.pullallwith": {
+			"type": "module",
+			"moduleName": "lodash.pullallwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.pullat": {
+			"type": "module",
+			"moduleName": "lodash.pullat",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.random": {
+			"type": "module",
+			"moduleName": "lodash.random",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.range": {
+			"type": "module",
+			"moduleName": "lodash.range",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.rangeright": {
+			"type": "module",
+			"moduleName": "lodash.rangeright",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.rearg": {
+			"type": "module",
+			"moduleName": "lodash.rearg",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.reduce": {
+			"type": "module",
+			"moduleName": "lodash.reduce",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.reduceright": {
+			"type": "module",
+			"moduleName": "lodash.reduceright",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.reescape": {
+			"type": "module",
+			"moduleName": "lodash.reescape",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.reevaluate": {
+			"type": "module",
+			"moduleName": "lodash.reevaluate",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.reinterpolate": {
+			"type": "module",
+			"moduleName": "lodash.reinterpolate",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.reject": {
+			"type": "module",
+			"moduleName": "lodash.reject",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.remove": {
+			"type": "module",
+			"moduleName": "lodash.remove",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.repeat": {
+			"type": "module",
+			"moduleName": "lodash.repeat",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.replace": {
+			"type": "module",
+			"moduleName": "lodash.replace",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.rest": {
+			"type": "module",
+			"moduleName": "lodash.rest",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.restparam": {
+			"type": "module",
+			"moduleName": "lodash.restparam",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.result": {
+			"type": "module",
+			"moduleName": "lodash.result",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.reverse": {
+			"type": "module",
+			"moduleName": "lodash.reverse",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.round": {
+			"type": "module",
+			"moduleName": "lodash.round",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sample": {
+			"type": "module",
+			"moduleName": "lodash.sample",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.samplesize": {
+			"type": "module",
+			"moduleName": "lodash.samplesize",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.set": {
+			"type": "module",
+			"moduleName": "lodash.set",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.setwith": {
+			"type": "module",
+			"moduleName": "lodash.setwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.shuffle": {
+			"type": "module",
+			"moduleName": "lodash.shuffle",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.size": {
+			"type": "module",
+			"moduleName": "lodash.size",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.slice": {
+			"type": "module",
+			"moduleName": "lodash.slice",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.snakecase": {
+			"type": "module",
+			"moduleName": "lodash.snakecase",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.some": {
+			"type": "module",
+			"moduleName": "lodash.some",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sortby": {
+			"type": "module",
+			"moduleName": "lodash.sortby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sortbyall": {
+			"type": "module",
+			"moduleName": "lodash.sortbyall",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sortbyorder": {
+			"type": "module",
+			"moduleName": "lodash.sortbyorder",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sortedindex": {
+			"type": "module",
+			"moduleName": "lodash.sortedindex",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sortedindexby": {
+			"type": "module",
+			"moduleName": "lodash.sortedindexby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sortedindexof": {
+			"type": "module",
+			"moduleName": "lodash.sortedindexof",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sortedlastindex": {
+			"type": "module",
+			"moduleName": "lodash.sortedlastindex",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sortedlastindexby": {
+			"type": "module",
+			"moduleName": "lodash.sortedlastindexby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sortedlastindexof": {
+			"type": "module",
+			"moduleName": "lodash.sortedlastindexof",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sorteduniq": {
+			"type": "module",
+			"moduleName": "lodash.sorteduniq",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sorteduniqby": {
+			"type": "module",
+			"moduleName": "lodash.sorteduniqby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.split": {
+			"type": "module",
+			"moduleName": "lodash.split",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.spread": {
+			"type": "module",
+			"moduleName": "lodash.spread",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.startcase": {
+			"type": "module",
+			"moduleName": "lodash.startcase",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.startswith": {
+			"type": "module",
+			"moduleName": "lodash.startswith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.stubarray": {
+			"type": "module",
+			"moduleName": "lodash.stubarray",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.stubfalse": {
+			"type": "module",
+			"moduleName": "lodash.stubfalse",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.stubobject": {
+			"type": "module",
+			"moduleName": "lodash.stubobject",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.stubstring": {
+			"type": "module",
+			"moduleName": "lodash.stubstring",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.stubtrue": {
+			"type": "module",
+			"moduleName": "lodash.stubtrue",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.subtract": {
+			"type": "module",
+			"moduleName": "lodash.subtract",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sum": {
+			"type": "module",
+			"moduleName": "lodash.sum",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.sumby": {
+			"type": "module",
+			"moduleName": "lodash.sumby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.support": {
+			"type": "module",
+			"moduleName": "lodash.support",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.tail": {
+			"type": "module",
+			"moduleName": "lodash.tail",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.take": {
+			"type": "module",
+			"moduleName": "lodash.take",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.takeright": {
+			"type": "module",
+			"moduleName": "lodash.takeright",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.takerightwhile": {
+			"type": "module",
+			"moduleName": "lodash.takerightwhile",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.takewhile": {
+			"type": "module",
+			"moduleName": "lodash.takewhile",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.template": {
+			"type": "module",
+			"moduleName": "lodash.template",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.templatesettings": {
+			"type": "module",
+			"moduleName": "lodash.templatesettings",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.throttle": {
+			"type": "module",
+			"moduleName": "lodash.throttle",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.times": {
+			"type": "module",
+			"moduleName": "lodash.times",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.tofinite": {
+			"type": "module",
+			"moduleName": "lodash.tofinite",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.tolength": {
+			"type": "module",
+			"moduleName": "lodash.tolength",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.tonumber": {
+			"type": "module",
+			"moduleName": "lodash.tonumber",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.topairs": {
+			"type": "module",
+			"moduleName": "lodash.topairs",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.topairsin": {
+			"type": "module",
+			"moduleName": "lodash.topairsin",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.topath": {
+			"type": "module",
+			"moduleName": "lodash.topath",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.toplainobject": {
+			"type": "module",
+			"moduleName": "lodash.toplainobject",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.tosafeinteger": {
+			"type": "module",
+			"moduleName": "lodash.tosafeinteger",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.tostring": {
+			"type": "module",
+			"moduleName": "lodash.tostring",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.transform": {
+			"type": "module",
+			"moduleName": "lodash.transform",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.trunc": {
+			"type": "module",
+			"moduleName": "lodash.trunc",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.truncate": {
+			"type": "module",
+			"moduleName": "lodash.truncate",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.unary": {
+			"type": "module",
+			"moduleName": "lodash.unary",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.unescape": {
+			"type": "module",
+			"moduleName": "lodash.unescape",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.union": {
+			"type": "module",
+			"moduleName": "lodash.union",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.unionby": {
+			"type": "module",
+			"moduleName": "lodash.unionby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.unionwith": {
+			"type": "module",
+			"moduleName": "lodash.unionwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.uniqby": {
+			"type": "module",
+			"moduleName": "lodash.uniqby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.uniqueid": {
+			"type": "module",
+			"moduleName": "lodash.uniqueid",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.uniqwith": {
+			"type": "module",
+			"moduleName": "lodash.uniqwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.unset": {
+			"type": "module",
+			"moduleName": "lodash.unset",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.unzip": {
+			"type": "module",
+			"moduleName": "lodash.unzip",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.unzipwith": {
+			"type": "module",
+			"moduleName": "lodash.unzipwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.update": {
+			"type": "module",
+			"moduleName": "lodash.update",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.updatewith": {
+			"type": "module",
+			"moduleName": "lodash.updatewith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.uppercase": {
+			"type": "module",
+			"moduleName": "lodash.uppercase",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.upperfirst": {
+			"type": "module",
+			"moduleName": "lodash.upperfirst",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.values": {
+			"type": "module",
+			"moduleName": "lodash.values",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.valuesin": {
+			"type": "module",
+			"moduleName": "lodash.valuesin",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.where": {
+			"type": "module",
+			"moduleName": "lodash.where",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.without": {
+			"type": "module",
+			"moduleName": "lodash.without",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.words": {
+			"type": "module",
+			"moduleName": "lodash.words",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.wrap": {
+			"type": "module",
+			"moduleName": "lodash.wrap",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.xor": {
+			"type": "module",
+			"moduleName": "lodash.xor",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.xorby": {
+			"type": "module",
+			"moduleName": "lodash.xorby",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.xorwith": {
+			"type": "module",
+			"moduleName": "lodash.xorwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.zip": {
+			"type": "module",
+			"moduleName": "lodash.zip",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.zipobject": {
+			"type": "module",
+			"moduleName": "lodash.zipobject",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.zipobjectdeep": {
+			"type": "module",
+			"moduleName": "lodash.zipobjectdeep",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"lodash.zipwith": {
+			"type": "module",
+			"moduleName": "lodash.zipwith",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"materialize-css": {
+			"type": "module",
+			"moduleName": "materialize-css",
+			"replacements": [
+				"@materializecss/materialize",
+				"@material/web"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "materialize-css"
+			}
+		},
+		"md5": {
+			"type": "module",
+			"moduleName": "md5",
+			"replacements": [
+				"node:crypto"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "md5"
+			}
+		},
+		"meow": {
+			"type": "module",
+			"moduleName": "meow",
+			"replacements": [
+				"sade",
+				"cleye"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "cli-builders"
+			}
+		},
+		"mime": {
+			"type": "module",
+			"moduleName": "mime",
+			"replacements": [
+				"mrmime"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "mime"
+			}
+		},
+		"minimist": {
+			"type": "module",
+			"moduleName": "minimist",
+			"replacements": [
+				"util.parseArgs",
+				"mri"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "parseargs"
+			}
+		},
+		"mississippi": {
+			"type": "module",
+			"moduleName": "mississippi",
+			"replacements": [
+				"node:stream"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "mississippi"
+			}
+		},
+		"mktemp": {
+			"type": "module",
+			"moduleName": "mktemp",
+			"replacements": [
+				"fs.promises.mkdtempDisposable",
+				"fs.promises.mkdtemp",
+				"Deno.makeTempDir"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tempy"
+			}
+		},
+		"mockdate": {
+			"type": "module",
+			"moduleName": "mockdate",
+			"replacements": [
+				"node:test",
+				"vitest",
+				"bun:test"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "mockdate"
+			}
+		},
+		"moment": {
+			"type": "module",
+			"moduleName": "moment",
+			"replacements": [
+				"day.js",
+				"date-fns",
+				"luxon",
+				"Date",
+				"Temporal"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "moment"
+			}
+		},
+		"node-fetch": {
+			"type": "module",
+			"moduleName": "node-fetch",
+			"replacements": [
+				"fetch",
+				"ofetch",
+				"ky"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"node-telegram-bot-api": {
+			"type": "module",
+			"moduleName": "node-telegram-bot-api",
+			"replacements": [
+				"grammy"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "node-telegram-bot-api"
+			}
+		},
+		"node-uuid": {
+			"type": "module",
+			"moduleName": "node-uuid",
+			"replacements": [
+				"crypto.randomUUID"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "uuidv4"
+			}
+		},
+		"npm-check": {
+			"type": "module",
+			"moduleName": "npm-check",
+			"replacements": [
+				"npm-check",
+				"taze"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "npm-check"
+			}
+		},
+		"npm-run-all": {
+			"type": "module",
+			"moduleName": "npm-run-all",
+			"replacements": [
+				"npm-run-all2",
+				"concurrently",
+				"wireit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "npm-run-all"
+			}
+		},
+		"object-hash": {
+			"type": "module",
+			"moduleName": "object-hash",
+			"replacements": [
+				"ohash",
+				"crypto",
+				"Bun.CryptoHasher"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "object-hash"
+			}
+		},
+		"object-path": {
+			"type": "module",
+			"moduleName": "object-path",
+			"replacements": [
+				"dlv",
+				"dset"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "dot-prop"
+			}
+		},
+		"open": {
+			"type": "module",
+			"moduleName": "open",
+			"replacements": [
+				"tiny-open"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "open"
+			}
+		},
+		"ora": {
+			"type": "module",
+			"moduleName": "ora",
+			"replacements": [
+				"nanospinner",
+				"picospinner"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "ora"
+			}
+		},
+		"package-up": {
+			"type": "module",
+			"moduleName": "package-up",
+			"replacements": [
+				"empathic",
+				"pkg-types"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "find-up"
+			}
+		},
+		"path-exists": {
+			"type": "module",
+			"moduleName": "path-exists",
+			"replacements": [
+				"fs.promises.access",
+				"fs.existsSync",
+				"Bun.file"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "path-exists"
+			}
+		},
+		"pbkdf2": {
+			"type": "module",
+			"moduleName": "pbkdf2",
+			"replacements": [
+				"node:crypto",
+				"crypto"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "pbkdf2"
+			}
+		},
+		"pkg-dir": {
+			"type": "module",
+			"moduleName": "pkg-dir",
+			"replacements": [
+				"empathic"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "pkg-dir"
+			}
+		},
+		"pkg-up": {
+			"type": "module",
+			"moduleName": "pkg-up",
+			"replacements": [
+				"empathic",
+				"pkg-types"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "find-up"
+			}
+		},
+		"portal-vue": {
+			"type": "module",
+			"moduleName": "portal-vue",
+			"replacements": [
+				"Teleport"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "portal-vue"
+			}
+		},
+		"portfinder": {
+			"type": "module",
+			"moduleName": "portfinder",
+			"replacements": [
+				"get-port"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "portfinder"
+			}
+		},
+		"preferred-pm": {
+			"type": "module",
+			"moduleName": "preferred-pm",
+			"replacements": [
+				"package-manager-detector"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "detect-package-manager"
+			}
+		},
+		"q": {
+			"type": "module",
+			"moduleName": "q",
+			"replacements": [
+				"Promise",
+				"nativebird"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "bluebird-q"
+			}
+		},
+		"qs": {
+			"type": "module",
+			"moduleName": "qs",
+			"replacements": [
+				"URLSearchParams",
+				"fast-querystring",
+				"picoquery",
+				"neoqs"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "qs"
+			}
+		},
+		"querystring": {
+			"type": "module",
+			"moduleName": "querystring",
+			"replacements": [
+				"URLSearchParams",
+				"fast-querystring",
+				"picoquery",
+				"neoqs"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "qs"
+			}
+		},
+		"quick-temp": {
+			"type": "module",
+			"moduleName": "quick-temp",
+			"replacements": [
+				"fs.promises.mkdtempDisposable",
+				"fs.promises.mkdtemp",
+				"Deno.makeTempDir"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tempy"
+			}
+		},
+		"randomatic": {
+			"type": "module",
+			"moduleName": "randomatic",
+			"replacements": [
+				"nanoid"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "shortid"
+			}
+		},
+		"react-feather": {
+			"type": "module",
+			"moduleName": "react-feather",
+			"replacements": [
+				"lucide-react"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "feather"
+			}
+		},
+		"react-helmet": {
+			"type": "module",
+			"moduleName": "react-helmet",
+			"replacements": [
+				"react:metadata",
+				"react-helmet-async"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "react-helmet"
+			}
+		},
+		"read-package-up": {
+			"type": "module",
+			"moduleName": "read-package-up",
+			"replacements": [
+				"pkg-types",
+				"empathic"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "read-package-up"
+			}
+		},
+		"read-pkg": {
+			"type": "module",
+			"moduleName": "read-pkg",
+			"replacements": [
+				"pkg-types",
+				"node:fs"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "read-pkg"
+			}
+		},
+		"read-pkg-up": {
+			"type": "module",
+			"moduleName": "read-pkg-up",
+			"replacements": [
+				"pkg-types",
+				"empathic"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "read-pkg-up"
+			}
+		},
+		"readable-stream": {
+			"type": "module",
+			"moduleName": "readable-stream",
+			"replacements": [
+				"node:stream",
+				"streams"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "readable-stream"
+			}
+		},
+		"request": {
+			"type": "module",
+			"moduleName": "request",
+			"replacements": [
+				"fetch",
+				"ofetch",
+				"ky"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"resolve": {
+			"type": "module",
+			"moduleName": "resolve",
+			"replacements": [
+				"import.meta.resolve",
+				"exsolve",
+				"oxc-resolver"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "resolve"
+			}
+		},
+		"retry-request": {
+			"type": "module",
+			"moduleName": "retry-request",
+			"replacements": [
+				"ofetch",
+				"ky"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"rimraf": {
+			"type": "module",
+			"moduleName": "rimraf",
+			"replacements": [
+				"fs.promises.rm",
+				"fs.promises.rmdir",
+				"premove"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "rimraf"
+			}
+		},
+		"safe-compare": {
+			"type": "module",
+			"moduleName": "safe-compare",
+			"replacements": [
+				"crypto.timingSafeEqual"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "buffer-equal-constant-time"
+			}
+		},
+		"scmp": {
+			"type": "module",
+			"moduleName": "scmp",
+			"replacements": [
+				"crypto.timingSafeEqual"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "buffer-equal-constant-time"
+			}
+		},
+		"secure-compare": {
+			"type": "module",
+			"moduleName": "secure-compare",
+			"replacements": [
+				"crypto.timingSafeEqual"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "buffer-equal-constant-time"
+			}
+		},
+		"semver": {
+			"type": "module",
+			"moduleName": "semver",
+			"replacements": [
+				"verkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "semver"
+			}
+		},
+		"semver-diff": {
+			"type": "module",
+			"moduleName": "semver-diff",
+			"replacements": [
+				"verkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "semver"
+			}
+		},
+		"set-value": {
+			"type": "module",
+			"moduleName": "set-value",
+			"replacements": [
+				"dset"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "dot-prop"
+			}
+		},
+		"shortid": {
+			"type": "module",
+			"moduleName": "shortid",
+			"replacements": [
+				"nanoid"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "shortid"
+			}
+		},
+		"slice-ansi": {
+			"type": "module",
+			"moduleName": "slice-ansi",
+			"replacements": [
+				"fast-slice-ansi"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "slice-ansi"
+			}
+		},
+		"sort-object": {
+			"type": "module",
+			"moduleName": "sort-object",
+			"replacements": [
+				"sort-object",
+				"sort-object-keys",
+				"sortobject"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "sort-object"
+			}
+		},
+		"source-map-explorer": {
+			"type": "module",
+			"moduleName": "source-map-explorer",
+			"replacements": [
+				"rollup-plugin-visualizer",
+				"sonda",
+				"webpack-bundle-analyzer"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "source-map-explorer"
+			}
+		},
+		"split": {
+			"type": "module",
+			"moduleName": "split",
+			"replacements": [
+				"readline.createInterface"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "split"
+			}
+		},
+		"sqlite3": {
+			"type": "module",
+			"moduleName": "sqlite3",
+			"replacements": [
+				"node:sqlite",
+				"better-sqlite3",
+				"@libsql/client"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "sqlite3"
+			}
+		},
+		"stream-buffers": {
+			"type": "module",
+			"moduleName": "stream-buffers",
+			"replacements": [
+				"node:stream"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "stream-buffers"
+			}
+		},
+		"string-width": {
+			"type": "module",
+			"moduleName": "string-width",
+			"replacements": [
+				"fast-string-width",
+				"Bun.stringWidth"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "string-width"
+			}
+		},
+		"strip-ansi": {
+			"type": "module",
+			"moduleName": "strip-ansi",
+			"replacements": [
+				"util.stripVTControlCharacters",
+				"Bun.stripANSI"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "strip-ansi"
+			}
+		},
+		"tar-fs": {
+			"type": "module",
+			"moduleName": "tar-fs",
+			"replacements": [
+				"modern-tar"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tar-fs"
+			}
+		},
+		"tar-stream": {
+			"type": "module",
+			"moduleName": "tar-stream",
+			"replacements": [
+				"modern-tar"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tar-fs"
+			}
+		},
+		"teeny-request": {
+			"type": "module",
+			"moduleName": "teeny-request",
+			"replacements": [
+				"fetch",
+				"ofetch",
+				"ky"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"temp": {
+			"type": "module",
+			"moduleName": "temp",
+			"replacements": [
+				"fs.promises.mkdtempDisposable",
+				"fs.promises.mkdtemp",
+				"Deno.makeTempDir"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tempy"
+			}
+		},
+		"temp-dir": {
+			"type": "module",
+			"moduleName": "temp-dir",
+			"replacements": [
+				"fs.promises.mkdtempDisposable",
+				"fs.promises.mkdtemp",
+				"Deno.makeTempDir"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tempy"
+			}
+		},
+		"tempfile": {
+			"type": "module",
+			"moduleName": "tempfile",
+			"replacements": [
+				"fs.promises.mkdtempDisposable",
+				"fs.promises.mkdtemp",
+				"Deno.makeTempDir"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tempy"
+			}
+		},
+		"tempy": {
+			"type": "module",
+			"moduleName": "tempy",
+			"replacements": [
+				"fs.promises.mkdtempDisposable",
+				"fs.promises.mkdtemp",
+				"Deno.makeTempDir"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tempy"
+			}
+		},
+		"then-request": {
+			"type": "module",
+			"moduleName": "then-request",
+			"replacements": [
+				"fetch",
+				"ofetch",
+				"ky"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"through": {
+			"type": "module",
+			"moduleName": "through",
+			"replacements": [
+				"node:stream"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "through"
+			}
+		},
+		"through2": {
+			"type": "module",
+			"moduleName": "through2",
+			"replacements": [
+				"node:stream"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "through"
+			}
+		},
+		"tmp": {
+			"type": "module",
+			"moduleName": "tmp",
+			"replacements": [
+				"fs.promises.mkdtempDisposable",
+				"fs.promises.mkdtemp",
+				"Deno.makeTempDir"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tempy"
+			}
+		},
+		"tmp-promise": {
+			"type": "module",
+			"moduleName": "tmp-promise",
+			"replacements": [
+				"fs.promises.mkdtempDisposable",
+				"fs.promises.mkdtemp",
+				"Deno.makeTempDir"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tempy"
+			}
+		},
+		"tokml": {
+			"type": "module",
+			"moduleName": "tokml",
+			"replacements": [
+				"@placemarkio/tokml"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tokml"
+			}
+		},
+		"traverse": {
+			"type": "module",
+			"moduleName": "traverse",
+			"replacements": [
+				"neotraverse"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "traverse"
+			}
+		},
+		"tsc": {
+			"type": "module",
+			"moduleName": "tsc",
+			"replacements": [
+				"tsc"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tsc"
+			}
+		},
+		"tsup": {
+			"type": "module",
+			"moduleName": "tsup",
+			"replacements": [
+				"tsdown"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tsup"
+			}
+		},
+		"uid-safe": {
+			"type": "module",
+			"moduleName": "uid-safe",
+			"replacements": [
+				"crypto.randomUUID"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "uuidv4"
+			}
+		},
+		"underscore": {
+			"type": "module",
+			"moduleName": "underscore",
+			"replacements": [
+				"lodash-underscore",
+				"es-toolkit"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			}
+		},
+		"universal-deep-strict-equal": {
+			"type": "module",
+			"moduleName": "universal-deep-strict-equal",
+			"replacements": [
+				"dequal",
+				"util.isDeepStrictEqual",
+				"Bun.deepEquals"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "deep-equal"
+			}
+		},
+		"uri-js": {
+			"type": "module",
+			"moduleName": "uri-js",
+			"replacements": [
+				"URL",
+				"uri-js-replace",
+				"fast-uri"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "uri-js"
+			}
+		},
+		"utf8": {
+			"type": "module",
+			"moduleName": "utf8",
+			"replacements": [
+				"TextEncoder",
+				"Buffer.prototype.toString"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "utf8"
+			}
+		},
+		"uuid": {
+			"type": "module",
+			"moduleName": "uuid",
+			"replacements": [
+				"crypto.randomUUID"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "uuidv4"
+			}
+		},
+		"uuidv4": {
+			"type": "module",
+			"moduleName": "uuidv4",
+			"replacements": [
+				"crypto.randomUUID"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "uuidv4"
+			}
+		},
+		"vue3-markdown-it": {
+			"type": "module",
+			"moduleName": "vue3-markdown-it",
+			"replacements": [
+				"vue-markdown-render"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "vue3-markdown-it"
+			}
+		},
+		"wellknown": {
+			"type": "module",
+			"moduleName": "wellknown",
+			"replacements": [
+				"betterknown"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "wellknown"
+			}
+		},
+		"whatwg-fetch": {
+			"type": "module",
+			"moduleName": "whatwg-fetch",
+			"replacements": [
+				"fetch",
+				"ofetch",
+				"ky"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "fetch"
+			}
+		},
+		"which-pm": {
+			"type": "module",
+			"moduleName": "which-pm",
+			"replacements": [
+				"package-manager-detector"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "detect-package-manager"
+			}
+		},
+		"wrap-ansi": {
+			"type": "module",
+			"moduleName": "wrap-ansi",
+			"replacements": [
+				"fast-wrap-ansi"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "wrap-ansi"
+			}
+		},
+		"xmldom": {
+			"type": "module",
+			"moduleName": "xmldom",
+			"replacements": [
+				"@xmldom/xmldom"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "xmldom"
+			}
+		},
+		"yaml-ast-parser": {
+			"type": "module",
+			"moduleName": "yaml-ast-parser",
+			"replacements": [
+				"yaml"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "yaml-ast-parser"
+			}
+		},
+		"yamljs": {
+			"type": "module",
+			"moduleName": "yamljs",
+			"replacements": [
+				"yaml",
+				"Bun.YAML"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "js-yaml"
+			}
+		},
+		"yargs": {
+			"type": "module",
+			"moduleName": "yargs",
+			"replacements": [
+				"sade",
+				"cleye"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "cli-builders"
+			}
+		},
+		"yargs-parser": {
+			"type": "module",
+			"moduleName": "yargs-parser",
+			"replacements": [
+				"util.parseArgs",
+				"mri"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "parseargs"
+			}
+		},
+		"yup": {
+			"type": "module",
+			"moduleName": "yup",
+			"replacements": [
+				"valibot",
+				"zod/mini"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "schema-validation"
+			}
+		}
+	},
+	"replacements": {
+		"--env-file": {
+			"id": "--env-file",
+			"type": "native",
+			"url": {
+				"type": "node",
+				"id": "api/cli.html#--env-filefile"
+			}
+		},
+		"@11ty/gray-matter": {
+			"id": "@11ty/gray-matter",
+			"type": "documented",
+			"replacementModule": "@11ty/gray-matter"
+		},
+		"@eslint-community/eslint-plugin-eslint-comments": {
+			"id": "@eslint-community/eslint-plugin-eslint-comments",
+			"type": "documented",
+			"replacementModule": "@eslint-community/eslint-plugin-eslint-comments"
+		},
+		"@eslint-react/eslint-plugin": {
+			"id": "@eslint-react/eslint-plugin",
+			"type": "documented",
+			"replacementModule": "@eslint-react/eslint-plugin"
+		},
+		"@faker-js/faker": {
+			"id": "@faker-js/faker",
+			"type": "documented",
+			"replacementModule": "@faker-js/faker"
+		},
+		"@fastify/deepmerge": {
+			"id": "@fastify/deepmerge",
+			"type": "documented",
+			"replacementModule": "@fastify/deepmerge"
+		},
+		"@libsql/client": {
+			"id": "@libsql/client",
+			"type": "documented",
+			"replacementModule": "@libsql/client"
+		},
+		"@material/web": {
+			"id": "@material/web",
+			"type": "documented",
+			"replacementModule": "@material/web"
+		},
+		"@materializecss/materialize": {
+			"id": "@materializecss/materialize",
+			"type": "documented",
+			"replacementModule": "@materializecss/materialize"
+		},
+		"@noble/hashes": {
+			"id": "@noble/hashes",
+			"type": "documented",
+			"replacementModule": "@noble/hashes"
+		},
+		"@placemarkio/tokml": {
+			"id": "@placemarkio/tokml",
+			"type": "documented",
+			"replacementModule": "@placemarkio/tokml"
+		},
+		"@vitest/eslint-plugin": {
+			"id": "@vitest/eslint-plugin",
+			"type": "documented",
+			"replacementModule": "@vitest/eslint-plugin"
+		},
+		"@vitest/istanbul-lib-coverage": {
+			"id": "@vitest/istanbul-lib-coverage",
+			"type": "documented",
+			"replacementModule": "@vitest/istanbul-lib-coverage"
+		},
+		"@xmldom/xmldom": {
+			"id": "@xmldom/xmldom",
+			"type": "documented",
+			"replacementModule": "@xmldom/xmldom"
+		},
+		"Buffer": {
+			"id": "Buffer",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:buffer",
+				"exportName": "Buffer"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/buffer.html"
+			}
+		},
+		"Buffer.compare": {
+			"id": "Buffer.compare",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:buffer",
+				"exportName": "Buffer"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/buffer.html#static-method-buffercomparebuf1-buf2"
+			}
+		},
+		"Buffer.prototype.equals": {
+			"id": "Buffer.prototype.equals",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:buffer",
+				"exportName": "Buffer"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/buffer.html#bufequalsotherbuffer"
+			}
+		},
+		"Buffer.prototype.toString": {
+			"id": "Buffer.prototype.toString",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:buffer",
+				"exportName": "Buffer"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/buffer.html#buftostringencoding-start-end"
+			}
+		},
+		"Bun.CryptoHasher": {
+			"id": "Bun.CryptoHasher",
+			"type": "native",
+			"url": "https://bun.com/docs/runtime/hashing"
+		},
+		"Bun.Shell": {
+			"id": "Bun.Shell",
+			"type": "native",
+			"url": "https://bun.com/docs/runtime/shell"
+		},
+		"Bun.YAML": {
+			"id": "Bun.YAML",
+			"type": "native",
+			"url": "https://bun.com/docs/runtime/yaml"
+		},
+		"Bun.deepEquals": {
+			"id": "Bun.deepEquals",
+			"type": "native",
+			"url": "https://bun.com/docs/runtime/utils#bun-deepequals"
+		},
+		"Bun.file": {
+			"id": "Bun.file",
+			"type": "native",
+			"url": "https://bun.com/reference/bun/file"
+		},
+		"Bun.stringWidth": {
+			"id": "Bun.stringWidth",
+			"type": "native",
+			"url": "https://bun.com/docs/runtime/utils#bun-stringwidth"
+		},
+		"Bun.stripANSI": {
+			"id": "Bun.stripANSI",
+			"type": "native",
+			"url": "https://bun.com/docs/runtime/utils#bun-stripansi"
+		},
+		"ClipboardAPI": {
+			"id": "ClipboardAPI",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "async-clipboard",
+				"compatKey": "api.Clipboard"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/API/Clipboard_API"
+			}
+		},
+		"Date": {
+			"id": "Date",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "date",
+				"compatKey": "javascript.builtins.Date"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/JavaScript/Reference/Global_Objects/Date"
+			}
+		},
+		"Deno.makeTempDir": {
+			"id": "Deno.makeTempDir",
+			"type": "native",
+			"url": "https://docs.deno.com/api/deno/~/Deno.makeTempDir"
+		},
+		"Intl.Segmenter": {
+			"id": "Intl.Segmenter",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "intl-segmenter",
+				"compatKey": "javascript.builtins.Intl.Segmenter"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/JavaScript/Reference/Global_Objects/Intl/Segmenter"
+			}
+		},
+		"Promise": {
+			"id": "Promise",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "promise",
+				"compatKey": "javascript.builtins.Promise"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/JavaScript/Reference/Global_Objects/Promise"
+			}
+		},
+		"Teleport": {
+			"id": "Teleport",
+			"type": "documented",
+			"replacementModule": "Teleport"
+		},
+		"Temporal": {
+			"id": "Temporal",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "temporal",
+				"compatKey": "javascript.builtins.Temporal"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/JavaScript/Reference/Global_Objects/Temporal"
+			}
+		},
+		"TextEncoder": {
+			"id": "TextEncoder",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "text-encoding",
+				"compatKey": "api.TextEncoder"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/API/TextEncoder"
+			}
+		},
+		"URL": {
+			"id": "URL",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "url",
+				"compatKey": "api.URL"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/API/URL"
+			}
+		},
+		"URLSearchParams": {
+			"id": "URLSearchParams",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "url",
+				"compatKey": "api.URLSearchParams"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/API/URLSearchParams"
+			}
+		},
+		"ansis": {
+			"id": "ansis",
+			"type": "documented",
+			"replacementModule": "ansis"
+		},
+		"bcryptjs": {
+			"id": "bcryptjs",
+			"type": "documented",
+			"replacementModule": "bcryptjs"
+		},
+		"better-sqlite3": {
+			"id": "better-sqlite3",
+			"type": "documented",
+			"replacementModule": "better-sqlite3"
+		},
+		"betterknown": {
+			"id": "betterknown",
+			"type": "documented",
+			"replacementModule": "betterknown"
+		},
+		"builtinModules": {
+			"id": "builtinModules",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:module",
+				"exportName": "builtinModules"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/module.html#modulebuiltinmodules"
+			}
+		},
+		"bun:test": {
+			"id": "bun:test",
+			"type": "native",
+			"url": "https://bun.com/docs/test"
+		},
+		"cac": {
+			"id": "cac",
+			"type": "documented",
+			"replacementModule": "cac"
+		},
+		"cleye": {
+			"id": "cleye",
+			"type": "documented",
+			"replacementModule": "cleye"
+		},
+		"color": {
+			"id": "color",
+			"type": "documented",
+			"replacementModule": "color"
+		},
+		"concurrently": {
+			"id": "concurrently",
+			"type": "documented",
+			"replacementModule": "concurrently"
+		},
+		"cpx2": {
+			"id": "cpx2",
+			"type": "documented",
+			"replacementModule": "cpx2"
+		},
+		"crypto": {
+			"id": "crypto",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "web-cryptography",
+				"compatKey": "api.crypto"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/API/Web_Crypto_API"
+			}
+		},
+		"crypto.createHmac": {
+			"id": "crypto.createHmac",
+			"type": "native",
+			"url": {
+				"type": "node",
+				"id": "api/crypto.html#cryptocreatehmacalgorithm-key-options"
+			},
+			"nodeFeatureId": {
+				"moduleName": "crypto",
+				"exportName": "createHmac"
+			}
+		},
+		"crypto.randomUUID": {
+			"id": "crypto.randomUUID",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "web-cryptography",
+				"compatKey": "api.Crypto.randomUUID"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/API/Crypto/randomUUID"
+			}
+		},
+		"crypto.subtle.sign": {
+			"id": "crypto.subtle.sign",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "web-cryptography",
+				"compatKey": "api.SubtleCrypto.sign"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/API/SubtleCrypto/sign"
+			}
+		},
+		"crypto.timingSafeEqual": {
+			"id": "crypto.timingSafeEqual",
+			"type": "native",
+			"url": {
+				"type": "node",
+				"id": "api/crypto.html#cryptotimingsafeequala-b"
+			},
+			"nodeFeatureId": {
+				"moduleName": "crypto",
+				"exportName": "timingSafeEqual"
+			}
+		},
+		"date-fns": {
+			"id": "date-fns",
+			"type": "documented",
+			"replacementModule": "date-fns"
+		},
+		"day.js": {
+			"id": "day.js",
+			"type": "documented",
+			"replacementModule": "day.js"
+		},
+		"defu": {
+			"id": "defu",
+			"type": "documented",
+			"replacementModule": "defu"
+		},
+		"dequal": {
+			"id": "dequal",
+			"type": "documented",
+			"replacementModule": "dequal"
+		},
+		"dlv": {
+			"id": "dlv",
+			"type": "documented",
+			"replacementModule": "dlv"
+		},
+		"dset": {
+			"id": "dset",
+			"type": "documented",
+			"replacementModule": "dset"
+		},
+		"elysia": {
+			"id": "elysia",
+			"type": "documented",
+			"replacementModule": "elysia"
+		},
+		"emoji-regex-xs": {
+			"id": "emoji-regex-xs",
+			"type": "documented",
+			"replacementModule": "emoji-regex-xs"
+		},
+		"empathic": {
+			"id": "empathic",
+			"type": "documented",
+			"replacementModule": "empathic"
+		},
+		"error-stack-parser-es": {
+			"id": "error-stack-parser-es",
+			"type": "documented",
+			"replacementModule": "error-stack-parser-es"
+		},
+		"es-toolkit": {
+			"id": "es-toolkit",
+			"type": "documented",
+			"replacementModule": "es-toolkit"
+		},
+		"eslint-config-airbnb-extended": {
+			"id": "eslint-config-airbnb-extended",
+			"type": "documented",
+			"replacementModule": "eslint-config-airbnb-extended"
+		},
+		"eslint-plugin-es-x": {
+			"id": "eslint-plugin-es-x",
+			"type": "documented",
+			"replacementModule": "eslint-plugin-es-x"
+		},
+		"eslint-plugin-import-x": {
+			"id": "eslint-plugin-import-x",
+			"type": "documented",
+			"replacementModule": "eslint-plugin-import-x"
+		},
+		"eslint-plugin-n": {
+			"id": "eslint-plugin-n",
+			"type": "documented",
+			"replacementModule": "eslint-plugin-n"
+		},
+		"exsolve": {
+			"id": "exsolve",
+			"type": "documented",
+			"replacementModule": "exsolve"
+		},
+		"fast-querystring": {
+			"id": "fast-querystring",
+			"type": "documented",
+			"replacementModule": "fast-querystring"
+		},
+		"fast-slice-ansi": {
+			"id": "fast-slice-ansi",
+			"type": "documented",
+			"replacementModule": "fast-slice-ansi"
+		},
+		"fast-string-width": {
+			"id": "fast-string-width",
+			"type": "documented",
+			"replacementModule": "fast-string-width"
+		},
+		"fast-uri": {
+			"id": "fast-uri",
+			"type": "documented",
+			"replacementModule": "fast-uri"
+		},
+		"fast-wrap-ansi": {
+			"id": "fast-wrap-ansi",
+			"type": "documented",
+			"replacementModule": "fast-wrap-ansi"
+		},
+		"fdir": {
+			"id": "fdir",
+			"type": "documented",
+			"replacementModule": "fdir"
+		},
+		"fetch": {
+			"id": "fetch",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "fetch",
+				"compatKey": "api.fetch"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/API/Fetch_API"
+			}
+		},
+		"fs": {
+			"id": "fs",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:fs"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/fs.html"
+			}
+		},
+		"fs.existsSync": {
+			"id": "fs.existsSync",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:fs",
+				"exportName": "existsSync"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/fs.html#fsexistssyncpath"
+			}
+		},
+		"fs.promises.access": {
+			"id": "fs.promises.access",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:fs/promises",
+				"exportName": "access"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/fs.html#fspromisesaccesspath-mode"
+			}
+		},
+		"fs.promises.glob": {
+			"id": "fs.promises.glob",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:fs",
+				"exportName": "glob"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/fs.html#fspromisesglobpattern-options"
+			}
+		},
+		"fs.promises.mkdtemp": {
+			"id": "fs.promises.mkdtemp",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:fs/promises",
+				"exportName": "mkdtemp"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/fs.html#fspromisesmkdtempprefix-options"
+			}
+		},
+		"fs.promises.mkdtempDisposable": {
+			"id": "fs.promises.mkdtempDisposable",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:fs/promises",
+				"exportName": "mkdtempDisposable"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/fs.html#fspromisesmkdtempdisposableprefix-options"
+			}
+		},
+		"fs.promises.rm": {
+			"id": "fs.promises.rm",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:fs/promises",
+				"exportName": "rm"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/fs.html#fspromisesrmpath-options"
+			}
+		},
+		"fs.promises.rmdir": {
+			"id": "fs.promises.rmdir",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:fs/promises",
+				"exportName": "rmdir"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/fs.html#fspromisesrmdirpath-options"
+			}
+		},
+		"get-port": {
+			"id": "get-port",
+			"type": "documented",
+			"replacementModule": "get-port"
+		},
+		"grammy": {
+			"id": "grammy",
+			"type": "documented",
+			"replacementModule": "grammy"
+		},
+		"h3": {
+			"id": "h3",
+			"type": "documented",
+			"replacementModule": "h3"
+		},
+		"hono": {
+			"id": "hono",
+			"type": "documented",
+			"replacementModule": "hono"
+		},
+		"html-minifier-next": {
+			"id": "html-minifier-next",
+			"type": "documented",
+			"replacementModule": "html-minifier-next"
+		},
+		"http-proxy-3": {
+			"id": "http-proxy-3",
+			"type": "documented",
+			"replacementModule": "http-proxy-3"
+		},
+		"httpxy": {
+			"id": "httpxy",
+			"type": "documented",
+			"replacementModule": "httpxy"
+		},
+		"import.meta.resolve": {
+			"id": "import.meta.resolve",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "js-modules",
+				"compatKey": "javascript.operators.import_meta.resolve"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/JavaScript/Reference/Operators/import.meta/resolve"
+			}
+		},
+		"isBuiltin": {
+			"id": "isBuiltin",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:module",
+				"exportName": "isBuiltin"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/module.html#moduleisbuiltinmodulename"
+			}
+		},
+		"jose": {
+			"id": "jose",
+			"type": "documented",
+			"replacementModule": "jose"
+		},
+		"jquery": {
+			"id": "jquery",
+			"type": "removal",
+			"url": {
+				"type": "e18e",
+				"id": "jquery"
+			},
+			"description": "jQuery can be replaced with native DOM and Web APIs"
+		},
+		"jsx-ast-utils-x": {
+			"id": "jsx-ast-utils-x",
+			"type": "documented",
+			"replacementModule": "jsx-ast-utils-x"
+		},
+		"knip": {
+			"id": "knip",
+			"type": "documented",
+			"replacementModule": "knip"
+		},
+		"ky": {
+			"id": "ky",
+			"type": "documented",
+			"replacementModule": "ky"
+		},
+		"lilconfig": {
+			"id": "lilconfig",
+			"type": "documented",
+			"replacementModule": "lilconfig"
+		},
+		"lodash-underscore": {
+			"id": "lodash-underscore",
+			"type": "removal",
+			"url": {
+				"type": "e18e",
+				"id": "lodash-underscore"
+			},
+			"description": "lodash and Underscore can be replaced with native JavaScript APIs"
+		},
+		"lucide": {
+			"id": "lucide",
+			"type": "documented",
+			"replacementModule": "lucide"
+		},
+		"lucide-react": {
+			"id": "lucide-react",
+			"type": "documented",
+			"replacementModule": "lucide-react"
+		},
+		"luxon": {
+			"id": "luxon",
+			"type": "documented",
+			"replacementModule": "luxon"
+		},
+		"milliparsec": {
+			"id": "milliparsec",
+			"type": "documented",
+			"replacementModule": "milliparsec"
+		},
+		"modern-tar": {
+			"id": "modern-tar",
+			"type": "documented",
+			"replacementModule": "modern-tar"
+		},
+		"mri": {
+			"id": "mri",
+			"type": "documented",
+			"replacementModule": "mri"
+		},
+		"mrmime": {
+			"id": "mrmime",
+			"type": "documented",
+			"replacementModule": "mrmime"
+		},
+		"nanoexec": {
+			"id": "nanoexec",
+			"type": "documented",
+			"replacementModule": "nanoexec"
+		},
+		"nanoid": {
+			"id": "nanoid",
+			"type": "documented",
+			"replacementModule": "nanoid"
+		},
+		"nanospinner": {
+			"id": "nanospinner",
+			"type": "documented",
+			"replacementModule": "nanospinner"
+		},
+		"nativebird": {
+			"id": "nativebird",
+			"type": "documented",
+			"replacementModule": "nativebird"
+		},
+		"neoqs": {
+			"id": "neoqs",
+			"type": "documented",
+			"replacementModule": "neoqs"
+		},
+		"neotraverse": {
+			"id": "neotraverse",
+			"type": "documented",
+			"replacementModule": "neotraverse"
+		},
+		"node:crypto": {
+			"id": "node:crypto",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:crypto"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/crypto.html"
+			}
+		},
+		"node:fs": {
+			"id": "node:fs",
+			"type": "documented",
+			"replacementModule": "node:fs",
+			"url": {
+				"type": "node",
+				"id": "api/fs.html"
+			}
+		},
+		"node:sqlite": {
+			"id": "node:sqlite",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:sqlite"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/sqlite.html"
+			}
+		},
+		"node:stream": {
+			"id": "node:stream",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:stream"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/stream.html"
+			}
+		},
+		"node:test": {
+			"id": "node:test",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "test"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/test.html"
+			}
+		},
+		"npm-check": {
+			"id": "npm-check",
+			"type": "removal",
+			"url": {
+				"type": "e18e",
+				"id": "npm-check"
+			},
+			"description": "npm-check can be replaced with your package manager's built-in commands, such as `npm outdated` and `npm update`."
+		},
+		"npm-run-all2": {
+			"id": "npm-run-all2",
+			"type": "documented",
+			"replacementModule": "npm-run-all2"
+		},
+		"obug": {
+			"id": "obug",
+			"type": "documented",
+			"replacementModule": "obug"
+		},
+		"ofetch": {
+			"id": "ofetch",
+			"type": "documented",
+			"replacementModule": "ofetch"
+		},
+		"ohash": {
+			"id": "ohash",
+			"type": "documented",
+			"replacementModule": "ohash"
+		},
+		"oxc-resolver": {
+			"id": "oxc-resolver",
+			"type": "documented",
+			"replacementModule": "oxc-resolver"
+		},
+		"oxlint": {
+			"id": "oxlint",
+			"type": "documented",
+			"replacementModule": "oxlint"
+		},
+		"package-manager-detector": {
+			"id": "package-manager-detector",
+			"type": "documented",
+			"replacementModule": "package-manager-detector"
+		},
+		"picocolors": {
+			"id": "picocolors",
+			"type": "documented",
+			"replacementModule": "picocolors"
+		},
+		"picoquery": {
+			"id": "picoquery",
+			"type": "documented",
+			"replacementModule": "picoquery"
+		},
+		"picospinner": {
+			"id": "picospinner",
+			"type": "documented",
+			"replacementModule": "picospinner"
+		},
+		"pkg-types": {
+			"id": "pkg-types",
+			"type": "documented",
+			"replacementModule": "pkg-types"
+		},
+		"premove": {
+			"id": "premove",
+			"type": "documented",
+			"replacementModule": "premove"
+		},
+		"process.loadEnvFile": {
+			"id": "process.loadEnvFile",
+			"type": "native",
+			"url": {
+				"type": "node",
+				"id": "api/process.html#processloadenvfilepath"
+			}
+		},
+		"react-helmet-async": {
+			"id": "react-helmet-async",
+			"type": "documented",
+			"replacementModule": "react-helmet-async"
+		},
+		"react:metadata": {
+			"id": "react:metadata",
+			"type": "documented",
+			"replacementModule": "react"
+		},
+		"readline.createInterface": {
+			"id": "readline.createInterface",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:readline",
+				"exportName": "createInterface"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/readline.html#readlinecreateinterfaceoptions"
+			}
+		},
+		"rollup-plugin-visualizer": {
+			"id": "rollup-plugin-visualizer",
+			"type": "documented",
+			"replacementModule": "rollup-plugin-visualizer"
+		},
+		"sade": {
+			"id": "sade",
+			"type": "documented",
+			"replacementModule": "sade"
+		},
+		"sonda": {
+			"id": "sonda",
+			"type": "documented",
+			"replacementModule": "sonda"
+		},
+		"sort-object": {
+			"id": "sort-object",
+			"type": "removal",
+			"description": "`Object.entries` and `Array.prototype.sort` can be used to sort object keys.",
+			"url": {
+				"type": "e18e",
+				"id": "sort-object"
+			}
+		},
+		"sort-object-keys": {
+			"id": "sort-object-keys",
+			"type": "documented",
+			"replacementModule": "sort-object-keys"
+		},
+		"sortobject": {
+			"id": "sortobject",
+			"type": "documented",
+			"replacementModule": "sortobject"
+		},
+		"streams": {
+			"id": "streams",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "streams",
+				"compatKey": "api.ReadableStream"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/API/Streams_API"
+			}
+		},
+		"structuredClone": {
+			"id": "structuredClone",
+			"type": "native",
+			"webFeatureId": {
+				"featureId": "structured-clone",
+				"compatKey": "api.structuredClone"
+			},
+			"url": {
+				"type": "mdn",
+				"id": "Web/API/Window/structuredClone"
+			}
+		},
+		"taze": {
+			"id": "taze",
+			"type": "documented",
+			"replacementModule": "taze"
+		},
+		"tiny-invariant": {
+			"id": "tiny-invariant",
+			"type": "documented",
+			"replacementModule": "tiny-invariant"
+		},
+		"tiny-open": {
+			"id": "tiny-open",
+			"type": "documented",
+			"replacementModule": "tiny-open"
+		},
+		"tinyclip": {
+			"id": "tinyclip",
+			"type": "documented",
+			"replacementModule": "tinyclip"
+		},
+		"tinyexec": {
+			"id": "tinyexec",
+			"type": "documented",
+			"replacementModule": "tinyexec"
+		},
+		"tinyglobby": {
+			"id": "tinyglobby",
+			"type": "documented",
+			"replacementModule": "tinyglobby"
+		},
+		"tinyhttp": {
+			"id": "tinyhttp",
+			"type": "documented",
+			"replacementModule": "@tinyhttp/app"
+		},
+		"ts-graphviz": {
+			"id": "ts-graphviz",
+			"type": "documented",
+			"replacementModule": "ts-graphviz"
+		},
+		"tsc": {
+			"id": "tsc",
+			"type": "removal",
+			"url": {
+				"type": "e18e",
+				"id": "tsc"
+			},
+			"description": "The `tsc` npm package is not the TypeScript compiler. Remove it and install `typescript` instead."
+		},
+		"tsdown": {
+			"id": "tsdown",
+			"type": "documented",
+			"replacementModule": "tsdown"
+		},
+		"typescript": {
+			"id": "typescript",
+			"type": "documented",
+			"replacementModule": "typescript"
+		},
+		"unicode-segmenter": {
+			"id": "unicode-segmenter",
+			"type": "documented",
+			"replacementModule": "unicode-segmenter"
+		},
+		"unicodeClassEscape": {
+			"id": "unicodeClassEscape",
+			"type": "native",
+			"url": {
+				"type": "mdn",
+				"id": "Web/JavaScript/Reference/Regular_expressions/Unicode_character_class_escape"
+			}
+		},
+		"uri-js-replace": {
+			"id": "uri-js-replace",
+			"type": "documented",
+			"replacementModule": "uri-js-replace"
+		},
+		"util.isDeepStrictEqual": {
+			"id": "util.isDeepStrictEqual",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:util",
+				"exportName": "isDeepStrictEqual"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/util.html#utilisdeepstrictequalval1-val2-options"
+			}
+		},
+		"util.parseArgs": {
+			"id": "util.parseArgs",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:util",
+				"exportName": "parseArgs"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/util.html#utilparseargsconfig"
+			}
+		},
+		"util.stripVTControlCharacters": {
+			"id": "util.stripVTControlCharacters",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:util",
+				"exportName": "stripVTControlCharacters"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/util.html#utilstripvtcontrolcharactersstr"
+			}
+		},
+		"util.styleText": {
+			"id": "util.styleText",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:util",
+				"exportName": "styleText"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/util.html#utilstyletextformat-text-options"
+			}
+		},
+		"util.types": {
+			"id": "util.types",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:util",
+				"exportName": "types"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/util.html#utiltypes"
+			}
+		},
+		"valibot": {
+			"id": "valibot",
+			"type": "documented",
+			"replacementModule": "valibot"
+		},
+		"verkit": {
+			"id": "verkit",
+			"type": "documented",
+			"replacementModule": "verkit"
+		},
+		"vitest": {
+			"id": "vitest",
+			"type": "documented",
+			"replacementModule": "vitest"
+		},
+		"vue-markdown-render": {
+			"id": "vue-markdown-render",
+			"type": "documented",
+			"replacementModule": "vue-markdown-render"
+		},
+		"webpack-bundle-analyzer": {
+			"id": "webpack-bundle-analyzer",
+			"type": "documented",
+			"replacementModule": "webpack-bundle-analyzer"
+		},
+		"webpack.output.clean": {
+			"id": "webpack.output.clean",
+			"type": "documented",
+			"replacementModule": "webpack"
+		},
+		"wireit": {
+			"id": "wireit",
+			"type": "documented",
+			"replacementModule": "wireit"
+		},
+		"yaml": {
+			"id": "yaml",
+			"type": "documented",
+			"replacementModule": "yaml"
+		},
+		"zlib.gzipSync": {
+			"id": "zlib.gzipSync",
+			"type": "native",
+			"nodeFeatureId": {
+				"moduleName": "node:zlib",
+				"exportName": "gzipSync"
+			},
+			"url": {
+				"type": "node",
+				"id": "api/zlib.html#zlibgzipsyncbuffer-options"
+			}
+		},
+		"zod/mini": {
+			"id": "zod/mini",
+			"type": "documented",
+			"replacementModule": "zod"
+		}
+	}
+}

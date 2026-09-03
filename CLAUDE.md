@@ -12,9 +12,10 @@ npm test                    # vitest run (165 tests)
 npm run dev                 # tsc --watch
 npm run extract-contracts   # pull contracts from latest Claude Code (Zod + schemastore)
 npm run fetch-schemastore   # refresh contracts/schemastore/ only
+npm run fetch-module-replacements  # refresh contracts/module-replacements/ snapshot
 npm run generate-contracts  # regenerate src/contracts.ts from JSON
 npm run knip                # find unused exports/dependencies
-npm run check-deps          # check for replaceable dependencies
+npm run check-deps          # check deps against the vendored module-replacements snapshot
 ```
 
 ## Usage
@@ -46,10 +47,13 @@ contracts/
   plugin.schema.json          Auto-extracted JSON Schema for plugin.json (Zod → JSON Schema)
   lsp.schema.json             Auto-extracted JSON Schema for .lsp.json
   monitors.schema.json        Auto-extracted JSON Schema for monitors/monitors.json
+  module-replacements/        Vendored es-tooling/module-replacements snapshot + provenance
 scripts/
   extract-contracts.ts        AST-based extractor: contract sets (tools, events, fields…)
   extract-plugin-schema.ts    Zod → JSON Schema walker for plugin/lsp/monitors validators
   generate-contracts.ts       Codegen: reads JSON → writes src/contracts.ts
+  fetch-module-replacements.ts  Vendors the module-replacements manifests (deliberate refresh)
+  check-deps.ts               Offline dependency gate over the vendored snapshot
 tests/
   linters/          Test files matching src/linters/ 1:1
   scripts/          Unit tests for the Zod walker (extract-plugin-schema.test.ts)
@@ -84,6 +88,33 @@ The contract-sync pipeline also fetches the four schemastore.org-curated Claude 
 | `keybindings.schema.json` | sole source for the `keybindings-json` linter — no Zod source in the bundle |
 
 The schemastore fetch happens in `npm run extract-contracts` and on each CI release. The committed JSONs ship in the published package via the `files` array.
+
+## Dependency gate — vendored, offline, fail-closed (gitea#25)
+
+`npm run check-deps` compares this package's dependencies against the
+`es-tooling/module-replacements` manifests **committed under
+`contracts/module-replacements/`**, not fetched at gate time.
+
+It used to fetch `raw.githubusercontent.com` on every CI run, which broke two
+ways at once:
+
+- An upstream addition reddened `main` and every open PR with no change here.
+  It happened: upstream added `semver` to `preferred.json` and unrelated
+  dependabot runs went red.
+- A non-OK response was logged and `continue`d, so a network blip made the gate
+  **pass having compared nothing** — fail-open on unreachability while
+  fail-closed on content.
+
+Vendoring fixes the first. The second is fixed independently and is the more
+important half: every way of failing to load a manifest — missing file,
+unreadable, malformed JSON, no `mappings`, **empty `mappings`** — is fatal, and
+`fetch-module-replacements.ts` throws on any non-OK response or network error
+rather than writing a partial snapshot. `tests/scripts/check-deps.test.ts`
+asserts each of those paths exits non-zero.
+
+Refresh deliberately with `npm run fetch-module-replacements` (`--ref <sha>` to
+pin an upstream commit). The `refresh-module-replacements` workflow does this
+weekly and opens a PR, so an upstream edit arrives as a diff someone reviews.
 
 ## Linter Pattern
 
