@@ -27,7 +27,32 @@ describe("command-md linter", () => {
     const diags = lintFile(resolve(FIXTURES, "invalid/command-md/bad-tools.md"));
     const toolWarns = diags.filter((d) => d.rule === "command-md/allowed-tools-valid");
     expect(toolWarns).toHaveLength(1);
-    expect(toolWarns[0].message).toContain("FakeToolName");
+    expect(toolWarns[0].message).toContain("Raed");
+  });
+
+  // gitea#21: the extracted tool registry lags the running harness, so a
+  // well-formed unknown name is accepted and only a near-miss is reported.
+  it("does not warn on built-ins missing from the extracted registry", () => {
+    const content =
+      "---\ndescription: A command\nallowed-tools: [Read, ListAgents, DesignSync, SendFeedback, EndConversation]\n---\n\nDo the thing.";
+    const diags = commandMdLinter.lint("test.md", content, CONFIG);
+    expect(diags.filter((d) => d.rule === "command-md/allowed-tools-valid")).toHaveLength(0);
+  });
+
+  it("does not warn on mcp__ tools or the Tool(specifier) form", () => {
+    const content =
+      "---\ndescription: A command\nallowed-tools: [\"Bash(npm run test:*)\", mcp__gitea__list_my_repos]\n---\n\nDo the thing.";
+    const diags = commandMdLinter.lint("test.md", content, CONFIG);
+    expect(diags.filter((d) => d.rule === "command-md/allowed-tools-valid")).toHaveLength(0);
+  });
+
+  it("still warns on a misspelled tool, and suggests the real one", () => {
+    const content =
+      "---\ndescription: A command\nallowed-tools: [Bahs]\n---\n\nDo the thing.";
+    const diags = commandMdLinter.lint("test.md", content, CONFIG);
+    const warns = diags.filter((d) => d.rule === "command-md/allowed-tools-valid");
+    expect(warns).toHaveLength(1);
+    expect(warns[0].message).toContain('did you mean "Bash"');
   });
 
   it("reports empty body", () => {

@@ -17,6 +17,7 @@ import {
 } from "../plugin-schema.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity, ConfigScope } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
+import { toolNameProblem } from "../utils/tool-names.js";
 
 interface RuleDef { id: string; defaultSeverity: Severity; }
 
@@ -416,9 +417,10 @@ export const settingsJsonLinter: Linter = {
             // Rules are "Tool" or "Tool(specifier)". Warn on a base tool name
             // Claude Code does not expose (mcp__* is dynamic).
             const toolMatch = entry.match(/^([A-Za-z]+)(\(.*\))?$/);
-            if (toolMatch && !TOOLS.has(toolMatch[1]) && !entry.startsWith("mcp__")) {
+            const toolProblem = toolMatch ? toolNameProblem(toolMatch[1]) : null;
+            if (toolProblem) {
               push(diag(config, filePath, "settings-json/allow-known-tools", "warning",
-                `Unknown tool "${toolMatch[1]}" in permissions.${name}`, kp?.line, kp?.column));
+                `${toolProblem} (in permissions.${name})`, kp?.line, kp?.column));
             }
           }
         };

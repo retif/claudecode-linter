@@ -25,6 +25,7 @@ import {
 	artifactLabel,
 	classifyUnknownFrontmatterKey,
 } from "../utils/frontmatter-keys.js";
+import { toolNameProblem } from "../utils/tool-names.js";
 
 function findPluginRoot(agentFilePath: string): string | null {
 	let dir = dirname(agentFilePath);
@@ -524,14 +525,15 @@ export const agentMdLinter: Linter = {
 					}
 					continue;
 				}
-				if (!TOOLS.has(t)) {
+				const toolProblem = toolNameProblem(t);
+				if (toolProblem) {
 					push(
 						diag(
 							config,
 							filePath,
 							"agent-md/known-tools",
 							"warning",
-							`Unknown built-in tool "${t}" in tools: field. Valid: ${[...TOOLS].sort().join(", ")}.`,
+							`${toolProblem} (in tools: field). Known built-ins: ${[...TOOLS].sort().join(", ")}.`,
 						),
 					);
 				}

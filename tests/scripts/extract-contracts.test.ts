@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractTopLevelKeys, collectObjectKeySets, classifyByOverlap, parseToolsDts, validateContracts } from "../../scripts/extract-contracts.js";
+import { extractTopLevelKeys, collectObjectKeySets, classifyByOverlap, parseToolsDts, validateContracts, extractUserFacingToolNames } from "../../scripts/extract-contracts.js";
 import * as acorn from "acorn";
 
 function parseCode(code: string) {
@@ -250,5 +250,43 @@ describe("validateContracts", () => {
 		};
 		const result = validateContracts(raw, previous);
 		expect(result.failed).toBe(false);
+	});
+});
+
+// gitea#21: tool discovery used to be a hardcoded name list, so a tool added
+// to the harness could never be picked up by a re-extraction. These fragments
+// are verbatim slices of the Claude Code 2.1.259 native bundle, so the
+// patterns are pinned against real minifier output.
+describe("extractUserFacingToolNames", () => {
+	it("harvests the method-accessor form", () => {
+		const fragment =
+			'"list agents you can SendMessage to",maxResultSizeChars:h,toAutoClassifierInput(){return"list agents"},async description(){return Lwn()},userFacingName(){return"ListAgents"},isEnabled(){return Ko()}';
+		expect(extractUserFacingToolNames(fragment)).toEqual(["ListAgents"]);
+	});
+
+	it("harvests the arrow form", () => {
+		const fragment =
+			'ionally mobile",maxResultSizeChars:1000,userFacingName:()=>"PushNotification"';
+		expect(extractUserFacingToolNames(fragment)).toEqual(["PushNotification"]);
+	});
+
+	it("harvests several tools from one source and sorts them", () => {
+		const fragment =
+			'userFacingName(){return"Workflow"},getToolUseSummary(e){},userFacingName(){return"Monitor"},userFacingName:()=>"LSP"';
+		expect(extractUserFacingToolNames(fragment)).toEqual([
+			"LSP",
+			"Monitor",
+			"Workflow",
+		]);
+	});
+
+	it("drops internal lowercase accessor names", () => {
+		const fragment =
+			'userFacingName(){return"autocompact"},userFacingName:()=>"mcp",userFacingName(){return"readMcpResource"},userFacingName(){return"Bash"}';
+		expect(extractUserFacingToolNames(fragment)).toEqual(["Bash"]);
+	});
+
+	it("returns nothing when the accessor is absent", () => {
+		expect(extractUserFacingToolNames("const a = 1;")).toEqual([]);
 	});
 });

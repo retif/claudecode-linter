@@ -1,5 +1,5 @@
 {
   "permissions": {
-    "allow": ["Read", "FakeToolXyz", 42]
+    "allow": ["Read", "Raed", 42]
   }
 }

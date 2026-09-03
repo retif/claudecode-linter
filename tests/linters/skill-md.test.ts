@@ -254,6 +254,25 @@ describe("skill-md linter", () => {
 		expect(d[0].message).toContain("Bashh");
 	});
 
+	// gitea#21: same registry, same policy as command-md.
+	it("does not warn on built-ins missing from the extracted registry", () => {
+		const diags = lint(
+			"---\nname: my-skill\ndescription: Use when X\nallowed-tools:\n  - ListAgents\n  - DesignSync\n  - SendFeedback\n  - EndConversation\n---\n\n## Body",
+		);
+		expect(
+			diags.filter((d) => d.rule === "skill-md/allowed-tools-valid"),
+		).toHaveLength(0);
+	});
+
+	it("suggests the real tool when a name is a near-miss", () => {
+		const diags = lint(
+			"---\nname: my-skill\ndescription: Use when X\nallowed-tools:\n  - Bashh\n---\n\n## Body",
+		);
+		const d = diags.filter((x) => x.rule === "skill-md/allowed-tools-valid");
+		expect(d).toHaveLength(1);
+		expect(d[0].message).toContain('did you mean "Bash"');
+	});
+
 	it("does not warn on allowed-tools-valid when absent", () => {
 		const diags = skillMdLinter.lint(
 			"SKILL.md",

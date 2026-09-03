@@ -1,4 +1,4 @@
-import { AGENT_MODELS, TOOLS } from "../contracts.js";
+import { AGENT_MODELS } from "../contracts.js";
 import {
   formatAjvError,
   loadCommandFrontmatterSchema,
@@ -8,6 +8,7 @@ import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
 import { invalidEffortReason } from "../utils/effort.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
+import { toolNameProblem } from "../utils/tool-names.js";
 import {
   artifactLabel,
   classifyUnknownFrontmatterKey,
@@ -133,9 +134,11 @@ export const commandMdLinter: Linter = {
       const tools = fm.data["allowed-tools"];
       if (Array.isArray(tools)) {
         for (const t of tools) {
-          if (typeof t === "string" && !TOOLS.has(t)) {
+          if (typeof t !== "string") continue;
+          const problem = toolNameProblem(t);
+          if (problem) {
             push(diag(config, filePath, "command-md/allowed-tools-valid", "warning",
-              `Unknown tool "${t}" in allowed-tools`));
+              `${problem} (in allowed-tools)`));
           }
         }
       }

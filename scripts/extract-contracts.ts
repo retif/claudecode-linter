@@ -496,10 +496,46 @@ function extractAgentModelEnum(source: string): string[] {
 	return [...match[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
 }
 
-function extractAllToolNames(source: string): string[] {
-	const candidates = new Set<string>();
+/**
+ * Tool names as the `allowed-tools` / permission surface spells them.
+ *
+ * Two sources, unioned:
+ *
+ *  1. A structural harvest of each tool's `userFacingName()` accessor — the
+ *     value Claude Code itself matches an `allowed-tools` entry against. This
+ *     is what lets a tool the linter has never heard of be discovered on a
+ *     sync; the hardcoded name list this function used to be could by
+ *     construction only ever re-find the names already typed into it, which is
+ *     why `ListAgents` stayed missing across every release after it shipped
+ *     (oleks/claudecode-linter#21).
+ *  2. The literal-anchor scan, kept as a floor so a minifier change that
+ *     breaks the accessor patterns cannot empty the list.
+ *
+ * Names are shape-filtered to PascalCase: the same accessors also carry
+ * internal lowercase identifiers (`autocompact`, `mcp`, `readMcpResource`)
+ * that are not addressable as tools.
+ */
+const USER_FACING_NAME_PATTERNS: RegExp[] = [
+	/userFacingName\(\)\s*\{\s*return\s*["']([A-Za-z][A-Za-z0-9]*)["']/g,
+	/userFacingName:\s*\(\)\s*=>\s*["']([A-Za-z][A-Za-z0-9]*)["']/g,
+	/userFacingName:\s*["']([A-Za-z][A-Za-z0-9]*)["']/g,
+];
 
-	// Scan for known tool name string literals
+export function extractUserFacingToolNames(source: string): string[] {
+	const names = new Set<string>();
+	for (const pattern of USER_FACING_NAME_PATTERNS) {
+		pattern.lastIndex = 0;
+		for (const m of source.matchAll(pattern)) {
+			if (isPascalCase(m[1])) names.add(m[1]);
+		}
+	}
+	return [...names].sort();
+}
+
+function extractAllToolNames(source: string): string[] {
+	const candidates = new Set<string>(extractUserFacingToolNames(source));
+
+	// Floor: known tool name string literals.
 	const toolLiteralPattern =
 		/["'](Read|Write|Edit|Bash|Glob|Grep|WebFetch|WebSearch|Agent|AskUserQuestion|NotebookEdit|NotebookRead|TodoWrite|EnterPlanMode|ExitPlanMode|Skill|EnterWorktree|ExitWorktree|SendMessage|TaskCreate|TaskUpdate|TaskGet|TaskList|TaskStop|TaskOutput|TeamCreate|TeamDelete|ToolSearch|LSP|Monitor|PushNotification|CronCreate|CronDelete|CronList|RemoteTrigger)["']/g;
 	for (const m of source.matchAll(toolLiteralPattern)) {

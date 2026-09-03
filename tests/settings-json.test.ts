@@ -109,8 +109,18 @@ describe("settings-json permissions — allow / deny / ask rule arrays", () => {
     expect(d?.severity).toBe("error");
   });
 
+  // gitea#21: the extracted registry lags the harness; a well-formed unknown
+  // permission target is accepted, a near-miss still reported.
+  it("does not warn on built-ins missing from the extracted registry", () => {
+    const d = find(
+      { permissions: { allow: ["ListAgents", "DesignSync", "SendFeedback", "EndConversation"] } },
+      "settings-json/allow-known-tools",
+    );
+    expect(d).toBeUndefined();
+  });
+
   it.each(["allow", "deny", "ask"])("warns on an unknown tool in %s", (key) => {
-    const d = find({ permissions: { [key]: ["Bandersnatch"] } }, "settings-json/allow-known-tools");
+    const d = find({ permissions: { [key]: ["Bahs"] } }, "settings-json/allow-known-tools");
     expect(d?.severity).toBe("warning");
     expect(d?.message).toContain(`permissions.${key}`);
   });

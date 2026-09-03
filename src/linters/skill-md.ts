@@ -1,4 +1,4 @@
-import { AGENT_MODELS, TOOLS } from "../contracts.js";
+import { AGENT_MODELS } from "../contracts.js";
 import {
   formatAjvError,
   loadSkillFrontmatterSchema,
@@ -13,6 +13,7 @@ import {
   classifyUnknownFrontmatterKey,
 } from "../utils/frontmatter-keys.js";
 import { isKebabCase } from "../utils/kebab-case.js";
+import { toolNameProblem } from "../utils/tool-names.js";
 
 interface RuleDef { id: string; defaultSeverity: Severity; }
 
@@ -245,9 +246,11 @@ export const skillMdLinter: Linter = {
       const tools = fm.data["allowed-tools"];
       if (Array.isArray(tools)) {
         for (const t of tools) {
-          if (typeof t === "string" && !t.startsWith("mcp__") && !TOOLS.has(t)) {
+          if (typeof t !== "string") continue;
+          const problem = toolNameProblem(t);
+          if (problem) {
             push(diag(config, filePath, "skill-md/allowed-tools-valid", "warning",
-              `Unknown tool "${t}" in allowed-tools`));
+              `${problem} (in allowed-tools)`));
           }
         }
       }

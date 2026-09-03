@@ -1,6 +1,6 @@
 ---
 description: A command with invalid tool names
-allowed-tools: ["Read", "FakeToolName", "Write"]
+allowed-tools: ["Read", "Raed", "Write"]
 ---
 
 # Bad Tools Command
