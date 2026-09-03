@@ -134,9 +134,9 @@ Rules are named `<artifact>/<rule>` (e.g., `plugin-json/name-kebab-case`). Use `
 | Artifact | Files | Scopes |
 |----------|-------|--------|
 | `plugin-json` | `.claude-plugin/plugin.json` | — |
-| `skill-md` | `skills/*/SKILL.md` | — |
-| `agent-md` | `agents/*.md`, `.claude/agents/*.md` | — |
-| `command-md` | `commands/*.md` | — |
+| `skill-md` | `skills/*/SKILL.md`, `.claude/skills/*/SKILL.md` | project |
+| `agent-md` | `agents/*.md`, `.claude/agents/*.md` | project |
+| `command-md` | `commands/*.md`, `.claude/commands/*.md` | project |
 | `hooks-json` | `hooks/hooks.json` | — |
 | `settings-json` | `settings.json`, `settings.local.json` | user, project |
 | `mcp-json` | `.mcp.json`, `mcp.json` | user, project |
@@ -147,6 +147,12 @@ Rules are named `<artifact>/<rule>` (e.g., `plugin-json/name-kebab-case`). Use `
 | `keybindings-json` | `keybindings.json`, `.claude/keybindings.json` | user, project |
 
 Scope detection (`discovery.ts`): files in `~/.claude/` or `~/` → user, files in project `.claude/` → project.
+"In project `.claude/`" is an allow-list of the shapes Claude Code actually reads —
+`.claude/<file>`, `.claude/agents/*.md`, `.claude/commands/*.md`,
+`.claude/skills/*/SKILL.md` — not an upward walk for any ancestor named `.claude/`,
+which would mis-scope a plugin checked out under someone's `.claude/worktrees/`.
+The plugin's own `skills/`, `agents/` and `commands/` stay unscoped: they ship to
+every install, whereas a `.claude/` copy is for this repo's contributors only.
 
 ## Configuration
 

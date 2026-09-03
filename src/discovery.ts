@@ -132,14 +132,18 @@ function detectScope(filePath: string): ConfigScope | undefined {
 		}
 	}
 
-	// Inside a project's .claude/ directory
+	// Inside a project's .claude/ directory — either directly
+	// (`.claude/settings.json`) or in one of the artifact subdirectories
+	// Claude Code reads project-locally (`.claude/skills/<name>/SKILL.md`,
+	// `.claude/agents/*.md`, `.claude/commands/*.md`). The user-level
+	// `~/.claude/` is excluded: it is handled by the block above and by the
+	// per-name rules below.
 	const name = basename(filePath);
-	const parent = basename(dirname(filePath));
+	const claudeDir = projectLocalClaudeDir(resolved);
 
-	if (parent === ".claude") {
+	if (claudeDir !== undefined && claudeDir !== CLAUDE_USER_DIR) {
 		// Check if this .claude/ is inside another .claude/ (subdirectory scope)
-		const projectDir = dirname(dirname(filePath));
-		if (isSubdirectoryProject(projectDir)) {
+		if (isSubdirectoryProject(dirname(claudeDir))) {
 			return "subdirectory";
 		}
 		return "project";
@@ -162,6 +166,46 @@ function detectScope(filePath: string): ConfigScope | undefined {
 	// settings.local.json in ~/.claude/ — this is misplaced (user level), detect it so the linter can warn
 	if (name === "settings.local.json" && dirname(resolved) === CLAUDE_USER_DIR) {
 		return "user";
+	}
+
+	return undefined;
+}
+
+/**
+ * The `.claude/` directory `filePath` belongs to, when the file sits at one
+ * of the shapes Claude Code actually reads project-locally, or undefined
+ * otherwise.
+ *
+ * Deliberately an allow-list of exact shapes rather than "nearest ancestor
+ * named `.claude`" — the same reasoning as `canonical-paths.ts`. An upward
+ * walk matches any distant ancestor, so a plugin's own `skills/x/SKILL.md`
+ * checked out under some outer `.claude/worktrees/` would be mis-scoped as
+ * project-local. These four shapes cannot do that.
+ */
+function projectLocalClaudeDir(filePath: string): string | undefined {
+	const resolved = resolve(filePath);
+	const parent = dirname(resolved);
+
+	// .claude/<file> — e.g. settings.json, keybindings.json
+	if (basename(parent) === ".claude") return parent;
+
+	// .claude/agents/<file>.md, .claude/commands/<file>.md
+	const grandparent = dirname(parent);
+	const parentName = basename(parent);
+	if (
+		(parentName === "agents" || parentName === "commands") &&
+		basename(grandparent) === ".claude"
+	) {
+		return grandparent;
+	}
+
+	// .claude/skills/<name>/SKILL.md
+	if (
+		basename(resolved) === "SKILL.md" &&
+		basename(grandparent) === "skills" &&
+		basename(dirname(grandparent)) === ".claude"
+	) {
+		return dirname(grandparent);
 	}
 
 	return undefined;
@@ -194,10 +238,19 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 		artifacts.push({ filePath: f, artifactType: "plugin-json" });
 	}
 
-	// SKILL.md files
-	const skills = globSync("skills/*/SKILL.md", { cwd: dir, absolute: true });
-	for (const f of skills) {
-		artifacts.push({ filePath: f, artifactType: "skill-md" });
+	// SKILL.md files (plugin skills/ and .claude/skills/)
+	const skillPatterns = isUserDir
+		? ["skills/*/SKILL.md"]
+		: ["skills/*/SKILL.md", ".claude/skills/*/SKILL.md"];
+	for (const pattern of skillPatterns) {
+		const skills = globSync(pattern, { cwd: dir, absolute: true });
+		for (const f of skills) {
+			artifacts.push({
+				filePath: f,
+				artifactType: "skill-md",
+				scope: detectScope(f),
+			});
+		}
 	}
 
 	// Agent definitions (plugin agents/ and .claude/agents/)
@@ -207,14 +260,27 @@ function discoverInDirectory(dir: string): DiscoveredArtifact[] {
 	for (const pattern of agentPatterns) {
 		const agents = globSync(pattern, { cwd: dir, absolute: true });
 		for (const f of agents) {
-			artifacts.push({ filePath: f, artifactType: "agent-md" });
+			artifacts.push({
+				filePath: f,
+				artifactType: "agent-md",
+				scope: detectScope(f),
+			});
 		}
 	}
 
-	// Command definitions
-	const commands = globSync("commands/*.md", { cwd: dir, absolute: true });
-	for (const f of commands) {
-		artifacts.push({ filePath: f, artifactType: "command-md" });
+	// Command definitions (plugin commands/ and .claude/commands/)
+	const commandPatterns = isUserDir
+		? ["commands/*.md"]
+		: ["commands/*.md", ".claude/commands/*.md"];
+	for (const pattern of commandPatterns) {
+		const commands = globSync(pattern, { cwd: dir, absolute: true });
+		for (const f of commands) {
+			artifacts.push({
+				filePath: f,
+				artifactType: "command-md",
+				scope: detectScope(f),
+			});
+		}
 	}
 
 	// hooks.json

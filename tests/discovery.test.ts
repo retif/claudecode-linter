@@ -79,3 +79,76 @@ describe("detectArtifactTypes", () => {
     expect(detectArtifactTypes([here])).toEqual([]);
   });
 });
+
+describe("project-local artifacts under .claude/", () => {
+  const PROJECT_LOCAL = resolve(FIXTURES, "invalid/project-local");
+
+  it("discovers .claude/skills/<name>/SKILL.md as skill-md with project scope", () => {
+    const artifacts = discoverArtifacts(PROJECT_LOCAL);
+    const skill = artifacts.find((a) => a.artifactType === "skill-md");
+    expect(skill).toBeDefined();
+    expect(relative(PROJECT_LOCAL, skill!.filePath)).toBe(
+      ".claude/skills/Bad Skill Name/SKILL.md",
+    );
+    expect(skill!.scope).toBe("project");
+  });
+
+  it("discovers .claude/commands/<name>.md as command-md with project scope", () => {
+    const artifacts = discoverArtifacts(PROJECT_LOCAL);
+    const command = artifacts.find((a) => a.artifactType === "command-md");
+    expect(command).toBeDefined();
+    expect(relative(PROJECT_LOCAL, command!.filePath)).toBe(
+      ".claude/commands/bad-tools.md",
+    );
+    expect(command!.scope).toBe("project");
+  });
+
+  it("scopes a project-local skill as project, like the .claude/ artifacts beside it", () => {
+    // The acceptance bar from oleks/claudecode-linter#32: a project-local
+    // skill must not report a different scope from the other project-local
+    // artifacts discovered next to it.
+    // Compare fixture-relative paths: the repo's own worktrees live under
+    // `.claude/worktrees/`, so an absolute path always contains "/.claude/".
+    const root = resolve(FIXTURES, "valid-plugin");
+    const projectLocalSkill = discoverArtifacts(root).find(
+      (a) =>
+        a.artifactType === "skill-md" &&
+        relative(root, a.filePath) ===
+          ".claude/skills/project-local-helper/SKILL.md",
+    );
+    expect(projectLocalSkill?.scope).toBe("project");
+  });
+
+  it("leaves the plugin's own skills/ unscoped", () => {
+    const root = resolve(FIXTURES, "valid-plugin");
+    const artifacts = discoverArtifacts(root);
+    const pluginSkill = artifacts.find(
+      (a) =>
+        a.artifactType === "skill-md" &&
+        relative(root, a.filePath) === "skills/example-skill/SKILL.md",
+    );
+    expect(pluginSkill).toBeDefined();
+    // A plugin skill ships to every install — it has no project scope, and
+    // must not acquire one just because some ancestor directory happens to
+    // be named `.claude/` (e.g. a `.claude/worktrees/` checkout).
+    expect(pluginSkill!.scope).toBeUndefined();
+  });
+
+  it("does not discover .claude/skills/SKILL.md (no <name> directory)", () => {
+    // Claude Code reads nothing from that path; misplaced-file owns it.
+    const root = resolve(FIXTURES, "invalid/misplaced-file");
+    const skills = discoverArtifacts(root).filter(
+      (a) => a.artifactType === "skill-md",
+    );
+    expect(
+      skills.some(
+        (a) => relative(root, a.filePath) === ".claude/skills/SKILL.md",
+      ),
+    ).toBe(false);
+  });
+
+  it("reports project-local artifact types via detectArtifactTypes", () => {
+    const types = detectArtifactTypes([PROJECT_LOCAL]);
+    expect(types).toEqual(["command-md", "skill-md"]);
+  });
+});

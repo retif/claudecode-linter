@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { commandMdLinter } from "../../src/linters/command-md.js";
+import { discoverArtifacts } from "../../src/discovery.js";
 import type { LinterConfig } from "../../src/types.js";
 
 const FIXTURES = resolve(import.meta.dirname, "../fixtures");
@@ -283,5 +284,26 @@ describe("command-md — schema-valid (auto-extracted JSON Schema)", () => {
       { rules: { "command-md/schema-valid": false } },
     );
     expect(diags.some((d) => d.rule === "command-md/schema-valid")).toBe(false);
+  });
+});
+
+describe("project-local commands (.claude/commands/<name>.md)", () => {
+  // Decided in oleks/claudecode-linter#32: `.claude/commands/` is included
+  // in the same pass as `.claude/skills/`, because Claude Code documents it
+  // as a read location alongside it (schemastore's settings schema names
+  // "plugins, .claude/skills/, and .claude/commands/" in one breath), so
+  // shipping only half leaves a known hole open.
+  const PROJECT_LOCAL = resolve(FIXTURES, "invalid/project-local");
+
+  function lintDiscovered() {
+    return discoverArtifacts(PROJECT_LOCAL)
+      .filter((a) => a.artifactType === "command-md")
+      .flatMap((a) => lintFile(a.filePath));
+  }
+
+  it("reports an unknown tool in a project-local command", () => {
+    expect(
+      lintDiscovered().some((d) => d.rule === "command-md/allowed-tools-valid"),
+    ).toBe(true);
   });
 });

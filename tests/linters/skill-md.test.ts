@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { skillMdLinter } from "../../src/linters/skill-md.js";
+import { discoverArtifacts } from "../../src/discovery.js";
 import type { LinterConfig } from "../../src/types.js";
 
 const FIXTURES = resolve(import.meta.dirname, "../fixtures");
@@ -407,5 +408,41 @@ describe("skill-md — schema-valid (auto-extracted JSON Schema)", () => {
 			{ rules: { "skill-md/schema-valid": false } },
 		);
 		expect(diags.some((d) => d.rule === "skill-md/schema-valid")).toBe(false);
+	});
+});
+
+describe("project-local skills (.claude/skills/<name>/SKILL.md)", () => {
+	const PROJECT_LOCAL = resolve(FIXTURES, "invalid/project-local");
+
+	// oleks/claudecode-linter#32: the path was read by Claude Code but
+	// discovered by nothing, so no `skill-md/*` rule could ever fire on it.
+	// Go through discovery rather than pointing at the file directly — the
+	// hole was in discovery, and a direct `lintFile` would pass either way.
+	function lintDiscovered() {
+		return discoverArtifacts(PROJECT_LOCAL)
+			.filter((a) => a.artifactType === "skill-md")
+			.flatMap((a) => lintFile(a.filePath));
+	}
+
+	it("reports a non-kebab-case name in a project-local skill", () => {
+		expect(
+			lintDiscovered().some((d) => d.rule === "skill-md/name-kebab-case"),
+		).toBe(true);
+	});
+
+	it("reports the project-local skill's other skill-md/* problems too", () => {
+		const rules = new Set(lintDiscovered().map((d) => d.rule));
+		expect(rules.has("skill-md/description-trigger-phrases")).toBe(true);
+		expect([...rules].every((r) => r.startsWith("skill-md/"))).toBe(true);
+	});
+
+	it("lints a valid project-local skill clean", () => {
+		const diags = lintFile(
+			resolve(
+				FIXTURES,
+				"valid-plugin/.claude/skills/project-local-helper/SKILL.md",
+			),
+		);
+		expect(diags.filter((d) => d.severity === "error")).toHaveLength(0);
 	});
 });
