@@ -1,60 +1,18 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.197",
-	"extractedAt": "2026-09-03T03:55:44.823Z",
+	"extractedFromClaudeCodeVersion": "2.1.259",
+	"extractedAt": "2026-09-03T09:41:17.285Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code command .md frontmatter",
 		"type": "object",
 		"properties": {
 			"name": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "Display name. Defaults to the filename without extension."
 			},
 			"description": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "One-line summary shown in listings and the Skill tool."
 			},
 			"model": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "Model override (`haiku`, `sonnet`, `opus`, `fable`, or a full ID). Use `inherit` to match the parent conversation."
 			},
 			"allowed-tools": {
@@ -139,20 +97,6 @@
 				"description": "Canonical (normalized) alias of `disallowed-tools`."
 			},
 			"argument-hint": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "Placeholder text shown after the slash command name."
 			},
 			"arguments": {
@@ -217,54 +161,12 @@
 				"description": "If false, hides the slash command from users; only the model can invoke it via the Skill tool."
 			},
 			"effort": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "Thinking effort for the model: `low`, `medium`, `high`, `max`, or an integer."
 			},
 			"shell": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "Shell for `!`-command blocks: `bash` or `powershell`. Defaults to bash regardless of platform."
 			},
 			"version": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "@internal — bookkeeping, not surfaced to users"
 			}
 		},

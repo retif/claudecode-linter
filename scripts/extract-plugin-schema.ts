@@ -28,14 +28,20 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import pc from "picocolors";
+import { extractBunEmbeddedModules } from "./extract-contracts.js";
 
 // ---------------------------------------------------------------------------
-// 1. Bundle acquisition — duplicates fetchCliSource from extract-contracts.ts.
-//    Kept inline so this extractor can run standalone.
+// 1. Bundle acquisition — the module recovery is shared with
+//    extract-contracts.ts (`extractBunEmbeddedModules`); what is local here is
+//    the normalisation that turns the recovered modules into a single corpus
+//    the Zod walker can index.
 // ---------------------------------------------------------------------------
 
 export interface BundleResult {
+	/** The normalised, concatenated corpus the walker indexes. */
 	source: string;
+	/** The raw recovered modules, before normalisation. */
+	modules: string[];
 	version: string;
 }
 
@@ -56,7 +62,12 @@ export function fetchBundle(requestedVersion?: string): BundleResult {
 		);
 		const legacyCli = join(tmp, "package", "cli.js");
 		if (existsSync(legacyCli)) {
-			return { source: readFileSync(legacyCli, "utf8"), version: pkg.version };
+			const legacy = readFileSync(legacyCli, "utf8");
+			return {
+				source: buildCorpus([legacy]),
+				modules: [legacy],
+				version: pkg.version,
+			};
 		}
 		const platformDir = join(tmp, "platform");
 		mkdirSync(platformDir);
@@ -70,8 +81,10 @@ export function fetchBundle(requestedVersion?: string): BundleResult {
 		}).trim();
 		execSync(`tar xzf "${ptgz}"`, { cwd: platformDir, stdio: "pipe" });
 		const binary = readFileSync(join(platformDir, "package", "claude"));
+		const modules = extractBunEmbeddedModules(binary, pkg.version);
 		return {
-			source: sliceBundleBinary(binary, pkg.version),
+			source: buildCorpus(modules),
+			modules,
 			version: pkg.version,
 		};
 	} finally {
@@ -79,22 +92,223 @@ export function fetchBundle(requestedVersion?: string): BundleResult {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// 1b. Normalising a code-split bundle into one indexable corpus
+//
+// Up to ~2.1.197 the bundle was one CJS module in which Zod was reached through
+// a single namespace alias — `y.object({…})`, `y.string()`. The whole walker is
+// built on that shape: `indexDefinitions` scans for `<name>=<alias>.object({`,
+// and `evalHead` dispatches on `<alias>.<method>`.
+//
+// 2.1.259 ships a code-split ESM bundle (~1,635 modules) in which each module
+// imports the Zod factories it needs as *bare minified bindings* from a shared
+// chunk:
+//
+//   import{…,i,T,c,nt,Ge,ui,ge,ee,I,BS,hs}from"/$bunfs/root/chunk-84vc68b7.js";
+//   var ss=m(()=>i().min(1)), _d=m(()=>nt({name:i().min(1)…}));
+//
+// There is no alias to detect, so `detectZodAlias` found nothing, every
+// definition scan came back empty, and the run died — oleks/claudecode-linter#31.
+//
+// The fix is a normalisation pass rather than a second walker: recover the
+// modules (shared with extract-contracts.ts), work out what each imported
+// binding means, and rewrite every call site back into the `<alias>.<method>`
+// form the walker already understands. `c({…})` becomes `__zod.object({…})`,
+// `i()` becomes `__zod.string()`. Namespace-style modules are rewritten to the
+// same alias so one corpus has one alias. Everything downstream is unchanged.
+// ---------------------------------------------------------------------------
+
+/** The single Zod alias every normalised module is rewritten to. */
+export const CANONICAL_ZOD_ALIAS = "__zod";
+
+/** Read a balanced `{…}` body starting at `braceIdx`, capped for safety. */
+function readBraceBody(src: string, braceIdx: number, cap = 2000): string {
+	let depth = 0;
+	const end = Math.min(src.length, braceIdx + cap);
+	for (let i = braceIdx; i < end; i++) {
+		const ch = src[i];
+		if (ch === "{") depth++;
+		else if (ch === "}") {
+			depth--;
+			if (depth === 0) return src.slice(braceIdx, i + 1);
+		}
+	}
+	return src.slice(braceIdx, end);
+}
+
+function escapeIdent(name: string): string {
+	return name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
- * Slice the JavaScript bundle out of a Bun-compiled `claude` binary.
+ * Map a Zod chunk's minified factory functions to the Zod method they build.
  *
- * The binary embeds the JS source after a `// @bun @bytecode @bun-cjs` marker
- * (interleaved with bytecode); we anchor on `// Version: <ver>` and walk back to
- * the nearest bun marker, then take a generous window. Shared by `fetchBundle`
- * (npm-tarball path) and `loadLocalBundle` (local on-disk bundle path).
+ * Two independent signals, so a rename on either side alone cannot blind this:
+ *
+ *  1. **The def literal.** Every factory constructs its schema from an object
+ *     carrying the type tag Zod itself uses — `function c(e,r){let t={type:
+ *     "object",shape:e??{}…`, `function ee(e,r){…{type:"enum",entries:t…`. The
+ *     tag is the method name, so it is read straight out of the body.
+ *  2. **The class symbol.** Factories that delegate (`function i(e){return
+ *     Sn(Wtt,e)}`) carry no tag, but the symbol they pass was declared as
+ *     `Wtt=pn("ZodString",…)` — the class-name string is unminified, so
+ *     `ZodString` → `string`.
+ *
+ * `object` is refined to `strictObject` when the factory pins a `catchall`, and
+ * `union` to `discriminatedUnion` when it takes a discriminator, because the
+ * walker treats those as distinct methods.
  */
-export function sliceBundleBinary(binary: Buffer, version: string): string {
-	const versionMarker = Buffer.from(`// Version: ${version}`);
-	const versionIdx = binary.indexOf(versionMarker);
-	const bunMarker = Buffer.from("// @bun @bytecode @bun-cjs");
-	const bundleStart = binary.lastIndexOf(bunMarker, versionIdx);
-	return binary
-		.subarray(bundleStart, Math.min(bundleStart + 60_000_000, binary.length))
-		.toString("utf8");
+export function mapZodFactories(source: string): Map<string, string> {
+	const classSymbols = new Map<string, string>();
+	for (const m of source.matchAll(
+		/([A-Za-z_$][\w$]*)\s*=\s*[A-Za-z_$][\w$]*\("(Zod[A-Za-z0-9]+)"/g,
+	)) {
+		classSymbols.set(m[1], m[2]);
+	}
+
+	const factories = new Map<string, string>();
+	for (const m of source.matchAll(/function ([A-Za-z_$][\w$]*)\([^)]*\)\{/g)) {
+		const body = readBraceBody(source, m.index + m[0].length - 1);
+		let method: string | null = null;
+
+		const tag = body.match(/type:"([a-z_]+)"/);
+		if (tag) method = tag[1];
+		if (method === "object" && /catchall:/.test(body)) method = "strictObject";
+		if (method === "union" && /discriminator/.test(body))
+			method = "discriminatedUnion";
+		// `record` and `partialRecord` build the same `type:"record"` def and
+		// differ only in that the partial form clears the key type's
+		// exhaustiveness values. The walker treats both alike, but the hooks
+		// schema is *located* by its `partialRecord` call, so the distinction
+		// has to survive normalisation.
+		if (method === "record" && /_zod\.values\s*=\s*void 0/.test(body))
+			method = "partialRecord";
+
+		if (!method) {
+			for (const [symbol, className] of classSymbols) {
+				const re = new RegExp(`(?<![.\\w$])${escapeIdent(symbol)}(?![\\w$])`);
+				if (!re.test(body)) continue;
+				const bare = className.replace(/^Zod/, "");
+				method = bare[0].toLowerCase() + bare.slice(1);
+				break;
+			}
+		}
+		if (method) factories.set(m[1], method);
+	}
+	return factories;
+}
+
+/** How many `X=Y("ZodFoo"` declarations mark a module as a Zod runtime chunk. */
+const ZOD_CHUNK_CLASS_FLOOR = 10;
+
+/** Harvest the factory map from every module that looks like a Zod chunk. */
+export function collectZodFactories(modules: string[]): Map<string, string> {
+	const factories = new Map<string, string>();
+	for (const mod of modules) {
+		const declarations = mod.match(/\("Zod[A-Za-z0-9]+"/g);
+		if (!declarations || declarations.length < ZOD_CHUNK_CLASS_FLOOR) continue;
+		for (const [name, method] of mapZodFactories(mod)) {
+			if (!factories.has(name)) factories.set(name, method);
+		}
+	}
+	return factories;
+}
+
+/** The local names an ESM module binds through `import{…}from"…"`. */
+function importedBindings(source: string): Set<string> {
+	const names = new Set<string>();
+	for (const m of source.matchAll(/import\s*\{([^}]*)\}\s*from\s*"[^"]*"/g)) {
+		for (const part of m[1].split(",")) {
+			const local = part.trim().split(/\s+as\s+/).pop()?.trim();
+			if (local && /^[A-Za-z_$][\w$]*$/.test(local)) names.add(local);
+		}
+	}
+	return names;
+}
+
+/**
+ * How many Zod call sites a module must contain before it is normalised.
+ *
+ * A module that merely re-exports one helper is noise in the corpus; requiring
+ * a handful of rewrites keeps the corpus to the modules that actually declare
+ * schemas, which both shrinks it and lowers the chance of two modules
+ * contributing the same minified symbol.
+ */
+const MIN_ZOD_CALL_SITES = 3;
+
+/**
+ * Rewrite one module's Zod call sites to `CANONICAL_ZOD_ALIAS.<method>(…)`.
+ *
+ * Returns `null` when the module carries no meaningful Zod usage, so the caller
+ * can drop it from the corpus.
+ */
+export function normalizeZodModule(
+	source: string,
+	factories: Map<string, string>,
+): string | null {
+	let out = source;
+	let rewrites = 0;
+
+	// (a) Namespace style (<= 2.1.197, and modules that still bundle their own
+	//     Zod namespace): `y.object({` → `__zod.object({`. The alias is a single
+	//     module-scoped binding, so rewriting every `y.` on it is safe.
+	const namespaceCounts = new Map<string, number>();
+	for (const m of source.matchAll(/\b([A-Za-z_$][\w$]*)\.object\(\{/g)) {
+		namespaceCounts.set(m[1], (namespaceCounts.get(m[1]) ?? 0) + 1);
+	}
+	let namespaceAlias: string | null = null;
+	let namespaceHits = 0;
+	for (const [alias, n] of namespaceCounts) {
+		if (n > namespaceHits) {
+			namespaceHits = n;
+			namespaceAlias = alias;
+		}
+	}
+	if (namespaceAlias && namespaceHits >= MIN_ZOD_CALL_SITES) {
+		out = out.replace(
+			new RegExp(`(?<![.\\w$])${escapeIdent(namespaceAlias)}\\.`, "g"),
+			`${CANONICAL_ZOD_ALIAS}.`,
+		);
+		rewrites += namespaceHits;
+	}
+
+	// (b) Bare-binding style (2.1.259+): only identifiers this module actually
+	//     imports are rewritten, so a same-named local in another module cannot
+	//     be dragged in.
+	for (const name of importedBindings(source)) {
+		const method = factories.get(name);
+		if (!method) continue;
+		const re = new RegExp(`(?<![.\\w$])${escapeIdent(name)}\\(`, "g");
+		const hits = out.match(re);
+		if (!hits) continue;
+		out = out.replace(re, `${CANONICAL_ZOD_ALIAS}.${method}(`);
+		rewrites += hits.length;
+	}
+
+	return rewrites >= MIN_ZOD_CALL_SITES ? out : null;
+}
+
+/**
+ * Turn recovered modules into the single corpus the walker indexes.
+ *
+ * The corpus is a concatenation rather than a per-module index because the
+ * anchors and the definitions they name routinely live in *different* modules:
+ * on 2.1.259 the `"plugin-json"` validator dispatch that names the master
+ * schema `rhe` sits in module #275, while `rhe`'s definition sits in #51.
+ * Indexing each module alone finds the name or the definition, never both.
+ */
+export function buildCorpus(modules: string[]): string {
+	const factories = collectZodFactories(modules);
+	const normalized: string[] = [];
+	for (const mod of modules) {
+		const n = normalizeZodModule(mod, factories);
+		if (n) normalized.push(n);
+	}
+	// Nothing normalised: either an unrecognised layout or a non-Zod corpus.
+	// Fall back to the raw modules so `assertDefinitionsUsable` reports on real
+	// content rather than on an empty string.
+	if (normalized.length === 0) return modules.join("\n");
+	return normalized.join("\n");
 }
 
 /**
@@ -123,7 +337,8 @@ export function loadLocalBundle(pathOrVersion: string): BundleResult {
 	// Derive the version from the trailing path segment (the versions-dir
 	// layout names each binary after its version).
 	const version = binPath.split(/[\\/]/).pop() ?? pathOrVersion;
-	return { source: sliceBundleBinary(binary, version), version };
+	const modules = extractBunEmbeddedModules(binary, version);
+	return { source: buildCorpus(modules), modules, version };
 }
 
 // ---------------------------------------------------------------------------
@@ -426,6 +641,44 @@ export function indexDefinitions(source: string): DefinitionIndex {
 }
 
 /**
+ * How many Zod definitions a usable index must hold.
+ *
+ * A healthy 2.1.259 corpus indexes ~1,400. The floor is deliberately far below
+ * that: an upstream refactor that halves the schema count is a warning for the
+ * per-schema drift gates to raise, not a failure here. What this catches is the
+ * shape that actually happens — a layout or minifier change that leaves the
+ * index at or near zero.
+ */
+const MIN_DEFINITIONS = 50;
+
+/**
+ * Refuse an index that found (almost) nothing.
+ *
+ * This is the half of oleks/claudecode-linter#31 that matters. The walker is
+ * built to degrade rather than fail — every pattern it does not recognise
+ * becomes a permissive `{}` — which is right for one unknown field and
+ * catastrophic for a whole bundle: with an empty index every schema either
+ * comes out as an empty permissive object or is skipped with a yellow warning,
+ * and the run still exits 0. Downstream that reads as "Claude Code validates
+ * nothing", silently disabling every linter rule backed by these schemas.
+ *
+ * So an empty index is fatal here, before a single schema is written. An error
+ * must never collapse into an apparently-successful extraction.
+ */
+export function assertDefinitionsUsable(index: DefinitionIndex): void {
+	if (index.defs.size >= MIN_DEFINITIONS) return;
+	throw new Error(
+		`Indexed ${index.defs.size} Zod definitions (alias "${index.zodAlias}", ` +
+			`lazy wrapper "${index.lazyWrapper}") from a ${(index.source.length / 1e6).toFixed(1)}MB ` +
+			`corpus — below the floor of ${MIN_DEFINITIONS}. Refusing to write ` +
+			`schemas: an empty index yields permissive, rule-disabling schemas that ` +
+			`look like a successful extraction. The bundle layout or the Zod call ` +
+			`form has probably changed again — re-check normalizeZodModule() and ` +
+			`mapZodFactories() against the new bundle.`,
+	);
+}
+
+/**
  * Detect the lazy-wrapper helper used to wrap Zod schemas — `<wrapper>(()=>...)`.
  *
  * The bundle also contains a generic module-factory helper (often `T(()=>{...})`
@@ -489,9 +742,13 @@ function extractExpression(src: string, exprStart: number): string {
 }
 
 function detectZodAlias(source: string): string {
-	// Find the most common alias used for .object({...}).
+	// Find the most common alias used for .object({...}). Multi-character
+	// aliases are allowed so a normalised corpus (`__zod.object({`) is detected
+	// as readily as a legacy single-letter minified one (`y.object({`); the
+	// winner is whichever alias carries the most call sites, which on a
+	// normalised corpus is the canonical one by a wide margin.
 	const candidates = new Map<string, number>();
-	const re = /\b([A-Za-z_$])\.object\(\{/g;
+	const re = /\b([A-Za-z_$][\w$]*)\.object\(\{/g;
 	let m;
 	while ((m = re.exec(source)) !== null) {
 		candidates.set(m[1], (candidates.get(m[1]) ?? 0) + 1);
@@ -1735,21 +1992,38 @@ export function buildHooksJsonSchema(
 	const { source, lazyWrapper } = index;
 	// `HC = <lazyWrapper>(()=><alias>.partialRecord(...))` — anchor on the
 	// partialRecord call, which is distinctive to the hooks-config validator.
-	const anchor = `${index.zodAlias}.partialRecord(`;
-	const anchorIdx = source.indexOf(anchor);
-	if (anchorIdx === -1) return null;
-	// Walk back to the enclosing `=<lazyWrapper>(()=>` and read the symbol.
-	const eq = source.lastIndexOf(`=${lazyWrapper}(()=>`, anchorIdx);
-	if (eq === -1) return null;
-	let nameStart = eq;
-	while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
-	const hcSym = source.slice(nameStart, eq);
-	if (!hcSym) return null;
-	const hcDef = index.defs.get(hcSym);
-	if (!hcDef) return null;
-
-	const hooksValue = evalZod(hcDef, { index, resolving: new Set() });
-	if (hooksValue.type !== "object") return null;
+	//
+	// `record` is accepted as a second anchor, and every occurrence is tried
+	// rather than only the first: if a future Zod chunk stops distinguishing
+	// `partialRecord` from `record` the mapping collapses to `record`, of which
+	// a corpus holds hundreds. Walking them until one resolves to an object
+	// keeps the schema extractable instead of silently dropping it.
+	let hooksValue: JSONSchema | null = null;
+	outer: for (const method of ["partialRecord", "record"]) {
+		const anchor = `${index.zodAlias}.${method}(`;
+		for (
+			let anchorIdx = source.indexOf(anchor);
+			anchorIdx !== -1;
+			anchorIdx = source.indexOf(anchor, anchorIdx + 1)
+		) {
+			// Walk back to the enclosing `=<lazyWrapper>(()=>` and read the symbol.
+			const eq = source.lastIndexOf(`=${lazyWrapper}(()=>`, anchorIdx);
+			if (eq === -1) continue;
+			let nameStart = eq;
+			while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
+			const hcSym = source.slice(nameStart, eq);
+			if (!hcSym) continue;
+			const hcDef = index.defs.get(hcSym);
+			// The symbol must be the one this anchor belongs to, not a nearer
+			// unrelated factory that happens to precede it.
+			if (!hcDef || !hcDef.includes(anchor)) continue;
+			const candidate = evalZod(hcDef, { index, resolving: new Set() });
+			if (candidate.type !== "object") continue;
+			hooksValue = candidate;
+			break outer;
+		}
+	}
+	if (!hooksValue) return null;
 	stripAdditionalPropertiesFalse(hooksValue);
 
 	return {
@@ -1876,6 +2150,7 @@ function main() {
 	console.log(
 		pc.dim(`  ${index.defs.size} definitions, Zod alias = ${index.zodAlias}`),
 	);
+	assertDefinitionsUsable(index);
 
 	const rootDir = join(import.meta.dirname!, "..");
 

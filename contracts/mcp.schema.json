@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.197",
-	"extractedAt": "2026-09-03T03:55:44.825Z",
+	"extractedFromClaudeCodeVersion": "2.1.259",
+	"extractedAt": "2026-09-03T09:41:17.286Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code .mcp.json",
@@ -90,6 +90,10 @@
 								"timeout": {
 									"type": "number"
 								},
+								"request_timeout_ms": {
+									"type": "number",
+									"description": "@internal CCR backend wire hint; folded into timeout at parse."
+								},
 								"tools": {
 									"type": "array",
 									"items": {
@@ -112,6 +116,9 @@
 									}
 								},
 								"alwaysLoad": {
+									"type": "boolean"
+								},
+								"discoveryCache": {
 									"type": "boolean"
 								},
 								"role": {
@@ -244,6 +251,10 @@
 								"timeout": {
 									"type": "number"
 								},
+								"request_timeout_ms": {
+									"type": "number",
+									"description": "@internal CCR backend wire hint; folded into timeout at parse."
+								},
 								"tools": {
 									"type": "array",
 									"items": {
@@ -266,6 +277,9 @@
 									}
 								},
 								"alwaysLoad": {
+									"type": "boolean"
+								},
+								"discoveryCache": {
 									"type": "boolean"
 								},
 								"role": {
@@ -381,6 +395,26 @@
 								"cachedInitResponse": {
 									"type": "object",
 									"additionalProperties": {}
+								},
+								"discoverSupport": {
+									"enum": [
+										"supported",
+										"legacy",
+										"unknown"
+									]
+								},
+								"cachedDiscoverResponse": {
+									"type": "object",
+									"additionalProperties": {}
+								},
+								"eligible": {
+									"type": "boolean"
+								},
+								"ineligibleReason": {
+									"type": "string"
+								},
+								"enterpriseManaged": {
+									"type": "boolean"
 								}
 							},
 							"required": [

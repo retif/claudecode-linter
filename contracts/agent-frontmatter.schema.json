@@ -1,60 +1,18 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.197",
-	"extractedAt": "2026-09-03T03:55:44.823Z",
+	"extractedFromClaudeCodeVersion": "2.1.259",
+	"extractedAt": "2026-09-03T09:41:17.284Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code agent .md frontmatter",
 		"type": "object",
 		"properties": {
 			"name": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "Agent identifier. Required — this is how the Agent tool and `--agent` flag address it."
 			},
 			"description": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "When to use this agent. Required — shown in the Agent tool listing."
 			},
 			"model": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "Model override for this agent. Use `inherit` to match the spawning conversation."
 			},
 			"tools": {
@@ -112,54 +70,12 @@
 				"description": "Tools removed from the default set. Ignored if `tools` is set."
 			},
 			"color": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "@internal — display color in the agents UI"
 			},
 			"effort": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "Thinking effort: `low`, `medium`, `high`, `max`, or an integer."
 			},
 			"permissionMode": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "Permission mode the agent runs in."
 			},
 			"mcpServers": {
@@ -210,37 +126,9 @@
 				"description": "Skills preloaded for this agent."
 			},
 			"initialPrompt": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "Auto-submitted first message when this agent runs as the main session (via `--agent` or settings). Not read when spawned as a subagent."
 			},
 			"memory": {
-				"anyOf": [
-					{
-						"type": "string"
-					},
-					{
-						"type": "number"
-					},
-					{
-						"type": "boolean"
-					},
-					{
-						"type": "null"
-					}
-				],
 				"description": "Memory scope: `user`, `project`, or `local`."
 			},
 			"background": {
@@ -261,6 +149,15 @@
 				"description": "If true, the agent runs in the background by default."
 			},
 			"isolation": {
+				"description": "Filesystem isolation: `worktree` runs in a temporary git worktree."
+			},
+			"observer": {
+				"description": "Agent type auto-spawned as a background observer whenever this agent runs."
+			},
+			"observerMessage": {
+				"description": "Supplemental postamble appended (after the harness-owned default) to each activity digest sent to the observer."
+			},
+			"observeSubagents": {
 				"anyOf": [
 					{
 						"type": "string"
@@ -275,7 +172,19 @@
 						"type": "null"
 					}
 				],
-				"description": "Filesystem isolation: `worktree` runs in a temporary git worktree."
+				"description": "If false, subagents this agent spawns do not inherit its observer. Defaults to true."
+			},
+			"experimental": {
+				"type": [
+					"object",
+					"null"
+				],
+				"properties": {
+					"cacheTtl": {
+						"description": "Prompt cache TTL for this agent\\'s requests (\"5m\" or \"1h\") when no `subagentPromptCacheTtl` setting or env var is set. \"1h\" is ignored while a Claude subscription is in overage."
+					}
+				},
+				"description": "Experimental per-agent options; unknown keys are ignored."
 			}
 		},
 		"required": [
