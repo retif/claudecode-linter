@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.197",
-	"extractedAt": "2026-09-03T03:55:44.804Z",
+	"extractedFromClaudeCodeVersion": "2.1.259",
+	"extractedAt": "2026-09-03T10:07:24.672Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code plugin.json",
@@ -102,6 +102,9 @@
 				},
 				"description": "`Plugins that must be enabled for this plugin to function. Bare names (no \"@marketplace\") are resolved against the declaring plugin's own marketplace.`"
 			},
+			"metadata": {
+				"description": "Free-form metadata for the plugin author's own use (e.g. entitlement or catalog fields). Preserved on the parsed manifest but not read by Claude Code."
+			},
 			"hooks": {
 				"anyOf": [
 					{
@@ -181,6 +184,13 @@
 															"type": "string",
 															"minLength": 1,
 															"description": "@internal One-line summary shown to the user in the terminal when an asyncRewake hook exits with code 2. Defaults to \"Stop hook feedback\"."
+														},
+														"cloud": {
+															"enum": [
+																"device",
+																"skip"
+															],
+															"description": "@internal Where this hook may run when a cloud session is driven from this machine. 'device': offer it to the cloud session and run it here even when its script sits where the cloud session can write on this machine or cannot be pinned — the author accepts that the session may have changed files this hook executes. 'skip': never offer it to cloud sessions. Omit for the default: a command hook whose script could be read and pinned and lies outside everything the cloud session can write here is offered; other command hooks are not. Applies to this entry only: the same hook written in another settings scope keeps its own setting. An unrecognised value reads as 'skip' (the file still loads; the hook stays on this machine)."
 														}
 													},
 													"required": [
@@ -307,6 +317,13 @@
 														"once": {
 															"type": "boolean",
 															"description": "If true, hook runs once and is removed after execution"
+														},
+														"cloud": {
+															"enum": [
+																"device",
+																"skip"
+															],
+															"description": "@internal Where this hook may run when a cloud session is driven from this machine. 'skip': never offer it to cloud sessions; 'device' or omitted: offered (an HTTP hook has no script to pin). Applies to this entry only. An unrecognised value reads as 'skip' (the file still loads)."
 														}
 													},
 													"required": [
@@ -450,6 +467,13 @@
 																		"type": "string",
 																		"minLength": 1,
 																		"description": "@internal One-line summary shown to the user in the terminal when an asyncRewake hook exits with code 2. Defaults to \"Stop hook feedback\"."
+																	},
+																	"cloud": {
+																		"enum": [
+																			"device",
+																			"skip"
+																		],
+																		"description": "@internal Where this hook may run when a cloud session is driven from this machine. 'device': offer it to the cloud session and run it here even when its script sits where the cloud session can write on this machine or cannot be pinned — the author accepts that the session may have changed files this hook executes. 'skip': never offer it to cloud sessions. Omit for the default: a command hook whose script could be read and pinned and lies outside everything the cloud session can write here is offered; other command hooks are not. Applies to this entry only: the same hook written in another settings scope keeps its own setting. An unrecognised value reads as 'skip' (the file still loads; the hook stays on this machine)."
 																	}
 																},
 																"required": [
@@ -576,6 +600,13 @@
 																	"once": {
 																		"type": "boolean",
 																		"description": "If true, hook runs once and is removed after execution"
+																	},
+																	"cloud": {
+																		"enum": [
+																			"device",
+																			"skip"
+																		],
+																		"description": "@internal Where this hook may run when a cloud session is driven from this machine. 'skip': never offer it to cloud sessions; 'device' or omitted: offered (an HTTP hook has no script to pin). Applies to this entry only. An unrecognised value reads as 'skip' (the file still loads)."
 																	}
 																},
 																"required": [
@@ -735,14 +766,28 @@
 			"skills": {
 				"anyOf": [
 					{
-						"type": "string",
-						"description": "Path to a skill directory, relative to the plugin root. Loaded in addition to the skills/ directory (except: for a marketplace entry whose source resolves to the marketplace root, declaring a specific subdirectory replaces the skills/ scan)."
+						"anyOf": [
+							{
+								"const": "."
+							},
+							{
+								"type": "string"
+							}
+						],
+						"description": "Path to a skill directory, relative to the plugin root (\".\" / \"./\" denote the plugin root itself). Loaded in addition to the skills/ directory (except: for a marketplace entry whose source resolves to the marketplace root, declaring a specific subdirectory replaces the skills/ scan)."
 					},
 					{
 						"type": "array",
 						"items": {
-							"type": "string",
-							"description": "Path to a skill directory, relative to the plugin root."
+							"anyOf": [
+								{
+									"const": "."
+								},
+								{
+									"type": "string"
+								}
+							],
+							"description": "Path to a skill directory, relative to the plugin root (\".\" / \"./\" denote the plugin root itself)."
 						},
 						"description": "List of skill directory paths, loaded in addition to the skills/ directory (except: for a marketplace entry whose source resolves to the marketplace root, declaring specific subdirectories replaces the skills/ scan)."
 					}
@@ -995,6 +1040,10 @@
 										"timeout": {
 											"type": "number"
 										},
+										"request_timeout_ms": {
+											"type": "number",
+											"description": "@internal CCR backend wire hint; folded into timeout at parse."
+										},
 										"tools": {
 											"type": "array",
 											"items": {
@@ -1017,6 +1066,9 @@
 											}
 										},
 										"alwaysLoad": {
+											"type": "boolean"
+										},
+										"discoveryCache": {
 											"type": "boolean"
 										},
 										"role": {
@@ -1149,6 +1201,10 @@
 										"timeout": {
 											"type": "number"
 										},
+										"request_timeout_ms": {
+											"type": "number",
+											"description": "@internal CCR backend wire hint; folded into timeout at parse."
+										},
 										"tools": {
 											"type": "array",
 											"items": {
@@ -1171,6 +1227,9 @@
 											}
 										},
 										"alwaysLoad": {
+											"type": "boolean"
+										},
+										"discoveryCache": {
 											"type": "boolean"
 										},
 										"role": {
@@ -1286,6 +1345,26 @@
 										"cachedInitResponse": {
 											"type": "object",
 											"additionalProperties": {}
+										},
+										"discoverSupport": {
+											"enum": [
+												"supported",
+												"legacy",
+												"unknown"
+											]
+										},
+										"cachedDiscoverResponse": {
+											"type": "object",
+											"additionalProperties": {}
+										},
+										"eligible": {
+											"type": "boolean"
+										},
+										"ineligibleReason": {
+											"type": "string"
+										},
+										"enterpriseManaged": {
+											"type": "boolean"
 										}
 									},
 									"required": [
@@ -1404,6 +1483,10 @@
 													"timeout": {
 														"type": "number"
 													},
+													"request_timeout_ms": {
+														"type": "number",
+														"description": "@internal CCR backend wire hint; folded into timeout at parse."
+													},
 													"tools": {
 														"type": "array",
 														"items": {
@@ -1426,6 +1509,9 @@
 														}
 													},
 													"alwaysLoad": {
+														"type": "boolean"
+													},
+													"discoveryCache": {
 														"type": "boolean"
 													},
 													"role": {
@@ -1558,6 +1644,10 @@
 													"timeout": {
 														"type": "number"
 													},
+													"request_timeout_ms": {
+														"type": "number",
+														"description": "@internal CCR backend wire hint; folded into timeout at parse."
+													},
 													"tools": {
 														"type": "array",
 														"items": {
@@ -1580,6 +1670,9 @@
 														}
 													},
 													"alwaysLoad": {
+														"type": "boolean"
+													},
+													"discoveryCache": {
 														"type": "boolean"
 													},
 													"role": {
@@ -1695,6 +1788,26 @@
 													"cachedInitResponse": {
 														"type": "object",
 														"additionalProperties": {}
+													},
+													"discoverSupport": {
+														"enum": [
+															"supported",
+															"legacy",
+															"unknown"
+														]
+													},
+													"cachedDiscoverResponse": {
+														"type": "object",
+														"additionalProperties": {}
+													},
+													"eligible": {
+														"type": "boolean"
+													},
+													"ineligibleReason": {
+														"type": "string"
+													},
+													"enterpriseManaged": {
+														"type": "boolean"
 													}
 												},
 												"required": [
@@ -2024,109 +2137,7 @@
 			"binaries": {
 				"description": "sha256-pinned files to fetch into bin/ at install time, keyed by basename (target triple encoded in the name)"
 			},
-			"experimental": {
-				"type": "object",
-				"properties": {
-					"themes": {
-						"anyOf": [
-							{
-								"type": "string",
-								"description": "Path to a themes directory or file, relative to the plugin root. When set, the themes/ directory is not auto-loaded — list its files here if you want both."
-							},
-							{
-								"type": "array",
-								"items": {
-									"type": "string",
-									"description": "Path to a themes directory or file, relative to the plugin root. When set, the themes/ directory is not auto-loaded — list its files here if you want both."
-								},
-								"description": "List of theme directory or file paths. When set, the themes/ directory is not auto-loaded."
-							}
-						]
-					},
-					"monitors": {
-						"anyOf": [
-							{
-								"type": "string",
-								"description": "Path to a JSON file containing the monitors array, relative to the plugin root"
-							},
-							{
-								"type": "array",
-								"items": {
-									"type": "object",
-									"properties": {
-										"name": {
-											"type": "string",
-											"minLength": 1,
-											"description": "Identifier for this monitor, unique within the plugin. Used to dedupe so re-arming (plugin reload, repeat skill invoke) does not spawn duplicates."
-										},
-										"command": {
-											"type": "string",
-											"minLength": 1,
-											"description": "Shell command to run as a persistent background monitor. Each stdout line is delivered to the model as a <task_notification> event; the process runs for the session lifetime. ${CLAUDE_PLUGIN_ROOT}, ${CLAUDE_PLUGIN_DATA}, ${CLAUDE_PROJECT_DIR}, ${user_config.*}, and ${ENV_VAR} are substituted. Runs in the session cwd \\u2014 prefix with `cd \"${CLAUDE_PLUGIN_ROOT}\" && ` if the script needs its own directory."
-										},
-										"description": {
-											"type": "string",
-											"minLength": 1,
-											"description": "Short human-readable description of what is being monitored (shown in task panel and notification summary)."
-										},
-										"when": {
-											"anyOf": [
-												{
-													"const": "always"
-												},
-												{
-													"type": "string"
-												}
-											],
-											"default": "always",
-											"description": "Arm trigger. \"always\" arms at session start and on plugin reload. \"on-skill-invoke:<skill>\" arms the first time that skill is dispatched (via Skill tool or slash command)."
-										}
-									},
-									"required": [
-										"name",
-										"command",
-										"description"
-									],
-									"additionalProperties": false
-								}
-							}
-						],
-						"description": "Background watch scripts the host arms as persistent Monitor tasks (unsandboxed, same trust tier as hooks) so plugins need not instruct the model to arm them. When omitted, monitors/monitors.json at the plugin root is loaded if present."
-					},
-					"outputStyles": {
-						"anyOf": [
-							{
-								"type": "string",
-								"description": "Path to an output-styles directory or file, relative to the plugin root. When set, the output-styles/ directory is not auto-loaded — list its files here if you want both."
-							},
-							{
-								"type": "array",
-								"items": {
-									"type": "string",
-									"description": "Path to an output-styles directory or file, relative to the plugin root. When set, the output-styles/ directory is not auto-loaded — list its files here if you want both."
-								},
-								"description": "List of output-style directory or file paths. When set, the output-styles/ directory is not auto-loaded."
-							}
-						]
-					},
-					"evals": {
-						"anyOf": [
-							{
-								"type": "string"
-							},
-							{
-								"type": "array",
-								"items": {
-									"type": "string"
-								}
-							}
-						],
-						"description": "Path(s) to evaluation query files for `claude plugin eval`. Defaults to `evals/`."
-					}
-				},
-				"additionalProperties": true,
-				"description": "Components whose manifest shape may change without a deprecation cycle. Move a key out of here once it is promoted to stable."
-			}
+			"experimental": {}
 		},
 		"required": [
 			"name"

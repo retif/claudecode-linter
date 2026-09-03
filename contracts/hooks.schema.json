@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.197",
-	"extractedAt": "2026-09-03T03:55:44.826Z",
+	"extractedFromClaudeCodeVersion": "2.1.259",
+	"extractedAt": "2026-09-03T10:07:24.763Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code hooks.json",
@@ -79,6 +79,13 @@
 													"type": "string",
 													"minLength": 1,
 													"description": "@internal One-line summary shown to the user in the terminal when an asyncRewake hook exits with code 2. Defaults to \"Stop hook feedback\"."
+												},
+												"cloud": {
+													"enum": [
+														"device",
+														"skip"
+													],
+													"description": "@internal Where this hook may run when a cloud session is driven from this machine. 'device': offer it to the cloud session and run it here even when its script sits where the cloud session can write on this machine or cannot be pinned — the author accepts that the session may have changed files this hook executes. 'skip': never offer it to cloud sessions. Omit for the default: a command hook whose script could be read and pinned and lies outside everything the cloud session can write here is offered; other command hooks are not. Applies to this entry only: the same hook written in another settings scope keeps its own setting. An unrecognised value reads as 'skip' (the file still loads; the hook stays on this machine)."
 												}
 											},
 											"required": [
@@ -205,6 +212,13 @@
 												"once": {
 													"type": "boolean",
 													"description": "If true, hook runs once and is removed after execution"
+												},
+												"cloud": {
+													"enum": [
+														"device",
+														"skip"
+													],
+													"description": "@internal Where this hook may run when a cloud session is driven from this machine. 'skip': never offer it to cloud sessions; 'device' or omitted: offered (an HTTP hook has no script to pin). Applies to this entry only. An unrecognised value reads as 'skip' (the file still loads)."
 												}
 											},
 											"required": [

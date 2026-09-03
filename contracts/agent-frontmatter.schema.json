@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.197",
-	"extractedAt": "2026-09-03T03:55:44.823Z",
+	"extractedFromClaudeCodeVersion": "2.1.259",
+	"extractedAt": "2026-09-03T10:07:24.753Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code agent .md frontmatter",
@@ -276,6 +276,83 @@
 					}
 				],
 				"description": "Filesystem isolation: `worktree` runs in a temporary git worktree."
+			},
+			"observer": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
+				"description": "Agent type auto-spawned as a background observer whenever this agent runs."
+			},
+			"observerMessage": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
+				"description": "Supplemental postamble appended (after the harness-owned default) to each activity digest sent to the observer."
+			},
+			"observeSubagents": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
+				"description": "If false, subagents this agent spawns do not inherit its observer. Defaults to true."
+			},
+			"experimental": {
+				"type": [
+					"object",
+					"null"
+				],
+				"properties": {
+					"cacheTtl": {
+						"anyOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "number"
+							},
+							{
+								"type": "boolean"
+							},
+							{
+								"type": "null"
+							}
+						],
+						"description": "Prompt cache TTL for this agent\\'s requests (\"5m\" or \"1h\") when no `subagentPromptCacheTtl` setting or env var is set. \"1h\" is ignored while a Claude subscription is in overage."
+					}
+				},
+				"description": "Experimental per-agent options; unknown keys are ignored."
 			}
 		},
 		"required": [

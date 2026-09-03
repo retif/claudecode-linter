@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.197",
-	"extractedAt": "2026-09-03T03:55:44.821Z",
+	"extractedFromClaudeCodeVersion": "2.1.259",
+	"extractedAt": "2026-09-03T10:07:24.745Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code SKILL.md frontmatter",
@@ -339,6 +339,23 @@
 				],
 				"description": "Agent type to spawn when `context: fork`."
 			},
+			"background": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
+				"description": "Only for `context: fork`. Forks run as background agents that report back as a task notification instead of blocking the turn; set `false` to keep the caller waiting for the result in-line."
+			},
 			"fallback": {
 				"anyOf": [
 					{
@@ -430,7 +447,7 @@
 				"description": "@internal"
 			},
 			"metadata": {
-				"description": "@internal"
+				"description": "Free-form map for the skill author's own use (e.g. entitlement or catalog fields). Preserved on the loaded skill."
 			},
 			"displayName": {
 				"description": "@internal"
