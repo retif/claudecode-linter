@@ -42,6 +42,50 @@ describe("mcp-json linter", () => {
     expect(diags.some((d) => d.rule === "mcp-json/url-valid")).toBe(true);
   });
 
+  // gitea#23: Claude Code expands `${...}` substitutions in .mcp.json before
+  // starting a server, so a templated url is not a URL at lint time.
+  describe("templated urls (gitea#23)", () => {
+    const urlServer = (url: string) => JSON.stringify({
+      mcpServers: { "my-server": { type: "streamable-http", url } },
+    });
+
+    it.each([
+      ["${user_config.browser_mcp_url}", "a user_config substitution"],
+      ["${CLAUDE_PLUGIN_ROOT}", "a plugin-root substitution"],
+      ["${MCP_URL:-https://example.com}", "an env substitution with a default"],
+      ["https://${user_config.host}/mcp", "a partial substitution"],
+    ])("does not report url-valid for %s (%s)", (url) => {
+      const diags = lint(urlServer(url));
+      expect(diags.some((d) => d.rule === "mcp-json/url-valid")).toBe(false);
+      expect(diags.filter((d) => d.severity === "error")).toHaveLength(0);
+    });
+
+    it("still reports url-valid for a genuinely malformed url", () => {
+      const diags = lint(urlServer("not a url at all"));
+      expect(diags.some((d) => d.rule === "mcp-json/url-valid")).toBe(true);
+    });
+
+    it("still reports url-valid when the substitution is only in another field", () => {
+      const diags = lint(JSON.stringify({
+        mcpServers: {
+          "my-server": {
+            type: "streamable-http",
+            url: "not a url at all",
+            headers: { Authorization: "${user_config.token}" },
+          },
+        },
+      }));
+      expect(diags.some((d) => d.rule === "mcp-json/url-valid")).toBe(true);
+    });
+
+    // The fix suppresses only the unparseable case; a templated url that DOES
+    // parse keeps its protocol check, so this is not a blanket skip.
+    it("still checks the protocol of a partially templated url", () => {
+      const diags = lint(urlServer("ftp://${user_config.host}/mcp"));
+      expect(diags.some((d) => d.rule === "mcp-json/url-protocol")).toBe(true);
+    });
+  });
+
   it("reports non-kebab-case server name", () => {
     const diags = lintFile(resolve(FIXTURES, "invalid/mcp-json/bad-server.json"));
     expect(diags.some((d) => d.rule === "mcp-json/server-name-kebab")).toBe(true);

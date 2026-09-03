@@ -16,6 +16,12 @@ interface RuleDef { id: string; defaultSeverity: Severity; }
 // `enum(["http","streamable-http"]).transform(()=>"http")`.
 const HTTP_TRANSPORT_TYPES = new Set<string>(["http", "streamable-http"]);
 
+// Claude Code expands `${...}` substitutions in .mcp.json — `${user_config.KEY}`,
+// `${CLAUDE_PLUGIN_ROOT}` and `${ENV_VAR}` / `${ENV_VAR:-default}` — before a server
+// is started, and its own schema types `url` as a plain string with no `uri` format.
+// A value carrying one is therefore not a URL at lint time and must not be parsed as one.
+const SUBSTITUTION_RE = /\$\{[^}]*\}/;
+
 const RULES: RuleDef[] = [
   { id: "mcp-json/scope-file-name", defaultSeverity: "warning" },
   { id: "mcp-json/valid-json", defaultSeverity: "error" },
@@ -175,8 +181,13 @@ export const mcpJsonLinter: Linter = {
               `Server "${name}" URL uses "${parsed.protocol}" — expected http: or https:`, sp?.line, sp?.column));
           }
         } catch {
-          push(diag(config, filePath, "mcp-json/url-valid", "error",
-            `Server "${name}" has invalid URL: "${url}"`, sp?.line, sp?.column));
+          // A parse failure is only a finding when nothing was left to substitute.
+          // Where a substitution spans the scheme the value cannot parse yet, and
+          // whether it resolves to a valid URL is unknowable here.
+          if (!SUBSTITUTION_RE.test(url)) {
+            push(diag(config, filePath, "mcp-json/url-valid", "error",
+              `Server "${name}" has invalid URL: "${url}"`, sp?.line, sp?.column));
+          }
         }
 
         // A URL-based HTTP server may declare "http" or "streamable-http".
