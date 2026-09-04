@@ -1,0 +1,36 @@
+# worktree-discipline opt-in for oleks/claudecode-linter
+# (kotkan/claude-plugin-worktree-discipline#31).
+#
+# Without this file every guard the plugin ships EXCEPT cross-worktree-guard.sh
+# is inert here: no pinned-main-checkout protection, no traceable naming for
+# worktrees a peer session creates, no reconcile-before-release on removal.
+# Both the protected and the unprotected state are silent, so a session cannot
+# tell them apart — that indistinguishability is the defect this file answers.
+#
+# This repo runs a shepherd plus one peer session at a time, each peer in its
+# own worktree under .claude/worktrees/, landing by merging into main in the
+# PRIMARY checkout. That is precisely the shape #31 describes going wrong.
+#
+# Sourced as shell KEY=VALUE; real environment variables override it. The
+# authoritative key contract — every key, its default and its precedence — is
+# the header of the plugin's hooks/policy.sh, not this file.
+
+# Integration ref new worktrees branch from. NOTE this repo has TWO remotes:
+# origin = github.com/retif/claudecode-linter (public, npm-published) and
+# gitea = git.oleks.space/oleks/claudecode-linter (the tracker). Local main
+# tracks GITEA, so gitea/main is the ref that matches the branch peers are
+# told to land into and push to both.
+WTD_BASE=gitea/main
+
+# The primary checkout is pinned to main. This is the key that actually turns
+# guards on: main-tree-edit-guard (PreToolUse Edit/Write), main-tree-bash-warn
+# (PreToolUse Bash, heuristic) and main-tree-dirty-detect (PostToolUse Bash,
+# certain but after the fact).
+#
+# Deliberate maintenance of the checkout itself overrides with
+# WTD_ALLOW_MAIN_TREE_EDIT=1. Two legitimate uses here, both temporary and
+# always restored: the shepherd's mutation checks against a landed fix, and
+# regenerating contracts/ to prove an extraction is byte-identical. Peers do
+# NOT need the override — they work in their worktree and only READ and run
+# gates in the primary.
+WTD_PIN_BRANCH=main

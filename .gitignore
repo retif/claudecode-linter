@@ -1,8 +1,12 @@
 node_modules/
 dist/
 *.tsbuildinfo
-.claude/
+.claude/*
 !tests/fixtures/**/.claude/
+# worktree-discipline opt-in; must be committed to take effect. Note the
+# rule above is `.claude/*` not `.claude/` — git cannot re-include a file
+# whose parent DIRECTORY is excluded, so a negation under `.claude/` is inert.
+!.claude/worktree-policy
 CHANGELOG_ENTRY.md
 .claude-code-version
 *.tgz
