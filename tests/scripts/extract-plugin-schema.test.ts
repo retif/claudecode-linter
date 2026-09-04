@@ -420,11 +420,32 @@ describe("indexDefinitions + master parsing", () => {
 });
 
 /**
+ * Enough unrelated code to push the kebab-case error string out of strategy 1's
+ * 4000-character backward window.
+ *
+ * Deliberately a second copy of the helper in
+ * `extract-plugin-schema-validator-collision.test.ts` rather than a shared
+ * import: these two files pin different mechanisms and neither should be able
+ * to weaken the other's fixtures by editing one helper (oleks/claudecode-linter#40).
+ */
+function pad(): string {
+	return `var PAD="${"x".repeat(5000)}";`;
+}
+
+/**
  * Build a 2.1.197+-shaped bundle where the master schema is NO LONGER validated
  * inline next to the "is not kebab-case" string. Instead a hand-rolled
  * imperative linter owns that string, and the Zod schema is validated inside a
  * generic validator (`KWe`) dispatched by artifact-type string
  * (`KWe(candidate,"plugin-json",{…})`), whose body calls `<master>().safeParse`.
+ *
+ * The `pad()` between the validator and the linter is what makes this fixture
+ * DISCRIMINATING. Without it `masterSchema().safeParse(` sits ~200 characters
+ * from "is not kebab-case", strategy 1 answers from the adjacency alone, and
+ * every assertion below passes with strategy 2 fully removed — which is exactly
+ * how this block sat green while pinning nothing (oleks/claudecode-linter#40).
+ * Real bundles have not had the two adjacent since 2.1.197; that separation is
+ * the whole reason strategy 2 exists.
  */
 function makeTypeDispatchBundle(): string {
 	const parts: string[] = [];
@@ -444,6 +465,9 @@ function makeTypeDispatchBundle(): string {
 	parts.push(
 		`function KWe(e,t,n){let o={...e},a=masterSchema().safeParse(o);return a.success?{ok:!0}:{ok:!1}}`,
 	);
+	// Push the kebab-case string out of strategy 1's reach, as the real bundle
+	// does with megabytes of unrelated modules.
+	parts.push(pad());
 	// Hand-rolled linter owning the kebab-case string, NOT adjacent to safeParse.
 	parts.push(
 		`function lintManifest(m,r){let i=KWe(m,"plugin-json",{manifestPath:r});if(!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(m.name))push({path:"name",message:\`Plugin name "\${m.name}" is not kebab-case.\`})}`,
@@ -453,6 +477,24 @@ function makeTypeDispatchBundle(): string {
 
 describe("type-string dispatch master detection (2.1.197+)", () => {
 	const idx = indexDefinitions(makeTypeDispatchBundle());
+
+	// Guard the FIXTURE, not the extractor. Padding fixes today's flaw; this is
+	// what stops the next author reintroducing it silently, because nothing else
+	// in the block reveals which strategy answered (oleks/claudecode-linter#40).
+	//
+	// Neutralising the "plugin-json" type string disarms strategy 2 and nothing
+	// else — strategy 1 keys on the kebab string, which stays untouched. So a
+	// null here is positive proof that strategy 1 cannot reach this fixture's
+	// `.safeParse(`, and therefore that every assertion below is strategy 2's
+	// work. Black-box on purpose: pinning the winner by reading it out of the
+	// locator would couple these tests to internals rewritten twice (#33, #39).
+	it("is a fixture strategy 1 cannot answer, so the rest pin strategy 2", () => {
+		const disarmed = makeTypeDispatchBundle().replace(
+			'"plugin-json"',
+			'"skill-md"',
+		);
+		expect(findMasterSchemaName(indexDefinitions(disarmed))).toBeNull();
+	});
 
 	it("falls back to the validator dispatch when kebab-case is not adjacent to safeParse", () => {
 		expect(findMasterSchemaName(idx)).toBe("masterSchema");
@@ -476,9 +518,16 @@ describe("type-string dispatch master detection (2.1.197+)", () => {
 			`var coreSchema=CH(()=>E.object({name:E.string().min(1)})),` +
 			`masterSchema=CH(()=>E.object({...coreSchema().shape}));` +
 			`var KWe=function(e,t){let a=masterSchema().safeParse(e);return a};` +
+			pad() +
 			`function lint(m){KWe(m,'plugin-json');` +
 			`if(!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(m.name))push("is not kebab-case")}`;
 		expect(findMasterSchemaName(indexDefinitions(src))).toBe("masterSchema");
+		// The same fixture guard, for this block's second fixture.
+		expect(
+			findMasterSchemaName(
+				indexDefinitions(src.replace("'plugin-json'", "'skill-md'")),
+			),
+		).toBeNull();
 	});
 });
 
