@@ -186,6 +186,15 @@ and check `npm view claudecode-linter version`. Full procedure — including the
 `patch-release.yml` escape hatch for fix-only changes and the emmett nix pin bump —
 in [`docs/RELEASING.md`](docs/RELEASING.md).
 
+**A commit touching `.github/workflows/**` cannot be pushed to `origin` over
+HTTPS.** GitHub rejects it (`GH013 … without workflow scope`) because github.com
+credentials come from `gh auth git-credential` and that token has no `workflow`
+scope. Push over SSH instead — `git push git@github.com:retif/claudecode-linter.git HEAD:main`,
+or `git remote set-url origin git@github.com:retif/claudecode-linter.git` once per
+clone. The remote URL lives in `.git/config` and is in no commit, so **a fresh
+HTTPS clone hits this again**. Details and rejected alternatives in
+[`docs/RELEASING.md`](docs/RELEASING.md#pushing-a-commit-that-touches-githubworkflows).
+
 ## Conventions
 
 - ESM (`"type": "module"`) — all imports use `.js` extensions
