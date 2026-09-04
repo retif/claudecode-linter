@@ -59,10 +59,17 @@ jobs:
       # Reported, never suppressed: if the new snapshot lists a production
       # dependency, the PR body has to say so rather than the job passing and
       # the surprise landing in CI later.
+      # `shell: bash` is load-bearing, not decoration. The DEFAULT shell on Linux
+      # runners is `bash -e {0}` with no pipefail; only an explicit `shell: bash`
+      # gets `bash --noprofile --norc -eo pipefail {0}`. Without it the status of
+      # `check-deps | tee` is tee's, always 0, so `steps.check.outcome` below was
+      # always `success` and the PR body claimed the gate passed even when it
+      # failed (oleks/claudecode-linter#37).
       - name: Check the refreshed snapshot against our dependencies
         if: steps.drift.outputs.changed == 'true'
         id: check
         continue-on-error: true
+        shell: bash
         run: npm run check-deps 2>&1 | tee check-deps.txt
 
       - name: Open a pull request
