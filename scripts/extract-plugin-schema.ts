@@ -1099,6 +1099,14 @@ function detectZodAlias(source: string): string {
  *     calls `<master>().safeParse(…)`. We locate the validator via the
  *     "plugin-json" type-string call site, then read the master symbol from
  *     its `<sym>().safeParse(` call.
+ *
+ * Strategy 2 resolves the validator's *declaration* by module, then verifies
+ * the candidate by what its body produces, rather than trusting the first
+ * corpus-wide match — see `findValidatorDeclarations`. That is not a third
+ * strategy for a third anchor: 2.1.260's anchor never moved, its validator's
+ * minified name merely collided with an unrelated function in another module,
+ * which a first-match search cannot distinguish. A fourth locator would not
+ * have helped, and a name collision will recur.
  */
 export function findMasterSchemaName(index: DefinitionIndex): string | null {
 	return findMasterSchemaSite(index)?.name ?? null;
@@ -1162,37 +1170,82 @@ function findMasterViaTypeDispatch(
 	source: string,
 	moduleRanges: ModuleRange[],
 ): { name: string; module: number } | null {
-	const validator = findValidatorCallName(source, "plugin-json");
-	if (!validator) return null;
-	// The validator may be declared as a statement (`function <V>(…)`) or bound
-	// to a variable as an arrow / function expression
-	// (`<V>=(…)=>{…}`, `<V>=async(…)=>{…}`, `<V>=function(…){…}`).
-	const esc = validator.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	const call = findValidatorCallSite(source, "plugin-json");
+	if (!call) return null;
+	const callModule = moduleOfOffset(moduleRanges, call.offset);
+	// Rank the declarations: the one in the calling module first, then the rest
+	// in source order. Minified identifiers are only unique *within* a module,
+	// so a corpus-wide search has no single right answer to take — see
+	// `findValidatorDeclarations`.
+	const decls = findValidatorDeclarations(source, call.name).sort((a, b) => {
+		const am = moduleOfOffset(moduleRanges, a) === callModule ? 0 : 1;
+		const bm = moduleOfOffset(moduleRanges, b) === callModule ? 0 : 1;
+		return am - bm || a - b;
+	});
+	// Accept the first declaration that actually produces what a validator
+	// produces. Ranking picks the likeliest candidate; this check is what makes
+	// a wrong pick impossible rather than merely unlikely.
+	for (const defIdx of decls) {
+		// Clamp the body window to the declaring module. A function body cannot
+		// cross a module boundary, so anything past it belongs to unrelated code
+		// — and reading a neighbour's `.safeParse(` would name a symbol that then
+		// has to resolve in the wrong module, which is the same class of mistake
+		// as the collision this loop exists to survive.
+		const declModule = moduleOfOffset(moduleRanges, defIdx);
+		const limit =
+			declModule === -1
+				? source.length
+				: Math.min(source.length, moduleRanges[declModule].end);
+		const body = source.slice(defIdx, Math.min(defIdx + 4000, limit));
+		const sp = body.match(/([\w$]+)\(\)\.safeParse\(/);
+		if (!sp) continue;
+		return {
+			name: sp[1],
+			module: moduleOfOffset(moduleRanges, defIdx + (sp.index ?? 0)),
+		};
+	}
+	return null;
+}
+
+/**
+ * Every offset in the corpus where `name` is *declared* — as a statement
+ * (`function <V>(…)`) or bound to a variable as an arrow / function expression
+ * (`<V>=(…)=>{…}`, `<V>=async(…)=>{…}`, `<V>=function(…){…}`).
+ *
+ * All of them, deliberately. The minifier allocates names per module, so a
+ * short name is routinely reused by unrelated code elsewhere in the corpus:
+ * on 2.1.260 the plugin-manifest validator is `jce` and a `notify_idle` helper
+ * eleven megabytes earlier is *also* `jce`. Taking the first corpus-wide match
+ * — which is what this used to do — picked the unrelated one, found no
+ * `.safeParse(` in its body, and reported the anchor as lost when it had not
+ * moved at all. 2.1.259 only worked because its validator name happened to be
+ * globally unique.
+ */
+function findValidatorDeclarations(source: string, name: string): number[] {
+	const esc = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 	const defRe = new RegExp(
 		`(?:function\\s+${esc}\\s*\\(|\\b${esc}\\s*=\\s*(?:async\\s*)?(?:function\\s*)?\\()`,
+		"g",
 	);
-	const def = defRe.exec(source);
-	if (!def) return null;
-	const defIdx = def.index;
-	const body = source.slice(defIdx, defIdx + 4000);
-	const sp = body.match(/([\w$]+)\(\)\.safeParse\(/);
-	if (!sp) return null;
-	return {
-		name: sp[1],
-		module: moduleOfOffset(moduleRanges, defIdx + (sp.index ?? 0)),
-	};
+	const out: number[] = [];
+	let m: RegExpExecArray | null;
+	while ((m = defRe.exec(source)) !== null) out.push(m.index);
+	return out;
 }
 
 /**
  * Find the identifier of the function called with `typeString` as one of its
- * arguments, e.g. `KWe(candidate,"plugin-json",{…})` → `KWe`. Scans backward
- * from the type-string literal across balanced brackets to the call's opening
- * paren, then reads the identifier before it.
+ * arguments, e.g. `KWe(candidate,"plugin-json",{…})` → `KWe`, and the offset of
+ * that call. Scans backward from the type-string literal across balanced
+ * brackets to the call's opening paren, then reads the identifier before it.
+ *
+ * The offset matters as much as the name: it is what tells the caller which
+ * module the identifier was resolved in.
  */
-function findValidatorCallName(
+function findValidatorCallSite(
 	source: string,
 	typeString: string,
-): string | null {
+): { name: string; offset: number } | null {
 	// The minifier usually emits double-quoted strings, but tolerate single
 	// quotes too so a quote-style rotation can't silently break extraction.
 	for (const needle of [`"${typeString}"`, `'${typeString}'`]) {
@@ -1218,7 +1271,8 @@ function findValidatorCallName(
 			const nameEnd = i;
 			let nameStart = nameEnd;
 			while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
-			if (nameStart < nameEnd) return source.slice(nameStart, nameEnd);
+			if (nameStart < nameEnd)
+				return { name: source.slice(nameStart, nameEnd), offset: nameStart };
 		}
 	}
 	return null;
@@ -2564,25 +2618,34 @@ function stripAdditionalPropertiesFalse(node: unknown): void {
 	}
 }
 
-export function buildPluginSchema(index: DefinitionIndex): JSONSchema {
+/**
+ * Compose `plugin.schema.json`, or null when the master schema cannot be
+ * located or carries no spread refs.
+ *
+ * Null, not a throw. A throw here took the other eight schemas down with it:
+ * `lsp`, `monitors`, `settings`, the three frontmatter schemas, `mcp` and
+ * `hooks` were never attempted, so a run in which exactly one anchor moved
+ * reported nine unknowns and the per-schema drift gate added in #33 could say
+ * nothing about the eight that were fine. Returning null makes this builder
+ * behave like every other one in the table, which is what lets the gate report
+ * per schema.
+ *
+ * Continuing is NOT the same as passing: an unlocatable master that previously
+ * extracted is still fatal via `checkSchemaStillBuilds`, only now at the end of
+ * the run instead of at its first failure. See the note on `main`'s deferred
+ * exit.
+ */
+export function buildPluginSchema(index: DefinitionIndex): JSONSchema | null {
 	const master = findMasterSchemaSite(index);
-	if (!master) {
-		throw new Error(
-			"Could not locate master plugin schema (kebab-case anchor not found)",
-		);
-	}
+	if (!master) return null;
 	const masterSite = resolveDefSite(index, master.name, master.module);
-	if (!masterSite) {
-		throw new Error(`Master schema symbol ${master.name} has no definition`);
-	}
+	if (!masterSite) return null;
 	const refs = parseMasterSpread(
 		masterSite.value,
 		index.zodAlias,
 		index.lazyWrapper,
 	);
-	if (refs.length === 0) {
-		throw new Error("Master schema spread parsing returned 0 refs");
-	}
+	if (refs.length === 0) return null;
 
 	const properties: Record<string, JSONSchema> = {};
 	const required: string[] = [];
@@ -2776,11 +2839,12 @@ export function schemaDriftVerdict(
 	};
 }
 
+/** True when the run must exit non-zero because of this schema. */
 function checkSchemaDrift(
 	label: string,
 	outPath: string,
 	schema: JSONSchema,
-): void {
+): boolean {
 	const verdict = schemaDriftVerdict(readPreviousSchema(outPath), schema);
 	if (verdict.gained.length > 0) {
 		console.log(
@@ -2789,16 +2853,17 @@ function checkSchemaDrift(
 			),
 		);
 	}
-	if (verdict.lost.length === 0) return;
+	if (verdict.lost.length === 0) return false;
 	const msg =
 		`${label} lost ${verdict.lost.length}/${verdict.prevCount} property paths ` +
 		`(${(verdict.dropRate * 100).toFixed(0)}%): ${verdict.lost.slice(0, 12).join(", ")}`;
 	if (verdict.fatal && process.env.FORCE_SCHEMA !== "1") {
 		console.log(pc.red(`  ✗ ${msg}`));
 		console.log(pc.red("    Set FORCE_SCHEMA=1 to override."));
-		process.exit(1);
+		return true;
 	}
 	console.log(pc.yellow(`  ⚠ ${msg}`));
+	return false;
 }
 
 /**
@@ -2813,11 +2878,12 @@ export function missingSchemaIsFatal(prevSchema: JSONSchema | null): boolean {
 	return !!prevSchema && schemaPropertyPaths(prevSchema).size > 0;
 }
 
-function checkSchemaStillBuilds(label: string, outPath: string): void {
+/** True when the run must exit non-zero because of this schema. */
+function checkSchemaStillBuilds(label: string, outPath: string): boolean {
 	const prevSchema = readPreviousSchema(outPath);
 	if (!missingSchemaIsFatal(prevSchema)) {
 		console.log(pc.yellow(`  ⚠ Could not locate ${label} schema`));
-		return;
+		return false;
 	}
 	const prevCount = schemaPropertyPaths(prevSchema).size;
 	if (process.env.FORCE_SCHEMA === "1") {
@@ -2826,7 +2892,7 @@ function checkSchemaStillBuilds(label: string, outPath: string): void {
 				`  ⚠ ${label} schema no longer extracts (previous extraction kept; FORCE_SCHEMA=1)`,
 			),
 		);
-		return;
+		return false;
 	}
 	console.log(
 		pc.red(
@@ -2835,7 +2901,7 @@ function checkSchemaStillBuilds(label: string, outPath: string): void {
 		),
 	);
 	console.log(pc.red("    Set FORCE_SCHEMA=1 to override."));
-	process.exit(1);
+	return true;
 }
 
 /** Write one extracted schema to its contracts file. */
@@ -2856,6 +2922,102 @@ function writeSchemaFile(
 			"\t",
 		) + "\n",
 	);
+}
+
+/** One emitted contracts file: how to build it and where it lands. */
+export interface SchemaTarget {
+	/** `--only` selector. Several targets may share one key. */
+	key: string;
+	label: string;
+	file: string;
+	build: (i: DefinitionIndex) => JSONSchema | null;
+}
+
+/**
+ * Every emitted schema, in one table so the drift gate cannot be attached to
+ * some of them and forgotten on the rest — which is exactly how the frontmatter
+ * schemas lost 83% of their fields inside a green run (#33).
+ *
+ * `plugin` is IN the table, not special-cased ahead of it. It used to be built
+ * before the loop by a function that threw, so a run in which only the master
+ * anchor moved never attempted the other eight — `lsp`, `monitors`, `settings`,
+ * the three frontmatter schemas, `mcp` and `hooks` were all reported as unknown
+ * when nothing suggested their anchors had moved (#39). Every builder now
+ * signals failure the same way, by returning null, and every target is gated
+ * the same way.
+ */
+export function schemaTargets(): SchemaTarget[] {
+	return [
+		{
+			key: "plugin",
+			label: "Plugin",
+			file: "plugin.schema.json",
+			build: (i) => {
+				console.log(
+					pc.cyan(`▸ Master schema: ${findMasterSchemaName(i) ?? "<not found>"}`),
+				);
+				const schema = buildPluginSchema(i);
+				if (schema) {
+					const propCount = Object.keys(schema.properties as object).length;
+					const reqCount = ((schema.required as string[]) ?? []).length;
+					console.log(
+						pc.cyan(
+							`▸ Composed schema: ${propCount} properties, ${reqCount} required`,
+						),
+					);
+				}
+				return schema;
+			},
+		},
+		{
+			key: "lsp",
+			label: "LSP",
+			file: "lsp.schema.json",
+			build: buildLspSchema,
+		},
+		{
+			key: "monitors",
+			label: "Monitors",
+			file: "monitors.schema.json",
+			build: buildMonitorsSchema,
+		},
+		{
+			key: "settings",
+			label: "Settings",
+			file: "settings.schema.json",
+			build: buildSettingsSchema,
+		},
+		{
+			key: "frontmatter",
+			label: "Skill frontmatter",
+			file: "skill-frontmatter.schema.json",
+			build: buildSkillFrontmatterSchema,
+		},
+		{
+			key: "frontmatter",
+			label: "Agent frontmatter",
+			file: "agent-frontmatter.schema.json",
+			build: buildAgentFrontmatterSchema,
+		},
+		{
+			key: "frontmatter",
+			label: "Command frontmatter",
+			file: "command-frontmatter.schema.json",
+			build: buildCommandFrontmatterSchema,
+		},
+		{
+			key: "mcp",
+			label: "MCP config",
+			file: "mcp.schema.json",
+			build: buildMcpJsonSchema,
+		},
+		{
+			key: "hooks",
+			label: "Hooks config",
+			file: "hooks.schema.json",
+			build: buildHooksJsonSchema,
+		},
+	];
 }
 
 // ---------------------------------------------------------------------------
@@ -2915,92 +3077,28 @@ function main() {
 
 	const rootDir = join(import.meta.dirname!, "..");
 
-	if (shouldBuild("plugin")) {
-		const masterName = findMasterSchemaName(index);
-		console.log(pc.cyan(`▸ Master schema: ${masterName ?? "<not found>"}`));
-
-		const schema = buildPluginSchema(index);
-		const propCount = Object.keys(schema.properties as object).length;
-		const reqCount = ((schema.required as string[]) ?? []).length;
-		console.log(
-			pc.cyan(
-				`▸ Composed schema: ${propCount} properties, ${reqCount} required`,
-			),
-		);
-
-		const outPath = join(rootDir, "contracts", "plugin.schema.json");
-		checkSchemaDrift("Plugin schema", outPath, schema);
-		writeSchemaFile(outPath, version, schema);
-		console.log(pc.dim(`  Written to ${outPath}`));
-	}
-
-	// Every other emitted schema, driven off one table so the drift gate cannot
-	// be attached to some of them and forgotten on the rest — which is exactly
-	// how the frontmatter schemas lost 83% of their fields inside a green run.
-	const targets: Array<{
-		key: string;
-		label: string;
-		file: string;
-		build: (i: DefinitionIndex) => JSONSchema | null;
-	}> = [
-		{
-			key: "lsp",
-			label: "LSP",
-			file: "lsp.schema.json",
-			build: buildLspSchema,
-		},
-		{
-			key: "monitors",
-			label: "Monitors",
-			file: "monitors.schema.json",
-			build: buildMonitorsSchema,
-		},
-		{
-			key: "settings",
-			label: "Settings",
-			file: "settings.schema.json",
-			build: buildSettingsSchema,
-		},
-		{
-			key: "frontmatter",
-			label: "Skill frontmatter",
-			file: "skill-frontmatter.schema.json",
-			build: buildSkillFrontmatterSchema,
-		},
-		{
-			key: "frontmatter",
-			label: "Agent frontmatter",
-			file: "agent-frontmatter.schema.json",
-			build: buildAgentFrontmatterSchema,
-		},
-		{
-			key: "frontmatter",
-			label: "Command frontmatter",
-			file: "command-frontmatter.schema.json",
-			build: buildCommandFrontmatterSchema,
-		},
-		{
-			key: "mcp",
-			label: "MCP config",
-			file: "mcp.schema.json",
-			build: buildMcpJsonSchema,
-		},
-		{
-			key: "hooks",
-			label: "Hooks config",
-			file: "hooks.schema.json",
-			build: buildHooksJsonSchema,
-		},
-	];
+	const targets = schemaTargets();
+	// Deferred exit. Each gate now REPORTS its verdict and the loop keeps going,
+	// so one run names every anchor that moved instead of only the first. The
+	// exit code is unchanged: any fatal verdict still exits 1, and a partial
+	// extraction never exits 0 while a previously-extracting schema is missing —
+	// that would let CI publish contracts around a stale plugin.schema.json in a
+	// green run, the silent-wrong-answer class the gate exists to kill.
+	const failed: string[] = [];
 	for (const target of targets) {
 		if (!shouldBuild(target.key)) continue;
 		const outPath = join(rootDir, "contracts", target.file);
 		const schema = target.build(index);
 		if (!schema) {
-			checkSchemaStillBuilds(target.label, outPath);
+			if (checkSchemaStillBuilds(target.label, outPath)) failed.push(target.label);
 			continue;
 		}
-		checkSchemaDrift(`${target.label} schema`, outPath, schema);
+		if (checkSchemaDrift(`${target.label} schema`, outPath, schema)) {
+			// Not written: a fatally-drifted schema must not overwrite the previous
+			// extraction, exactly as when this gate exited on the spot.
+			failed.push(target.label);
+			continue;
+		}
 		writeSchemaFile(outPath, version, schema);
 		console.log(
 			pc.cyan(
@@ -3008,6 +3106,12 @@ function main() {
 					`(${schemaPropertyPaths(schema).size} property paths)`,
 			),
 		);
+	}
+	if (failed.length > 0) {
+		console.log(
+			pc.red(`✗ ${failed.length} schema(s) failed the gate: ${failed.join(", ")}`),
+		);
+		process.exit(1);
 	}
 }
 
