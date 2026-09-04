@@ -703,6 +703,16 @@ function addSite(
  * source for `<ident>=` followed by recognized Zod-ish RHS expressions and
  * record their text spans.
  */
+/**
+ * Escape a literal for embedding in a `RegExp`.
+ *
+ * Minified Zod aliases are identifiers, so the character that actually matters
+ * here is `$` — legal in an identifier and a metacharacter in a pattern.
+ */
+function escapeRegExp(literal: string): string {
+	return literal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function indexDefinitions(
 	source: string,
 	moduleRanges: ModuleRange[] = [],
@@ -722,11 +732,20 @@ export function indexDefinitions(
 		// `<name>()` field references resolve to a real schema instead of
 		// degrading to `{}` — a strict improvement, since unresolved refs still
 		// fall back to permissive `{}`.
-		`()=>${zodAlias}.object({`,
-		`()=>${zodAlias}.strictObject({`,
-		`()=>${zodAlias}.union([`,
-		`()=>${zodAlias}.discriminatedUnion(`,
-		`()=>${zodAlias}.lazy(`,
+		//
+		// This is ANY `<alias>.<method>`, not an enumerated list of the composite
+		// ones. It used to name only object/strictObject/union/discriminatedUnion/
+		// lazy, which left every *primitive* factory — `He=()=>y.string().regex(…)`,
+		// `cc=()=>y.number().int().min(…)` — unindexed. An unindexed local binding
+		// does not degrade to `{}`: `resolveDefSite` finds no binding in the
+		// referring module, falls through to a same-named binding in some *other*
+		// module, and the walker emits that unrelated schema as if it were this
+		// field's. That is how 2.1.259 typed `accessKeyIdVar` ("Name of the masked
+		// env var holding the AWS access key id.") as a TodoWrite item and
+		// `autoCompactWindow` ("Auto-compact window size") as an experiment-arm
+		// union — 87 property paths that were never in the upstream source
+		// (oleks/claudecode-linter#41).
+		`()=>${zodAlias}.`,
 		`${zodAlias}.object({`,
 		`${zodAlias}.strictObject({`,
 		`${zodAlias}.union([`,
@@ -768,6 +787,42 @@ export function indexDefinitions(
 			if (!defs.has(name)) defs.set(name, expr);
 			addSite(defSites, moduleRanges, name, idx, expr);
 		}
+	}
+
+	// Function-declaration schema factories — `function <name>(){return <alias>…}`.
+	//
+	// The scan above walks backwards from `=` for the name, so a factory declared
+	// as a function statement rather than an assignment is invisible to it: there
+	// is no `=` to anchor on. Claude Code ships these (2.1.259 and 2.1.260 both
+	// declare `function bn(){return __zod.string().max(…,{message:"headersHelper
+	// must be…"})}`), and, exactly as above, being unindexed is not neutral — the
+	// reference resolves to some other module's `bn` instead. That is how
+	// `headersHelper`, documented upstream as "Command that prints a JSON object
+	// of HTTP headers", acquired a `{type,text}` shape on 2.1.259 and an OAuth
+	// `{access_token,refresh_token,…}` shape on 2.1.260, neither of which exists
+	// in the source (oleks/claudecode-linter#41).
+	//
+	// Restricted to bodies that return the Zod alias directly. A body returning a
+	// *helper* call could be anything, and resolving it on a guess is the failure
+	// this whole block exists to stop.
+	const fnFactoryRe = new RegExp(
+		`function\\s+([A-Za-z_$][\\w$]*)\\s*\\(\\)\\s*\\{\\s*return\\s+(?=${escapeRegExp(zodAlias)}\\.)`,
+		"g",
+	);
+	let fm: RegExpExecArray | null;
+	while ((fm = fnFactoryRe.exec(source)) !== null) {
+		const name = fm[1];
+		const bodyStart = fm.index + fm[0].length;
+		if (
+			defSites
+				.get(name)
+				?.some((s) => s.module === moduleOfOffset(moduleRanges, bodyStart))
+		)
+			continue;
+		const expr = extractExpression(source, bodyStart);
+		if (!expr) continue;
+		if (!defs.has(name)) defs.set(name, expr);
+		addSite(defSites, moduleRanges, name, bodyStart, expr);
 	}
 
 	// Index plain `<name>=[...]` array-literal declarations whose elements are
