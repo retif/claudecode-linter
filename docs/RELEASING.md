@@ -73,6 +73,60 @@ upstream, shallow clone with no common history) it reports "cannot determine" ra
 than success. A check that fails open is the same silent-failure class it exists to
 catch.
 
+## Pushing a commit that touches `.github/workflows/**`
+
+Over **HTTPS**, `origin` rejects it outright. This is not a warning you can push
+through:
+
+```
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: - refusing to allow an OAuth App to create or update workflow `.github/workflows/ci.yml` without `workflow` scope
+ ! [remote rejected] HEAD -> main (push declined due to repository rule violations)
+```
+
+The cause is not in this repo. Git is configured **globally on the machine** to
+serve `https://github.com` credentials from `gh auth git-credential`, and that
+token's scopes are `admin:public_key`, `gist`, `read:org`, `repo` — no
+`workflow`, which GitHub requires before an OAuth App token may create or modify
+a workflow file. Every repo on such a machine is affected, not only this one
+(oleks/emmett#635).
+
+**Push over SSH instead** — SSH is not subject to the OAuth App scope check:
+
+```bash
+git push git@github.com:retif/claudecode-linter.git HEAD:main
+```
+
+Or, once per clone, make it the default so the wall stops being reachable at all:
+
+```bash
+git remote set-url origin git@github.com:retif/claudecode-linter.git
+git push origin main          # now works for workflow commits too
+```
+
+Prefer the second. The failure fires only on the subset of commits that touch
+CI — exactly the subset most likely to be mis-recorded as landed — so left in
+place it lies dormant until the least convenient moment.
+
+> **This paragraph is the only part of the fix that travels.** `remote.origin.url`
+> lives in `.git/config`: machine-local, shared by every worktree of the checkout,
+> and captured in **no commit**. A fresh clone made over HTTPS on any machine —
+> including a fresh clone on this one — gets the HTTPS URL back and hits the same
+> wall. There is no way to ship a remote URL in-tree; git chooses it at clone
+> time. So this documentation is the deliverable, and the URL change is only local
+> hygiene. Cloning with `git clone git@github.com:retif/claudecode-linter.git`
+> avoids it from the start.
+
+Two things this is **not**:
+
+- Not `Bypassed rule violations for refs/heads/main`, which is a *warning* about
+  the required `build-and-test` check and lets the push through
+  (oleks/claudecode-linter#27). This one refuses the push.
+- Not fixed by `gh auth refresh -s workflow`. That needs an interactive browser
+  device flow, so it is the operator's to run — and it would grant `workflow` on
+  a machine-wide token, letting anything on the host rewrite CI in every repo
+  that token reaches. SSH needs no new scope.
+
 ## Route A — contract sync (automatic)
 
 When Anthropic publishes a new Claude Code version, `release.yml` picks it up on
@@ -108,6 +162,9 @@ Full sequence for a linter-only fix:
 git fetch --all
 git rev-list --left-right --count origin/main...gitea/main    # confirm the gap
 git push origin gitea/main:main                                # publish to upstream
+# ^ if the range contains ANY commit touching .github/workflows/**, this is
+#   rejected with GH013 over HTTPS. See "Pushing a commit that touches
+#   .github/workflows/**" above — push over SSH.
 
 # 2. Cut the patch release (publishes to npmjs + creates a GitHub Release).
 gh workflow run patch-release.yml -f reason="fix #NN: <what it fixes>"
