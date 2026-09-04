@@ -37,12 +37,29 @@ import { extractBunEmbeddedModules } from "./extract-contracts.js";
 //    the Zod walker can index.
 // ---------------------------------------------------------------------------
 
+/**
+ * Half-open `[start, end)` offsets of one normalised module inside the corpus.
+ *
+ * The corpus is a concatenation, so the boundaries the minifier's module scopes
+ * live in are still recoverable — which is the whole basis of module-scoped
+ * symbol resolution. See `buildCorpusWithRanges`.
+ */
+export interface ModuleRange {
+	start: number;
+	end: number;
+}
+
 export interface BundleResult {
 	/** The normalised, concatenated corpus the walker indexes. */
 	source: string;
 	/** The raw recovered modules, before normalisation. */
 	modules: string[];
 	version: string;
+	/**
+	 * Offsets of each normalised module within `source`, in order. Empty only
+	 * when the corpus was not built from recovered modules.
+	 */
+	moduleRanges: ModuleRange[];
 }
 
 export function fetchBundle(requestedVersion?: string): BundleResult {
@@ -63,10 +80,12 @@ export function fetchBundle(requestedVersion?: string): BundleResult {
 		const legacyCli = join(tmp, "package", "cli.js");
 		if (existsSync(legacyCli)) {
 			const legacy = readFileSync(legacyCli, "utf8");
+			const legacyCorpus = buildCorpusWithRanges([legacy]);
 			return {
-				source: buildCorpus([legacy]),
+				source: legacyCorpus.source,
 				modules: [legacy],
 				version: pkg.version,
+				moduleRanges: legacyCorpus.moduleRanges,
 			};
 		}
 		const platformDir = join(tmp, "platform");
@@ -82,10 +101,12 @@ export function fetchBundle(requestedVersion?: string): BundleResult {
 		execSync(`tar xzf "${ptgz}"`, { cwd: platformDir, stdio: "pipe" });
 		const binary = readFileSync(join(platformDir, "package", "claude"));
 		const modules = extractBunEmbeddedModules(binary, pkg.version);
+		const corpus = buildCorpusWithRanges(modules);
 		return {
-			source: buildCorpus(modules),
+			source: corpus.source,
 			modules,
 			version: pkg.version,
+			moduleRanges: corpus.moduleRanges,
 		};
 	} finally {
 		rmSync(tmp, { recursive: true, force: true });
@@ -298,6 +319,29 @@ export function normalizeZodModule(
  * Indexing each module alone finds the name or the definition, never both.
  */
 export function buildCorpus(modules: string[]): string {
+	return buildCorpusWithRanges(modules).source;
+}
+
+/**
+ * `buildCorpus`, plus the offsets each module occupies in the result.
+ *
+ * The concatenation is what makes anchors resolvable at all, but it also
+ * flattens ~1,635 module scopes into one namespace, and minified symbols are
+ * module-scoped: on 2.1.259, 161 of the 1,176 factory-bound names are bound in
+ * more than one module (`n` in fourteen of them) and 5,312 of the 15,225
+ * `function <name>(` declarations are declared in more than one. Keeping the
+ * boundaries lets `indexDefinitions` record which module each binding came
+ * from, so a reference can resolve to *its own* module's binding rather than to
+ * whichever module happened to be concatenated first. Without them the corpus
+ * is the only scope there is.
+ *
+ * The separator is the same single `\n` the join emits, so the ranges tile the
+ * corpus exactly and no offset in a module's own text falls outside its range.
+ */
+export function buildCorpusWithRanges(modules: string[]): {
+	source: string;
+	moduleRanges: ModuleRange[];
+} {
 	const factories = collectZodFactories(modules);
 	const normalized: string[] = [];
 	for (const mod of modules) {
@@ -307,8 +351,33 @@ export function buildCorpus(modules: string[]): string {
 	// Nothing normalised: either an unrecognised layout or a non-Zod corpus.
 	// Fall back to the raw modules so `assertDefinitionsUsable` reports on real
 	// content rather than on an empty string.
-	if (normalized.length === 0) return modules.join("\n");
-	return normalized.join("\n");
+	const parts = normalized.length === 0 ? modules : normalized;
+	const moduleRanges: ModuleRange[] = [];
+	let offset = 0;
+	for (let i = 0; i < parts.length; i++) {
+		if (i > 0) offset += 1; // the "\n" the join inserts
+		moduleRanges.push({ start: offset, end: offset + parts[i].length });
+		offset += parts[i].length;
+	}
+	return { source: parts.join("\n"), moduleRanges };
+}
+
+/**
+ * Which module an offset falls in, or -1 when there are no ranges (a corpus
+ * built from a bare string, as every unit test does) or the offset lands on a
+ * separator. -1 reads as "no module known", which every resolution path treats
+ * as "fall back to corpus-wide behaviour" — never as module 0.
+ */
+export function moduleOfOffset(ranges: ModuleRange[], pos: number): number {
+	let lo = 0;
+	let hi = ranges.length - 1;
+	while (lo <= hi) {
+		const mid = (lo + hi) >> 1;
+		if (pos < ranges[mid].start) hi = mid - 1;
+		else if (pos >= ranges[mid].end) lo = mid + 1;
+		else return mid;
+	}
+	return -1;
 }
 
 /**
@@ -338,7 +407,13 @@ export function loadLocalBundle(pathOrVersion: string): BundleResult {
 	// layout names each binary after its version).
 	const version = binPath.split(/[\\/]/).pop() ?? pathOrVersion;
 	const modules = extractBunEmbeddedModules(binary, version);
-	return { source: buildCorpus(modules), modules, version };
+	const corpus = buildCorpusWithRanges(modules);
+	return {
+		source: corpus.source,
+		modules,
+		version,
+		moduleRanges: corpus.moduleRanges,
+	};
 }
 
 // ---------------------------------------------------------------------------
@@ -489,11 +564,38 @@ function unquote(s: string): string {
 // 3. Top-level definition index — maps `<name> = <expr>` for resolution.
 // ---------------------------------------------------------------------------
 
+/**
+ * One binding of a symbol, tagged with the module it was declared in.
+ *
+ * `module` is -1 when the corpus carries no module ranges (a bare-string index,
+ * as in the unit tests) — "unknown module", never module 0.
+ */
+export interface DefSite {
+	module: number;
+	value: string;
+}
+
 export interface DefinitionIndex {
 	/** Bundle source. */
 	source: string;
 	/** Maps symbol name → expression text (right-hand side of the assignment). */
 	defs: Map<string, string>;
+	/**
+	 * Offsets of each normalised module inside `source`; empty when unknown.
+	 * See `buildCorpusWithRanges`.
+	 */
+	moduleRanges: ModuleRange[];
+	/**
+	 * EVERY factory binding of each name, in source order, each tagged with its
+	 * module — the module-scoped view of `defs`.
+	 *
+	 * `defs` keeps only the first binding, which is why a reference used to
+	 * resolve into whichever module the concatenation happened to put first.
+	 * `resolveDefSite` reads this instead and prefers the referring
+	 * definition's own module. `defs` is retained because it is what
+	 * `assertDefinitionsUsable` counts and what the corpus-wide fallback reads.
+	 */
+	defSites: Map<string, DefSite[]>;
 	/** Detected Zod alias (e.g. "E" or "I" or "y"). */
 	zodAlias: string;
 	/** Detected lazy-wrapper helper (e.g. "CH" or "xH" — `<name>(()=>...)`). */
@@ -506,6 +608,8 @@ export interface DefinitionIndex {
 	 * argument to a concrete `enum` instead of degrading to `{}`.
 	 */
 	arrays: Map<string, string>;
+	/** Every `<name>=[…]` array binding, tagged with its module. */
+	arraySites: Map<string, DefSite[]>;
 	/**
 	 * Maps symbol name → string value for plain `<name>="..."` declarations.
 	 * Claude Code keeps canonical URLs and other tokens in top-level string
@@ -515,6 +619,79 @@ export interface DefinitionIndex {
 	 * (the pXq/V0q-style bug fixed by issue #1).
 	 */
 	stringLits: Map<string, string>;
+	/** Every `<name>="…"` string binding, tagged with its module. */
+	stringSites: Map<string, DefSite[]>;
+}
+
+/**
+ * Resolve a symbol to the binding a reference in `fromModule` should see.
+ *
+ * Order, and why each step is the one it is:
+ *
+ *  1. **The referring module's own binding.** Minified names are module-scoped,
+ *     so if the module holding the reference also binds the name, that binding
+ *     is the referent, full stop. This is the step the corpus flattening used
+ *     to lose.
+ *  2. **A corpus-wide unique binding.** Anchors and the definitions they name
+ *     routinely live in different modules (on 2.1.259 the `"plugin-json"`
+ *     dispatch naming `rhe` is in one module and `rhe` is defined in another),
+ *     so a cross-module reference is normal and must still resolve. When a name
+ *     has exactly one binding there is nothing to be ambiguous about.
+ *  3. **The first binding.** Ambiguous *and* not bound in the referring module:
+ *     nothing in the corpus says which is meant. This is the pre-existing
+ *     behaviour, kept deliberately rather than guessed at — it is the case the
+ *     module boundaries cannot decide, and changing it would be a coin flip
+ *     dressed as a fix.
+ */
+export function resolveDefSite(
+	index: DefinitionIndex,
+	name: string,
+	fromModule?: number,
+): DefSite | null {
+	const sites = index.defSites.get(name);
+	if (!sites || sites.length === 0) return null;
+	if (fromModule !== undefined && fromModule >= 0) {
+		const own = sites.find((s) => s.module === fromModule);
+		if (own) return own;
+	}
+	return sites[0];
+}
+
+/** Module-scoped lookup in one of the leaf-value indexes (arrays / strings). */
+function resolveSite(
+	sites: Map<string, DefSite[]> | undefined,
+	name: string,
+	fromModule?: number,
+): string | undefined {
+	const found = sites?.get(name);
+	if (!found || found.length === 0) return undefined;
+	if (fromModule !== undefined && fromModule >= 0) {
+		const own = found.find((s) => s.module === fromModule);
+		if (own) return own.value;
+	}
+	return found[0].value;
+}
+
+/** Record one binding of `name` in the module containing `offset`. */
+function addSite(
+	sites: Map<string, DefSite[]>,
+	ranges: ModuleRange[],
+	name: string,
+	offset: number,
+	value: string,
+): void {
+	const module = moduleOfOffset(ranges, offset);
+	const list = sites.get(name);
+	if (list) {
+		// One module may bind a name once as far as resolution is concerned;
+		// keeping only the first binding per module mirrors `defs`' own
+		// first-wins rule *within* a scope, where it is correct.
+		if (!list.some((s) => s.module === module)) {
+			list.push({ module, value });
+		}
+		return;
+	}
+	sites.set(name, [{ module, value }]);
 }
 
 /**
@@ -526,8 +703,15 @@ export interface DefinitionIndex {
  * source for `<ident>=` followed by recognized Zod-ish RHS expressions and
  * record their text spans.
  */
-export function indexDefinitions(source: string): DefinitionIndex {
+export function indexDefinitions(
+	source: string,
+	moduleRanges: ModuleRange[] = [],
+): DefinitionIndex {
 	const defs = new Map<string, string>();
+	// Every binding, tagged with its module. Built in the *same* order `defs`
+	// is, so `defSites.get(n)[0]` is always the binding `defs.get(n)` holds and
+	// the corpus-wide fallback is bit-for-bit the old behaviour.
+	const defSites = new Map<string, DefSite[]>();
 	const zodAlias = detectZodAlias(source);
 	const lazyWrapper = detectLazyWrapper(source, zodAlias);
 	const factoryStarts = [
@@ -568,10 +752,21 @@ export function indexDefinitions(source: string): DefinitionIndex {
 				nameStart--;
 			if (nameStart === nameEnd) continue;
 			const name = source.slice(nameStart, nameEnd);
-			if (defs.has(name)) continue;
+			// One binding per module is recorded; `defs` still keeps only the
+			// very first, corpus-wide. `addSite` short-circuits a repeat within
+			// the same module, so this only re-extracts for a genuinely new one.
+			const knownModules = defSites.get(name);
+			if (
+				knownModules?.some(
+					(s) => s.module === moduleOfOffset(moduleRanges, idx),
+				)
+			)
+				continue;
 			// extract the RHS expression text
 			const expr = extractExpression(source, idx);
-			if (expr) defs.set(name, expr);
+			if (!expr) continue;
+			if (!defs.has(name)) defs.set(name, expr);
+			addSite(defSites, moduleRanges, name, idx, expr);
 		}
 	}
 
@@ -580,12 +775,15 @@ export function indexDefinitions(source: string): DefinitionIndex {
 	// hook-event list `ev`, the shell list `DLq`). Only string-of-strings
 	// arrays are indexed — that is all `y.enum(...)` ever consumes.
 	const arrays = new Map<string, string>();
+	const arraySites = new Map<string, DefSite[]>();
 	const arrRe = /(?:^|[;,{(\s])([A-Za-z_$][\w$]*)=\[/g;
 	let am: RegExpExecArray | null;
 	while ((am = arrRe.exec(source)) !== null) {
 		const name = am[1];
-		if (arrays.has(name)) continue;
-		const bracketIdx = source.indexOf("[", am.index);
+		const at = am.index;
+		const arrModule = moduleOfOffset(moduleRanges, at);
+		if (arraySites.get(name)?.some((s) => s.module === arrModule)) continue;
+		const bracketIdx = source.indexOf("[", at);
 		const arr = extractBalanced(source, bracketIdx, "[", "]");
 		if (!arr) continue;
 		const inner = arr.slice(1, -1).trim();
@@ -598,7 +796,9 @@ export function indexDefinitions(source: string): DefinitionIndex {
 				(p.startsWith('"') && p.endsWith('"')) ||
 				(p.startsWith("'") && p.endsWith("'")),
 		);
-		if (allStrings) arrays.set(name, arr);
+		if (!allStrings) continue;
+		if (!arrays.has(name)) arrays.set(name, arr);
+		addSite(arraySites, moduleRanges, name, at, arr);
 	}
 
 	// Index bare alias assignments — `<name>=<ident>` where `<ident>` is itself
@@ -630,11 +830,16 @@ export function indexDefinitions(source: string): DefinitionIndex {
 	// Trying each candidate and keeping the one that actually bottoms out in
 	// an indexed factory is both order-independent and conservative: a name
 	// with no factory-backed binding still resolves to nothing.
-	const aliasPairs = new Map<string, string[]>();
+	//
+	// Each candidate carries the module its `<name>=<target>` declaration sits
+	// in, so an alias resolves through its own module's binding of the target
+	// when there is one — the same module-scoping the factory index gets.
+	const aliasPairs = new Map<string, Array<{ target: string; module: number }>>();
 	let alm: RegExpExecArray | null;
 	while ((alm = aliasRe.exec(source)) !== null) {
 		const name = alm[1];
 		const target = alm[2];
+		const aliasModule = moduleOfOffset(moduleRanges, alm.index);
 		if (name === target) continue;
 		// Only an existing *definition* blocks an alias. An array binding must
 		// not: `defs` answers `<name>()` calls and `arrays` answers
@@ -647,30 +852,61 @@ export function indexDefinitions(source: string): DefinitionIndex {
 		if (defs.has(name)) continue;
 		const targets = aliasPairs.get(name);
 		if (targets) {
-			if (!targets.includes(target)) targets.push(target);
+			if (
+				!targets.some((t) => t.target === target && t.module === aliasModule)
+			) {
+				targets.push({ target, module: aliasModule });
+			}
 		} else {
-			aliasPairs.set(name, [target]);
+			aliasPairs.set(name, [{ target, module: aliasModule }]);
 		}
 	}
 	// Resolve each alias to a factory-backed target, following alias chains.
+	//
+	// A name aliased in several modules gets one recorded site per module, so
+	// `LW=z36` in the skill module and an unrelated `LW=<other>` elsewhere no
+	// longer compete: each resolves for references in its own module. `defs`
+	// still takes the first resolution corpus-wide, keeping the fallback path
+	// exactly as it was.
 	for (const [name, candidates] of aliasPairs) {
+		const resolvedModules = new Set<number>();
 		for (const candidate of candidates) {
+			if (resolvedModules.has(candidate.module)) continue;
 			const seen = new Set<string>([name]);
-			let target: string | undefined = candidate;
-			let resolved = false;
+			let target: string | undefined = candidate.target;
 			while (target !== undefined && !seen.has(target)) {
-				if (defs.has(target)) {
-					// `LW()` is `target()` — calling the aliased factory.
-					defs.set(name, `${target}()`);
-					resolved = true;
+				// Prefer the alias's own module's binding of the target, falling
+				// back to the corpus-wide first — the same rule `resolveDefSite`
+				// applies, inlined because the index is still being built.
+				const targetSites = defSites.get(target);
+				if (targetSites && targetSites.length > 0) {
+					// `LW()` is `target()` — calling the aliased factory. Which
+					// binding of `target` that call means is decided later, by
+					// `resolveDefSite` against the alias site's own module.
+					if (!defs.has(name)) defs.set(name, `${target}()`);
+					const list = defSites.get(name);
+					if (list) {
+						if (!list.some((s) => s.module === candidate.module)) {
+							list.push({ module: candidate.module, value: `${target}()` });
+						}
+					} else {
+						defSites.set(name, [
+							{ module: candidate.module, value: `${target}()` },
+						]);
+					}
+					resolvedModules.add(candidate.module);
 					break;
 				}
 				seen.add(target);
 				// Follow the chain through whichever binding of the next hop
-				// resolves; the same shadowing applies one link down.
-				target = aliasPairs.get(target)?.find((t) => !seen.has(t));
+				// resolves; the same shadowing applies one link down. Same-module
+				// hops are preferred over cross-module ones.
+				const hops = aliasPairs.get(target)?.filter((t) => !seen.has(t.target));
+				target =
+					(candidate.module >= 0
+						? hops?.find((t) => t.module === candidate.module)?.target
+						: undefined) ?? hops?.[0]?.target;
 			}
-			if (resolved) break;
 		}
 	}
 
@@ -680,20 +916,40 @@ export function indexDefinitions(source: string): DefinitionIndex {
 	// `$schema:y.literal(V0q).optional()`. Without this pass, `case "literal"`
 	// captured the bare minified identifier (`V0q`/`pXq`) as the const value.
 	const stringLits = new Map<string, string>();
+	const stringSites = new Map<string, DefSite[]>();
 	const strRe = /(?:^|[;,{(\s])([A-Za-z_$][\w$]*)=("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)(?=[;,)}\s]|$)/g;
 	let sm: RegExpExecArray | null;
 	while ((sm = strRe.exec(source)) !== null) {
 		const name = sm[1];
-		if (stringLits.has(name)) continue;
+		const at = sm.index;
+		const strModule = moduleOfOffset(moduleRanges, at);
+		if (stringSites.get(name)?.some((site) => site.module === strModule))
+			continue;
 		const raw = sm[2];
+		let value: string;
 		try {
-			stringLits.set(name, JSON.parse(raw.replace(/^'|'$/g, '"').replace(/^`|`$/g, '"')));
+			value = JSON.parse(
+				raw.replace(/^'|'$/g, '"').replace(/^`|`$/g, '"'),
+			) as string;
 		} catch {
-			stringLits.set(name, raw.slice(1, -1));
+			value = raw.slice(1, -1);
 		}
+		if (!stringLits.has(name)) stringLits.set(name, value);
+		addSite(stringSites, moduleRanges, name, at, value);
 	}
 
-	return { source, defs, zodAlias, lazyWrapper, arrays, stringLits };
+	return {
+		source,
+		defs,
+		zodAlias,
+		lazyWrapper,
+		arrays,
+		stringLits,
+		moduleRanges,
+		defSites,
+		arraySites,
+		stringSites,
+	};
 }
 
 /**
@@ -845,14 +1101,31 @@ function detectZodAlias(source: string): string {
  *     its `<sym>().safeParse(` call.
  */
 export function findMasterSchemaName(index: DefinitionIndex): string | null {
+	return findMasterSchemaSite(index)?.name ?? null;
+}
+
+/**
+ * `findMasterSchemaName`, plus the module the naming *call site* sits in.
+ *
+ * That is the module doing the referring, not necessarily the one holding the
+ * definition — on 2.1.259 the `"plugin-json"` dispatch that names `rhe` and
+ * `rhe`'s own declaration are in different modules, which is exactly why a
+ * cross-module fallback has to exist alongside the own-module preference.
+ */
+export function findMasterSchemaSite(
+	index: DefinitionIndex,
+): { name: string; module: number } | null {
 	return (
-		findMasterViaKebabAnchor(index.source) ??
-		findMasterViaTypeDispatch(index.source)
+		findMasterViaKebabAnchor(index.source, index.moduleRanges) ??
+		findMasterViaTypeDispatch(index.source, index.moduleRanges)
 	);
 }
 
 /** Strategy 1: `<master>().safeParse(` adjacent to the kebab-case error. */
-function findMasterViaKebabAnchor(source: string): string | null {
+function findMasterViaKebabAnchor(
+	source: string,
+	moduleRanges: ModuleRange[],
+): { name: string; module: number } | null {
 	const anchor = "is not kebab-case";
 	const anchorIdx = source.indexOf(anchor);
 	if (anchorIdx === -1) return null;
@@ -874,7 +1147,10 @@ function findMasterViaKebabAnchor(source: string): string | null {
 	let nameStart = nameEnd;
 	while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
 	if (nameStart === nameEnd) return null;
-	return source.slice(nameStart, nameEnd);
+	return {
+		name: source.slice(nameStart, nameEnd),
+		module: moduleOfOffset(moduleRanges, nameStart),
+	};
 }
 
 /**
@@ -882,7 +1158,10 @@ function findMasterViaKebabAnchor(source: string): string | null {
  * read the master schema symbol from the `<sym>().safeParse(` inside the
  * validator's body.
  */
-function findMasterViaTypeDispatch(source: string): string | null {
+function findMasterViaTypeDispatch(
+	source: string,
+	moduleRanges: ModuleRange[],
+): { name: string; module: number } | null {
 	const validator = findValidatorCallName(source, "plugin-json");
 	if (!validator) return null;
 	// The validator may be declared as a statement (`function <V>(…)`) or bound
@@ -897,7 +1176,11 @@ function findMasterViaTypeDispatch(source: string): string | null {
 	const defIdx = def.index;
 	const body = source.slice(defIdx, defIdx + 4000);
 	const sp = body.match(/([\w$]+)\(\)\.safeParse\(/);
-	return sp ? sp[1] : null;
+	if (!sp) return null;
+	return {
+		name: sp[1],
+		module: moduleOfOffset(moduleRanges, defIdx + (sp.index ?? 0)),
+	};
 }
 
 /**
@@ -1006,6 +1289,14 @@ interface EvalContext {
 	 * absent at the top level.
 	 */
 	bindings?: Map<string, string>;
+	/**
+	 * Which module the expression being evaluated was declared in, or undefined
+	 * / -1 when unknown. Every symbol looked up while evaluating it resolves
+	 * against this module first — that is what makes a reference mean its own
+	 * module's binding. It is threaded, not global: following a reference into
+	 * another module's definition switches it to that module for the subtree.
+	 */
+	module?: number;
 }
 
 /**
@@ -1133,7 +1424,7 @@ function evalFunctionReturnObject(
 	ctx: EvalContext,
 	wantedKeys: string[] = [],
 ): Map<string, string> | null {
-	const { source } = ctx.index;
+	const { source, moduleRanges } = ctx.index;
 	// EVERY `function <name>(` is tried, and the one that supplies the keys the
 	// caller asked for wins. The corpus concatenates ~1,635 code-split modules
 	// whose function names are module-scoped, so a short minified name is
@@ -1142,11 +1433,30 @@ function evalFunctionReturnObject(
 	// second. Taking the first match dropped the whole per-hook discriminated
 	// union — command/prompt/http/agent/mcp_tool — leaving `hooks.items` as a
 	// permissive `{}` that accepts a malformed hook silently.
+	//
+	// The key filter alone is not enough on its own terms: two modules can both
+	// declare a `function <name>(` returning the same key names, and then the
+	// first one wins for no better reason than concatenation order. So the
+	// caller's OWN module is swept first — a call site's `<fn>()` means that
+	// module's `<fn>` when it has one — and only then the rest of the corpus.
+	// 5,312 of 15,225 function names on 2.1.259 are declared in more than one
+	// module, `Z` and `G` in fifty-seven each.
+	const needle = `function ${fnName}(`;
+	const offsets: number[] = [];
 	for (
-		let fnIdx = source.indexOf(`function ${fnName}(`);
+		let fnIdx = source.indexOf(needle);
 		fnIdx !== -1;
-		fnIdx = source.indexOf(`function ${fnName}(`, fnIdx + 1)
+		fnIdx = source.indexOf(needle, fnIdx + 1)
 	) {
+		offsets.push(fnIdx);
+	}
+	const own =
+		ctx.module !== undefined && ctx.module >= 0
+			? offsets.filter(
+					(o) => moduleOfOffset(moduleRanges, o) === ctx.module,
+				)
+			: [];
+	for (const fnIdx of own.concat(offsets.filter((o) => !own.includes(o)))) {
 		const candidate = parseFunctionReturnObject(source, fnIdx);
 		if (!candidate) continue;
 		if (wantedKeys.every((k) => candidate.has(k))) return candidate;
@@ -1252,7 +1562,7 @@ export function splitChain(expr: string): string[] {
 }
 
 function evalHead(head: string, ctx: EvalContext): JSONSchema {
-	const { zodAlias, defs } = ctx.index;
+	const { zodAlias } = ctx.index;
 	head = head.trim();
 
 	// Resolve a locally-bound identifier (block-body `let{…}=Fn()` destructure).
@@ -1280,11 +1590,18 @@ function evalHead(head: string, ctx: EvalContext): JSONSchema {
 		if (ctx.resolving.has(name)) return {}; // cycle
 		// A locally-bound name may be called as `<name>()` too.
 		const localBound = ctx.bindings?.get(name);
-		const def = localBound ?? defs.get(name);
-		if (!def) return {};
+		// A local binding is already in scope, so it keeps the current module;
+		// a top-level one moves evaluation into the module it was declared in.
+		const site = localBound
+			? undefined
+			: resolveDefSite(ctx.index, name, ctx.module);
+		const def = localBound ?? site?.value;
+		if (def === undefined) return {};
+		const next: EvalContext =
+			site && site.module !== ctx.module ? { ...ctx, module: site.module } : ctx;
 		ctx.resolving.add(name);
 		try {
-			return evalZod(def, ctx);
+			return evalZod(def, next);
 		} finally {
 			ctx.resolving.delete(name);
 		}
@@ -1345,7 +1662,11 @@ function evalZodPrimitive(
 			// value (the pXq/V0q bug — gitea issue #1).
 			const identMatch = raw.match(/^[A-Za-z_$][\w$]*$/);
 			if (identMatch) {
-				const resolved = ctx.index.stringLits.get(raw);
+				const resolved = resolveSite(
+					ctx.index.stringSites,
+					raw,
+					ctx.module,
+				);
 				if (resolved !== undefined) return { const: resolved };
 				// Unresolved identifier — assume string-typed but don't pin a
 				// const value. Safer than emitting a bogus const.
@@ -1362,7 +1683,11 @@ function evalZodPrimitive(
 			if (!arrBody.startsWith("[")) {
 				const idMatch = arrBody.match(/^([\w$]+)$/);
 				if (idMatch) {
-					const resolved = ctx.index.arrays.get(idMatch[1]);
+					const resolved = resolveSite(
+						ctx.index.arraySites,
+						idMatch[1],
+						ctx.module,
+					);
 					if (resolved) arrBody = resolved;
 				}
 			}
@@ -1553,8 +1878,13 @@ function isOptional(expr: string, ctx?: EvalContext, depth = 0): boolean {
 		const head = chain[0]?.trim() ?? "";
 		const idCall = head.match(/^([\w$]+)\(\)$/);
 		if (idCall && idCall[1] !== ctx.index.zodAlias) {
-			const def = ctx.index.defs.get(idCall[1]);
-			if (def) return isOptional(def, ctx, depth + 1);
+			const site = resolveDefSite(ctx.index, idCall[1], ctx.module);
+			if (site)
+				return isOptional(
+					site.value,
+					site.module === ctx.module ? ctx : { ...ctx, module: site.module },
+					depth + 1,
+				);
 		}
 	}
 
@@ -1780,6 +2110,21 @@ export function findSymbolByAnchor(
 	index: DefinitionIndex,
 	anchorText: string,
 ): string | null {
+	return findSymbolSiteByAnchor(index, anchorText)?.name ?? null;
+}
+
+/**
+ * `findSymbolByAnchor`, but also reporting which module the binding it walked
+ * back to sits in.
+ *
+ * The walk-back lands on the symbol's actual `=<lazyWrapper>(()=>` declaration,
+ * so that module is not a guess: it is where this schema is defined, and every
+ * symbol the definition goes on to reference must be resolved against it.
+ */
+export function findSymbolSiteByAnchor(
+	index: DefinitionIndex,
+	anchorText: string,
+): { name: string; module: number } | null {
 	const { source, lazyWrapper } = index;
 	const anchorIdx = source.indexOf(anchorText);
 	if (anchorIdx === -1) return null;
@@ -1789,7 +2134,10 @@ export function findSymbolByAnchor(
 	let nameStart = nameEnd;
 	while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
 	if (nameStart === nameEnd) return null;
-	return source.slice(nameStart, nameEnd);
+	return {
+		name: source.slice(nameStart, nameEnd),
+		module: moduleOfOffset(index.moduleRanges, eq),
+	};
 }
 
 /**
@@ -1798,14 +2146,18 @@ export function findSymbolByAnchor(
  * `E.record(E.string(), RSH()).safeParse(content)`.
  */
 export function buildLspSchema(index: DefinitionIndex): JSONSchema | null {
-	const rsh = findSymbolByAnchor(
+	const rsh = findSymbolSiteByAnchor(
 		index,
 		"extensionToLanguage must have at least one mapping",
 	);
 	if (!rsh) return null;
-	const def = index.defs.get(rsh);
-	if (!def) return null;
-	const rshSchema = evalZod(def, { index, resolving: new Set() });
+	const site = resolveDefSite(index, rsh.name, rsh.module);
+	if (!site) return null;
+	const rshSchema = evalZod(site.value, {
+		index,
+		resolving: new Set(),
+		module: site.module,
+	});
 	return {
 		$schema: "https://json-schema.org/draft/2020-12/schema",
 		title: "Claude Code .lsp.json",
@@ -1823,14 +2175,18 @@ export function buildLspSchema(index: DefinitionIndex): JSONSchema | null {
  * separately.
  */
 export function buildMonitorsSchema(index: DefinitionIndex): JSONSchema | null {
-	const vc8 = findSymbolByAnchor(
+	const vc8 = findSymbolSiteByAnchor(
 		index,
 		"Monitor names must be unique within a plugin",
 	);
 	if (!vc8) return null;
-	const def = index.defs.get(vc8);
-	if (!def) return null;
-	const arrSchema = evalZod(def, { index, resolving: new Set() });
+	const site = resolveDefSite(index, vc8.name, vc8.module);
+	if (!site) return null;
+	const arrSchema = evalZod(site.value, {
+		index,
+		resolving: new Set(),
+		module: site.module,
+	});
 	return {
 		$schema: "https://json-schema.org/draft/2020-12/schema",
 		title: "Claude Code monitors.json",
@@ -1908,7 +2264,11 @@ export function buildSettingsSchema(index: DefinitionIndex): JSONSchema | null {
 	}
 
 	const expr = source.slice(headStart, exprEnd);
-	const schema = evalZod(expr, { index, resolving: new Set() });
+	const schema = evalZod(expr, {
+		index,
+		resolving: new Set(),
+		module: moduleOfOffset(index.moduleRanges, headStart),
+	});
 
 	if (schema.type !== "object") return null;
 	// Safety: the settings schema must never reject unknown top-level keys.
@@ -1955,11 +2315,15 @@ function buildFrontmatterSchema(
 	title: string,
 	description: string,
 ): JSONSchema | null {
-	const sym = findSymbolByAnchor(index, anchor);
+	const sym = findSymbolSiteByAnchor(index, anchor);
 	if (!sym) return null;
-	const def = index.defs.get(sym);
-	if (!def) return null;
-	const schema = evalZod(def, { index, resolving: new Set() });
+	const site = resolveDefSite(index, sym.name, sym.module);
+	if (!site) return null;
+	const schema = evalZod(site.value, {
+		index,
+		resolving: new Set(),
+		module: site.module,
+	});
 	if (schema.type !== "object") return null;
 	// Safety: never reject unknown frontmatter keys — that is the advisory
 	// no-unknown-frontmatter rule's job.
@@ -2084,7 +2448,11 @@ export function buildMcpJsonSchema(index: DefinitionIndex): JSONSchema | null {
 	if (!parenBlock) return null;
 	const expr = source.slice(objIdx, objIdx + `${zodAlias}.object`.length) +
 		parenBlock;
-	const schema = evalZod(expr, { index, resolving: new Set() });
+	const schema = evalZod(expr, {
+		index,
+		resolving: new Set(),
+		module: moduleOfOffset(index.moduleRanges, objIdx),
+	});
 	if (schema.type !== "object") return null;
 	if (schema.additionalProperties === false) {
 		delete (schema as Record<string, unknown>).additionalProperties;
@@ -2144,11 +2512,19 @@ export function buildHooksJsonSchema(
 			while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
 			const hcSym = source.slice(nameStart, eq);
 			if (!hcSym) continue;
-			const hcDef = index.defs.get(hcSym);
+			// The declaration this anchor sits inside fixes the module, so the
+			// symbol resolves to that module's binding rather than to whichever
+			// module the concatenation put first.
+			const hcModule = moduleOfOffset(index.moduleRanges, eq);
+			const hcSite = resolveDefSite(index, hcSym, hcModule);
 			// The symbol must be the one this anchor belongs to, not a nearer
 			// unrelated factory that happens to precede it.
-			if (!hcDef || !hcDef.includes(anchor)) continue;
-			const candidate = evalZod(hcDef, { index, resolving: new Set() });
+			if (!hcSite || !hcSite.value.includes(anchor)) continue;
+			const candidate = evalZod(hcSite.value, {
+				index,
+				resolving: new Set(),
+				module: hcSite.module,
+			});
 			if (candidate.type !== "object") continue;
 			hooksValue = candidate;
 			break outer;
@@ -2189,29 +2565,43 @@ function stripAdditionalPropertiesFalse(node: unknown): void {
 }
 
 export function buildPluginSchema(index: DefinitionIndex): JSONSchema {
-	const masterName = findMasterSchemaName(index);
-	if (!masterName) {
+	const master = findMasterSchemaSite(index);
+	if (!master) {
 		throw new Error(
 			"Could not locate master plugin schema (kebab-case anchor not found)",
 		);
 	}
-	const masterExpr = index.defs.get(masterName);
-	if (!masterExpr) {
-		throw new Error(`Master schema symbol ${masterName} has no definition`);
+	const masterSite = resolveDefSite(index, master.name, master.module);
+	if (!masterSite) {
+		throw new Error(`Master schema symbol ${master.name} has no definition`);
 	}
-	const refs = parseMasterSpread(masterExpr, index.zodAlias, index.lazyWrapper);
+	const refs = parseMasterSpread(
+		masterSite.value,
+		index.zodAlias,
+		index.lazyWrapper,
+	);
 	if (refs.length === 0) {
 		throw new Error("Master schema spread parsing returned 0 refs");
 	}
 
 	const properties: Record<string, JSONSchema> = {};
 	const required: string[] = [];
-	const ctx: EvalContext = { index, resolving: new Set() };
+	// The spread refs are written inside the master's own definition, so they
+	// are that module's names — not the naming call site's, and not the
+	// corpus's.
+	const ctx: EvalContext = {
+		index,
+		resolving: new Set(),
+		module: masterSite.module,
+	};
 
 	for (const ref of refs) {
-		const def = index.defs.get(ref.name);
-		if (!def) continue;
-		const sub = evalZod(def, ctx);
+		const site = resolveDefSite(index, ref.name, ctx.module);
+		if (!site) continue;
+		const sub = evalZod(
+			site.value,
+			site.module === ctx.module ? ctx : { ...ctx, module: site.module },
+		);
 		const subProps = (sub.properties as Record<string, JSONSchema>) ?? {};
 		const subRequired = (sub.required as string[]) ?? [];
 		for (const [k, v] of Object.entries(subProps)) {
@@ -2233,7 +2623,243 @@ export function buildPluginSchema(index: DefinitionIndex): JSONSchema {
 }
 
 // ---------------------------------------------------------------------------
-// 8. Main
+// 8. Drift gate
+// ---------------------------------------------------------------------------
+
+/**
+ * Fraction of the previous extraction's property paths a schema may lose before
+ * the run is treated as broken rather than as upstream churn.
+ *
+ * One rule for all nine schemas. The alternative considered and rejected was a
+ * per-schema hand-tuned threshold: it encodes today's field counts, and it rots
+ * silently as Claude Code churns. A ratio scales with the schema by
+ * construction, which is the same strictness with no table to maintain.
+ */
+const SCHEMA_DROP_LIMIT = 0.3;
+
+/**
+ * Every property path in a JSON Schema tree, e.g. `/hooks/PreToolUse/matcher`.
+ *
+ * Counting *top-level* `properties` — what the gate used to do — cannot work
+ * across these nine schemas: `.lsp.json` is a record and `monitors.json` an
+ * array, so both have zero top-level properties and a top-level rule can never
+ * fire on them; `hooks.json` and `.mcp.json` have exactly one, so it fires only
+ * on total annihilation. Measured on 2.1.259 the top-level counts are
+ * 0/0/1/1/13/20/28/42/169, while the path counts are 4/13/13/21/42/48/87/356/616
+ * — a denominator that exists for every schema and tracks its real size.
+ *
+ * Recursing through `items`/`additionalProperties`/`oneOf`/… is what makes the
+ * collapse this gate is for visible: an unresolved symbol degrades a subtree to
+ * a permissive `{}`, which erases paths wholesale while leaving the top level
+ * untouched.
+ */
+export function schemaPropertyPaths(
+	node: unknown,
+	prefix = "",
+	out: Set<string> = new Set(),
+): Set<string> {
+	if (Array.isArray(node)) return out;
+	if (!node || typeof node !== "object") return out;
+	for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+		if (key === "properties" && value && typeof value === "object") {
+			for (const [propName, propValue] of Object.entries(
+				value as Record<string, unknown>,
+			)) {
+				const path = `${prefix}/${propName}`;
+				out.add(path);
+				schemaPropertyPaths(propValue, path, out);
+			}
+		} else if (
+			(key === "items" || key === "additionalProperties" || key === "not") &&
+			value &&
+			typeof value === "object"
+		) {
+			schemaPropertyPaths(value, `${prefix}/${key}`, out);
+		} else if (
+			(key === "oneOf" ||
+				key === "anyOf" ||
+				key === "allOf" ||
+				key === "prefixItems") &&
+			Array.isArray(value)
+		) {
+			value.forEach((branch, i) =>
+				schemaPropertyPaths(branch, `${prefix}/${key}[${i}]`, out),
+			);
+		} else if (
+			(key === "$defs" ||
+				key === "definitions" ||
+				key === "patternProperties") &&
+			value &&
+			typeof value === "object"
+		) {
+			for (const [defName, defValue] of Object.entries(
+				value as Record<string, unknown>,
+			)) {
+				schemaPropertyPaths(defValue, `${prefix}/${key}/${defName}`, out);
+			}
+		}
+	}
+	return out;
+}
+
+/** The `schema` of a previously written contracts file, or null when absent. */
+function readPreviousSchema(outPath: string): JSONSchema | null {
+	try {
+		const prev = JSON.parse(readFileSync(outPath, "utf8")) as {
+			schema?: JSONSchema;
+		};
+		return prev.schema ?? null;
+	} catch {
+		return null; // no previous file — first run
+	}
+}
+
+/**
+ * Compare a freshly built schema against the committed one and abort the run
+ * when too much of it vanished.
+ *
+ * Applied to EVERY emitted schema, not just `plugin.schema.json`. Gating one of
+ * nine let the frontmatter schemas silently go 42 → 7, 20 → 7 and 13 → 7 fields
+ * (83% loss) with the run exiting 0 — the failure mode a drift gate exists to
+ * make impossible.
+ *
+ * `FORCE_SCHEMA=1` overrides, unchanged, for a loss that is genuinely upstream.
+ */
+export interface DriftVerdict {
+	/** Property paths present before and gone now. */
+	lost: string[];
+	/** Property paths that are new. */
+	gained: string[];
+	/** Size of the previous extraction's path set — the denominator. */
+	prevCount: number;
+	/** `lost.length / prevCount`, or 0 when there was nothing to compare to. */
+	dropRate: number;
+	/** True when the loss exceeds the limit and the run should fail. */
+	fatal: boolean;
+}
+
+/**
+ * The drift decision, as a value — no I/O, no `process.exit`.
+ *
+ * Split out so the gate's own behaviour is testable, including the cases that
+ * must NOT fire (no previous extraction, a previous extraction that was already
+ * empty) and the case that must (a subtree collapsing). A gate whose failure
+ * paths are only reachable through `process.exit` is a gate nothing checks.
+ */
+export function schemaDriftVerdict(
+	prevSchema: JSONSchema | null,
+	schema: JSONSchema,
+	limit: number = SCHEMA_DROP_LIMIT,
+): DriftVerdict {
+	const empty: DriftVerdict = {
+		lost: [],
+		gained: [],
+		prevCount: 0,
+		dropRate: 0,
+		fatal: false,
+	};
+	if (!prevSchema) return empty;
+	const prevPaths = schemaPropertyPaths(prevSchema);
+	// Nothing to measure against: a previous extraction that carried no paths
+	// cannot tell us anything was lost. Reported as "no verdict", not as "fine".
+	if (prevPaths.size === 0) return empty;
+	const nowPaths = schemaPropertyPaths(schema);
+	const lost = [...prevPaths].filter((p) => !nowPaths.has(p)).sort();
+	const gained = [...nowPaths].filter((p) => !prevPaths.has(p)).sort();
+	const dropRate = lost.length / prevPaths.size;
+	return {
+		lost,
+		gained,
+		prevCount: prevPaths.size,
+		dropRate,
+		fatal: dropRate > limit,
+	};
+}
+
+function checkSchemaDrift(
+	label: string,
+	outPath: string,
+	schema: JSONSchema,
+): void {
+	const verdict = schemaDriftVerdict(readPreviousSchema(outPath), schema);
+	if (verdict.gained.length > 0) {
+		console.log(
+			pc.green(
+				`  + ${label} gained ${verdict.gained.length}: ${verdict.gained.slice(0, 12).join(", ")}`,
+			),
+		);
+	}
+	if (verdict.lost.length === 0) return;
+	const msg =
+		`${label} lost ${verdict.lost.length}/${verdict.prevCount} property paths ` +
+		`(${(verdict.dropRate * 100).toFixed(0)}%): ${verdict.lost.slice(0, 12).join(", ")}`;
+	if (verdict.fatal && process.env.FORCE_SCHEMA !== "1") {
+		console.log(pc.red(`  ✗ ${msg}`));
+		console.log(pc.red("    Set FORCE_SCHEMA=1 to override."));
+		process.exit(1);
+	}
+	console.log(pc.yellow(`  ⚠ ${msg}`));
+}
+
+/**
+ * Abort when a schema that previously extracted no longer builds at all.
+ *
+ * A builder returning null used to print a yellow warning and leave the stale
+ * committed file in place — a total extraction failure reported more quietly
+ * than a partial one, and invisible in an exit-0 run. Losing 100% of a schema
+ * cannot be less serious than losing 31% of it, so it fails the same way.
+ */
+export function missingSchemaIsFatal(prevSchema: JSONSchema | null): boolean {
+	return !!prevSchema && schemaPropertyPaths(prevSchema).size > 0;
+}
+
+function checkSchemaStillBuilds(label: string, outPath: string): void {
+	const prevSchema = readPreviousSchema(outPath);
+	if (!missingSchemaIsFatal(prevSchema)) {
+		console.log(pc.yellow(`  ⚠ Could not locate ${label} schema`));
+		return;
+	}
+	const prevCount = schemaPropertyPaths(prevSchema).size;
+	if (process.env.FORCE_SCHEMA === "1") {
+		console.log(
+			pc.yellow(
+				`  ⚠ ${label} schema no longer extracts (previous extraction kept; FORCE_SCHEMA=1)`,
+			),
+		);
+		return;
+	}
+	console.log(
+		pc.red(
+			`  ✗ ${label} schema no longer extracts, but ${outPath} holds a previous ` +
+				`extraction with ${prevCount} property paths — the anchor has moved.`,
+		),
+	);
+	console.log(pc.red("    Set FORCE_SCHEMA=1 to override."));
+	process.exit(1);
+}
+
+/** Write one extracted schema to its contracts file. */
+function writeSchemaFile(
+	outPath: string,
+	version: string,
+	schema: JSONSchema,
+): void {
+	writeFileSync(
+		outPath,
+		JSON.stringify(
+			{
+				extractedFromClaudeCodeVersion: version,
+				extractedAt: new Date().toISOString(),
+				schema,
+			},
+			null,
+			"\t",
+		) + "\n",
+	);
+}
+
+// ---------------------------------------------------------------------------
+// 9. Main
 // ---------------------------------------------------------------------------
 
 function main() {
@@ -2260,26 +2886,30 @@ function main() {
 		onlySet === null || onlySet.has(target);
 	let source: string;
 	let version: string;
+	let moduleRanges: ModuleRange[];
 	if (localBundle) {
 		console.log(
 			pc.cyan(`▸ Loading local Claude Code bundle (${localBundle})...`),
 		);
-		({ source, version } = loadLocalBundle(localBundle));
+		({ source, version, moduleRanges } = loadLocalBundle(localBundle));
 	} else {
 		const label = requestedVersion ? `v${requestedVersion}` : "latest";
 		console.log(
 			pc.cyan(`▸ Fetching @anthropic-ai/claude-code (${label})...`),
 		);
-		({ source, version } = fetchBundle(requestedVersion));
+		({ source, version, moduleRanges } = fetchBundle(requestedVersion));
 	}
 	console.log(
 		pc.cyan("▸ Indexing definitions"),
 		pc.dim(`(v${version}, ${(source.length / 1e6).toFixed(1)}MB)`),
 	);
 
-	const index = indexDefinitions(source);
+	const index = indexDefinitions(source, moduleRanges);
 	console.log(
-		pc.dim(`  ${index.defs.size} definitions, Zod alias = ${index.zodAlias}`),
+		pc.dim(
+			`  ${index.defs.size} definitions across ${moduleRanges.length} module(s), ` +
+				`Zod alias = ${index.zodAlias}`,
+		),
 	);
 	assertDefinitionsUsable(index);
 
@@ -2299,152 +2929,38 @@ function main() {
 		);
 
 		const outPath = join(rootDir, "contracts", "plugin.schema.json");
-
-		// Drift gate: compare the new property set to the previous extraction
-		// and fail loudly if we lost >30% of the fields. Mirrors
-		// extract-contracts.ts. Override with FORCE_SCHEMA=1 if the loss is
-		// intentional (e.g., upstream removed an experimental field).
-		let prevSchema: { properties?: Record<string, unknown> } | null = null;
-		try {
-			const prev = JSON.parse(readFileSync(outPath, "utf8")) as {
-				schema?: { properties?: Record<string, unknown> };
-			};
-			prevSchema = prev.schema ?? null;
-		} catch {
-			// no previous file — first run
-		}
-		if (prevSchema) {
-			const prevKeys = new Set(Object.keys(prevSchema.properties ?? {}));
-			const nowKeys = new Set(
-				Object.keys(schema.properties as Record<string, unknown>),
-			);
-			const lost = [...prevKeys].filter((k) => !nowKeys.has(k));
-			const gained = [...nowKeys].filter((k) => !prevKeys.has(k));
-			if (gained.length > 0) {
-				console.log(
-					pc.green(`  + Schema gained: ${gained.sort().join(", ")}`),
-				);
-			}
-			if (lost.length > 0) {
-				const dropRate = lost.length / prevKeys.size;
-				const msg = `Schema lost ${lost.length}/${prevKeys.size} top-level fields (${(dropRate * 100).toFixed(0)}%): ${lost.sort().join(", ")}`;
-				if (dropRate > 0.3 && process.env.FORCE_SCHEMA !== "1") {
-					console.log(pc.red(`  ✗ ${msg}`));
-					console.log(pc.red("    Set FORCE_SCHEMA=1 to override."));
-					process.exit(1);
-				}
-				console.log(pc.yellow(`  ⚠ ${msg}`));
-			}
-		}
-		writeFileSync(
-			outPath,
-			JSON.stringify(
-				{
-					extractedFromClaudeCodeVersion: version,
-					extractedAt: new Date().toISOString(),
-					schema,
-				},
-				null,
-				"\t",
-			) + "\n",
-		);
+		checkSchemaDrift("Plugin schema", outPath, schema);
+		writeSchemaFile(outPath, version, schema);
 		console.log(pc.dim(`  Written to ${outPath}`));
 	}
 
-	// LSP schema (record of server-name → RSH)
-	const lspSchema = shouldBuild("lsp") ? buildLspSchema(index) : null;
-	if (lspSchema) {
-		const lspPath = join(rootDir, "contracts", "lsp.schema.json");
-		writeFileSync(
-			lspPath,
-			JSON.stringify(
-				{
-					extractedFromClaudeCodeVersion: version,
-					extractedAt: new Date().toISOString(),
-					schema: lspSchema,
-				},
-				null,
-				"\t",
-			) + "\n",
-		);
-		console.log(pc.cyan(`▸ LSP schema written to ${lspPath}`));
-	} else if (shouldBuild("lsp")) {
-		console.log(
-			pc.yellow(
-				"  ⚠ Could not locate LSP per-server schema (extensionToLanguage anchor)",
-			),
-		);
-	}
-
-	// Monitors schema (array of M09)
-	const monitorsSchema = shouldBuild("monitors")
-		? buildMonitorsSchema(index)
-		: null;
-	if (monitorsSchema) {
-		const monPath = join(rootDir, "contracts", "monitors.schema.json");
-		writeFileSync(
-			monPath,
-			JSON.stringify(
-				{
-					extractedFromClaudeCodeVersion: version,
-					extractedAt: new Date().toISOString(),
-					schema: monitorsSchema,
-				},
-				null,
-				"\t",
-			) + "\n",
-		);
-		console.log(pc.cyan(`▸ Monitors schema written to ${monPath}`));
-	} else if (shouldBuild("monitors")) {
-		console.log(
-			pc.yellow(
-				"  ⚠ Could not locate monitors schema (unique-name anchor)",
-			),
-		);
-	}
-
-	// Settings schema (y.object({...}).passthrough())
-	const settingsSchema = shouldBuild("settings")
-		? buildSettingsSchema(index)
-		: null;
-	if (settingsSchema) {
-		const settingsPath = join(rootDir, "contracts", "settings.schema.json");
-		const settingsPropCount = Object.keys(
-			(settingsSchema.properties as object) ?? {},
-		).length;
-		writeFileSync(
-			settingsPath,
-			JSON.stringify(
-				{
-					extractedFromClaudeCodeVersion: version,
-					extractedAt: new Date().toISOString(),
-					schema: settingsSchema,
-				},
-				null,
-				"\t",
-			) + "\n",
-		);
-		console.log(
-			pc.cyan(
-				`▸ Settings schema written to ${settingsPath} (${settingsPropCount} top-level fields)`,
-			),
-		);
-	} else if (shouldBuild("settings")) {
-		console.log(
-			pc.yellow(
-				"  ⚠ Could not locate settings schema ($schema describe anchor)",
-			),
-		);
-	}
-
-	// Markdown frontmatter schemas (SKILL.md / agent .md / command .md) plus the
-	// standalone JSON config schemas (mcp.json / hooks.json).
-	const frontmatterTargets: Array<{
+	// Every other emitted schema, driven off one table so the drift gate cannot
+	// be attached to some of them and forgotten on the rest — which is exactly
+	// how the frontmatter schemas lost 83% of their fields inside a green run.
+	const targets: Array<{
 		key: string;
 		label: string;
 		file: string;
 		build: (i: DefinitionIndex) => JSONSchema | null;
 	}> = [
+		{
+			key: "lsp",
+			label: "LSP",
+			file: "lsp.schema.json",
+			build: buildLspSchema,
+		},
+		{
+			key: "monitors",
+			label: "Monitors",
+			file: "monitors.schema.json",
+			build: buildMonitorsSchema,
+		},
+		{
+			key: "settings",
+			label: "Settings",
+			file: "settings.schema.json",
+			build: buildSettingsSchema,
+		},
 		{
 			key: "frontmatter",
 			label: "Skill frontmatter",
@@ -2476,36 +2992,22 @@ function main() {
 			build: buildHooksJsonSchema,
 		},
 	];
-	for (const target of frontmatterTargets) {
+	for (const target of targets) {
 		if (!shouldBuild(target.key)) continue;
-		const fmSchema = target.build(index);
-		if (fmSchema) {
-			const fmPath = join(rootDir, "contracts", target.file);
-			const fmFieldCount = Object.keys(
-				(fmSchema.properties as object) ?? {},
-			).length;
-			writeFileSync(
-				fmPath,
-				JSON.stringify(
-					{
-						extractedFromClaudeCodeVersion: version,
-						extractedAt: new Date().toISOString(),
-						schema: fmSchema,
-					},
-					null,
-					"\t",
-				) + "\n",
-			);
-			console.log(
-				pc.cyan(
-					`▸ ${target.label} schema written to ${fmPath} (${fmFieldCount} fields)`,
-				),
-			);
-		} else {
-			console.log(
-				pc.yellow(`  ⚠ Could not locate ${target.label} schema`),
-			);
+		const outPath = join(rootDir, "contracts", target.file);
+		const schema = target.build(index);
+		if (!schema) {
+			checkSchemaStillBuilds(target.label, outPath);
+			continue;
 		}
+		checkSchemaDrift(`${target.label} schema`, outPath, schema);
+		writeSchemaFile(outPath, version, schema);
+		console.log(
+			pc.cyan(
+				`▸ ${target.label} schema written to ${outPath} ` +
+					`(${schemaPropertyPaths(schema).size} property paths)`,
+			),
+		);
 	}
 }
 
