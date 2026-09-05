@@ -73,10 +73,10 @@ jobs:
           git push origin HEAD --tags
 
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          echo "//registry.npmjs.org/:_authToken=$NODE_AUTH_TOKEN" > ~/.npmrc
+          # Trusted publishing (OIDC) needs npm >= 11.5.1; setup-node's Node 20 ships npm 10.
+          # Pinned to 11: npm 12 requires Node >= 22 and refuses to install here.
+          npm install -g npm@11
           npm publish --ignore-scripts --access public --provenance
 
       - name: Create GitHub Release
