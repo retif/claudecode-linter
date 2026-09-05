@@ -45,6 +45,27 @@ npm view claudecode-linter version                            # what consumers g
 
 A non-zero right-hand number means there are merged commits no release can see.
 
+A non-zero **left**-hand number is usually the opposite and benign: `origin/main`
+moves by itself. Dependabot merges its bumps server-side on github.com, and
+`release.yml` commits its own version bump after every contracts change it
+publishes, so `N 0` a few hours after a verified `0 0` landing is expected and is
+not the last lander's fault (gitea#38). Tell the two cases apart before reacting:
+
+```bash
+bash ci/check-mirror-drift.sh          # prints FAST-FORWARDABLE (which side) or DIVERGED
+git merge-base --is-ancestor gitea/main origin/main && echo fast-forwardable
+```
+
+Reconcile fast-forwardable lag from a clean primary checkout on `main`:
+
+```bash
+git fetch --all && git merge --ff-only origin/main && git push gitea main
+npm ci && npm test        # the lockfile usually moved — do not gate against stale node_modules
+```
+
+Only a two-sided count (`N M`) means `main` has forked. That needs a merge, pushed
+to **both** remotes, not a push.
+
 **This is now checked automatically.** `ci/check-mirror-drift.sh` compares both tips
 in both directions and fails once the oldest unmirrored commit is older than
 `MAX_DRIFT_HOURS` (default 24) — drift right after a merge is expected and clears

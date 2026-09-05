@@ -8,6 +8,7 @@ import { defineConfig } from "vitest/config";
 // so a genuine slowdown there still fails fast.
 const SUBPROCESS_SUITES = [
   "tests/scripts/check-deps.test.ts",
+  "tests/scripts/check-mirror-drift.test.ts",
   "tests/resource-limits.test.ts",
 ];
 

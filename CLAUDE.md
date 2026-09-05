@@ -186,6 +186,20 @@ and check `npm view claudecode-linter version`. Full procedure — including the
 `patch-release.yml` escape hatch for fix-only changes and the emmett nix pin bump —
 in [`docs/RELEASING.md`](docs/RELEASING.md).
 
+**`origin` also moves on its own, so `0 0` is time-sensitive** (gitea#38). Two
+things commit to `origin/main` server-side with nobody pushing: dependabot merges
+its bumps on github.com overnight, and `release.yml` commits its own version bump
+(`release: sync with Claude Code vX.Y.Z`) after every contracts change it
+publishes. So a left-hand count (`N 0`) hours after a clean landing is expected,
+is not the last lander's fault, and is not a fork as long as
+`git merge-base --is-ancestor gitea/main origin/main` holds. `bash
+ci/check-mirror-drift.sh` says which case you are in (`FAST-FORWARDABLE` vs
+`DIVERGED`). Reconcile from a clean primary checkout on `main`:
+`git fetch --all && git merge --ff-only origin/main && git push gitea main`, then
+re-run the gates — the lockfile usually changed, so a stale `node_modules` can gate
+green against the wrong dependency tree. Only a two-sided count means `main` has
+forked; that takes a merge pushed to both remotes, never a plain push.
+
 **A commit touching `.github/workflows/**` cannot be pushed to `origin` over
 HTTPS.** GitHub rejects it (`GH013 … without workflow scope`) because github.com
 credentials come from `gh auth git-credential` and that token has no `workflow`

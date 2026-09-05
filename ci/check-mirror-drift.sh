@@ -41,99 +41,129 @@ MAX_DRIFT_HOURS="${MAX_DRIFT_HOURS:-24}"
 GITEA_REMOTE="${GITEA_REMOTE:-gitea}"
 
 die_unknown() {
-  echo "‼ mirror-drift: CANNOT DETERMINE — $*" >&2
-  echo "  Refusing to report success without an answer." >&2
-  exit 2
+	echo "‼ mirror-drift: CANNOT DETERMINE — $*" >&2
+	echo "  Refusing to report success without an answer." >&2
+	exit 2
 }
 
 # --- Resolve the GitHub upstream from package.json (single source of truth) ---
-if [ -z "${GITHUB_URL:-}" ]; then
-  GITHUB_URL="$(node -e "
+if [[ -z "${GITHUB_URL:-}" ]]; then
+	GITHUB_URL="$(node -e "
     const r = require('./package.json').repository;
     const u = (typeof r === 'string' ? r : r && r.url) || '';
     process.stdout.write(u.replace(/^git\+/, '').replace(/\.git$/, ''));
   " 2>/dev/null || true)"
 fi
-[ -n "$GITHUB_URL" ] || die_unknown "no GitHub upstream in package.json 'repository.url' and \$GITHUB_URL unset"
+[[ -n "${GITHUB_URL}" ]] || die_unknown "no GitHub upstream in package.json 'repository.url' and \${GITHUB_URL} unset"
 
-echo "▸ github upstream : $GITHUB_URL"
+echo "▸ github upstream : ${GITHUB_URL}"
 
 # --- Resolve the two main tips ------------------------------------------------
 # GitHub side: always fetched fresh over https. The repo is public, so this needs
 # no credentials — which is precisely why the check can run from the Gitea side.
-git fetch --quiet "$GITHUB_URL" main 2>/dev/null \
-  || die_unknown "could not fetch main from $GITHUB_URL (network? repo renamed?)"
+git fetch --quiet "${GITHUB_URL}" main 2>/dev/null ||
+	die_unknown "could not fetch main from ${GITHUB_URL} (network? repo renamed?)"
 GH_TIP="$(git rev-parse FETCH_HEAD)"
 
 # Gitea side: in CI we are already checked out on it, so HEAD is authoritative and
 # needs no token. Locally, read the configured remote.
-if [ -n "${CI:-}" ]; then
-  GT_TIP="$(git rev-parse HEAD)"
-  echo "▸ gitea tip       : $GT_TIP (CI checkout HEAD)"
+if [[ -n "${CI:-}" ]]; then
+	GT_TIP="$(git rev-parse HEAD)"
+	echo "▸ gitea tip       : ${GT_TIP} (CI checkout HEAD)"
 else
-  git remote get-url "$GITEA_REMOTE" >/dev/null 2>&1 \
-    || die_unknown "no '$GITEA_REMOTE' remote configured (set \$GITEA_REMOTE)"
-  git fetch --quiet "$GITEA_REMOTE" main 2>/dev/null \
-    || die_unknown "could not fetch main from remote '$GITEA_REMOTE'"
-  GT_TIP="$(git rev-parse FETCH_HEAD)"
-  echo "▸ gitea tip       : $GT_TIP (remote '$GITEA_REMOTE')"
+	git remote get-url "${GITEA_REMOTE}" >/dev/null 2>&1 ||
+		die_unknown "no '${GITEA_REMOTE}' remote configured (set \${GITEA_REMOTE})"
+	git fetch --quiet "${GITEA_REMOTE}" main 2>/dev/null ||
+		die_unknown "could not fetch main from remote '${GITEA_REMOTE}'"
+	GT_TIP="$(git rev-parse FETCH_HEAD)"
+	echo "▸ gitea tip       : ${GT_TIP} (remote '${GITEA_REMOTE}')"
 fi
-echo "▸ github tip      : $GH_TIP"
+echo "▸ github tip      : ${GH_TIP}"
 
 # A shallow clone cannot answer ancestry questions. Say so rather than guessing.
-if [ "$(git rev-parse --is-shallow-repository 2>/dev/null || echo false)" = "true" ]; then
-  git fetch --quiet --unshallow 2>/dev/null \
-    || die_unknown "shallow clone and could not unshallow — ancestry is not computable (set clone depth to 0)"
+is_shallow="$(git rev-parse --is-shallow-repository 2>/dev/null || echo false)"
+if [[ "${is_shallow}" = "true" ]]; then
+	git fetch --quiet --unshallow 2>/dev/null ||
+		die_unknown "shallow clone and could not unshallow — ancestry is not computable (set clone depth to 0)"
 fi
 
 # --- Compare both directions --------------------------------------------------
-only_on_gitea="$(git rev-list --count "$GH_TIP..$GT_TIP" 2>/dev/null)" \
-  || die_unknown "no common history between the two tips — diverged or unrelated histories"
-only_on_github="$(git rev-list --count "$GT_TIP..$GH_TIP" 2>/dev/null)" \
-  || die_unknown "no common history between the two tips — diverged or unrelated histories"
+only_on_gitea="$(git rev-list --count "${GH_TIP}..${GT_TIP}" 2>/dev/null)" ||
+	die_unknown "no common history between the two tips — diverged or unrelated histories"
+only_on_github="$(git rev-list --count "${GT_TIP}..${GH_TIP}" 2>/dev/null)" ||
+	die_unknown "no common history between the two tips — diverged or unrelated histories"
 
-if [ "$only_on_gitea" -eq 0 ] && [ "$only_on_github" -eq 0 ]; then
-  echo "✔ mirror-drift: in sync — gitea main and github main are the same commit."
-  exit 0
+if [[ "${only_on_gitea}" -eq 0 ]] && [[ "${only_on_github}" -eq 0 ]]; then
+	echo "✔ mirror-drift: in sync — gitea main and github main are the same commit."
+	exit 0
+fi
+
+# --- Classify the SHAPE before the age (oleks/claudecode-linter#38) -----------
+# A non-zero count is not one thing. If only ONE side has unique commits, the other
+# is a strict ancestor and the fix is a fast-forward — nobody forked anything, and
+# the most recent lander is innocent. Only when BOTH sides have unique commits has
+# main actually forked, and then the fix is a merge, not a push.
+#
+# The github-only case fires WITHOUT any human action, on a schedule: dependabot
+# merges its bumps server-side on github.com, and the release workflow commits its
+# own version bump after every contracts change it publishes. No local hook can
+# warn about either, because no local push happens. Expect it; do not hunt for who
+# "broke" the 0 0 check.
+if [[ "${only_on_gitea}" -gt 0 ]] && [[ "${only_on_github}" -gt 0 ]]; then
+	shape="DIVERGED"
+	shape_note="both tips have commits the other lacks — main has FORKED. A push cannot fix this;
+    merge one side into the other (locally, then push BOTH) and re-run the gates."
+elif [[ "${only_on_github}" -gt 0 ]]; then
+	shape="FAST-FORWARDABLE (github ahead)"
+	shape_note="gitea main is a strict ancestor of github main. Expected automation on the
+    github side (dependabot server-side merges, release-workflow version bumps), not a fork."
+else
+	shape="FAST-FORWARDABLE (gitea ahead)"
+	shape_note="github main is a strict ancestor of gitea main. Merged work nobody has published
+    to the release side yet."
 fi
 
 now="$(date +%s)"
 worst_age_h=0
 
 report_side() {
-  local range="$1" count="$2" label="$3" consequence="$4"
-  [ "$count" -gt 0 ] || return 0
+	local range="$1" count="$2" label="$3" consequence="$4"
+	[[ "${count}" -gt 0 ]] || return 0
 
-  # Oldest commit in the range decides the age: that is how long the drift has sat.
-  local oldest_ts age_h
-  oldest_ts="$(git rev-list --reverse --format=%ct "$range" | sed -n '2p')"
-  age_h=$(( (now - oldest_ts) / 3600 ))
-  [ "$age_h" -gt "$worst_age_h" ] && worst_age_h="$age_h"
+	# Oldest commit in the range decides the age: that is how long the drift has sat.
+	local oldest_ts age_h
+	oldest_ts="$(git rev-list --reverse --format=%ct "${range}" | sed -n '2p')"
+	age_h=$(((now - oldest_ts) / 3600))
+	[[ "${age_h}" -gt "${worst_age_h}" ]] && worst_age_h="${age_h}"
 
-  echo
-  echo "  $count commit(s) only on $label — oldest has sat ${age_h}h:"
-  git log --oneline --no-decorate -n 10 "$range" | sed 's/^/    /'
-  [ "$count" -gt 10 ] && echo "    … and $((count - 10)) more"
-  echo "  → $consequence"
+	echo
+	echo "  ${count} commit(s) only on ${label} — oldest has sat ${age_h}h:"
+	# Author shown so a bot (dependabot[bot], github-actions[bot]) is recognisable.
+	git log --format='    %h %<(20,trunc)%an %s' --no-decorate -n 10 "${range}"
+	[[ "${count}" -gt 10 ]] && echo "    … and $((count - 10)) more"
+	echo "  → ${consequence}"
 }
 
 echo
-echo "✖ mirror-drift DETECTED"
-report_side "$GH_TIP..$GT_TIP" "$only_on_gitea" "gitea" \
-  "these are merged but CANNOT be released — npmjs releases are cut from GitHub.
+echo "✖ mirror-drift DETECTED — shape: ${shape}"
+echo "  ${shape_note}"
+report_side "${GH_TIP}..${GT_TIP}" "${only_on_gitea}" "gitea" \
+	"these are merged but CANNOT be released — npmjs releases are cut from GitHub.
     Fix: git push origin gitea/main:main   (see docs/RELEASING.md — this publishes a
     private repo's commits to a public one, so it stays a human decision)"
-report_side "$GT_TIP..$GH_TIP" "$only_on_github" "github" \
-  "release-pipeline commits (version bumps, tags) not mirrored back to gitea.
-    Fix: git push gitea origin/main:main"
+report_side "${GT_TIP}..${GH_TIP}" "${only_on_github}" "github" \
+	"automated github-side commits (dependabot bumps, release-workflow version bumps)
+    not yet mirrored back to gitea. Fix, from a clean primary checkout on main:
+      git fetch --all && git merge --ff-only origin/main && git push gitea main
+    then re-run the gates — the lockfile usually changed, so node_modules may be stale."
 
 echo
-if [ "$MAX_DRIFT_HOURS" -eq 0 ] || [ "$worst_age_h" -ge "$MAX_DRIFT_HOURS" ]; then
-  echo "✖ FAILING: oldest drift is ${worst_age_h}h, threshold is ${MAX_DRIFT_HOURS}h." >&2
-  echo "  A merged fix that cannot reach a release is the failure this check exists for." >&2
-  exit 1
+if [[ "${MAX_DRIFT_HOURS}" -eq 0 ]] || [[ "${worst_age_h}" -ge "${MAX_DRIFT_HOURS}" ]]; then
+	echo "✖ FAILING: oldest drift is ${worst_age_h}h, threshold is ${MAX_DRIFT_HOURS}h." >&2
+	echo "  A merged fix that cannot reach a release is the failure this check exists for." >&2
+	exit 1
 fi
 
 echo "✔ PASSING for now: oldest drift is ${worst_age_h}h, under the ${MAX_DRIFT_HOURS}h threshold."
-echo "  Drift right after a merge is expected — release it and this clears."
+echo "  Drift right after a merge or a release is expected — reconcile as above and this clears."
 exit 0
