@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.259",
-	"extractedAt": "2026-09-03T10:07:24.737Z",
+	"extractedFromClaudeCodeVersion": "2.1.261",
+	"extractedAt": "2026-09-05T07:10:03.597Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -711,6 +711,14 @@
 				],
 				"description": "Default shell for input-box ! commands. Defaults to 'bash' on all platforms (no Windows auto-flip)."
 			},
+			"bashOutputMaxChars": {
+				"type": "number",
+				"description": "How many characters of a successful Bash or PowerShell command's output Claude receives inline (default 30000; values clamp to 4000-128000). Output past this is saved to a file and Claude receives a short preview plus the path. When set, this also replaces BASH_MAX_OUTPUT_LENGTH, which on its own only sizes the read-back window."
+			},
+			"taskOutputMaxChars": {
+				"type": "number",
+				"description": "How many characters of a background task's output the TaskOutput tool hands Claude inline (default 32000; values clamp to 4000-128000). Longer output is cut to its most recent characters with the path of the full output file, except that a shell command still running returns its first characters up to this size. When set, this also replaces TASK_MAX_OUTPUT_LENGTH, which on its own only sizes that window."
+			},
 			"respondToBashCommands": {
 				"type": "boolean",
 				"description": "Whether Claude responds after an input-box ! bash command runs. Set to false to add the command output to context without a response. Default: true."
@@ -893,19 +901,7 @@
 									"description": "Custom HTTP headers (e.g., for authentication)"
 								},
 								"headersHelper": {
-									"type": "object",
-									"properties": {
-										"type": {
-											"const": "text"
-										},
-										"text": {
-											"type": "string"
-										}
-									},
-									"required": [
-										"type",
-										"text"
-									],
+									"type": "string",
 									"description": "Command that prints a JSON object of HTTP headers (e.g. a short-lived auth token). Its output overrides `headers` and, like `headers`, is inherited by same-origin archive downloads from this marketplace. Runs from a fixed directory (the Claude config home, never the session's), so give a bare command found via PATH or an absolute path; it is re-run on later refreshes of this marketplace."
 								}
 							},
@@ -1304,19 +1300,7 @@
 												"description": "HTTP headers sent when downloading this entry's `archive` source."
 											},
 											"headersHelper": {
-												"type": "object",
-												"properties": {
-													"type": {
-														"const": "text"
-													},
-													"text": {
-														"type": "string"
-													}
-												},
-												"required": [
-													"type",
-													"text"
-												],
+												"type": "string",
 												"description": "Command that prints a JSON object of HTTP headers for downloading this entry's `archive` source. Runs only when a user explicitly installs or updates this plugin. Unlike a catalog entry, an entry written here does not need `strict: false`: it is declared in a settings file, which has no manifest fields to inline. A declaration in project settings is not operator-authored, so request-routing and client-identity header names are still filtered there. Use an absolute path."
 											}
 										},
@@ -1383,19 +1367,7 @@
 									"description": "Custom HTTP headers (e.g., for authentication)"
 								},
 								"headersHelper": {
-									"type": "object",
-									"properties": {
-										"type": {
-											"const": "text"
-										},
-										"text": {
-											"type": "string"
-										}
-									},
-									"required": [
-										"type",
-										"text"
-									],
+									"type": "string",
 									"description": "Command that prints a JSON object of HTTP headers (e.g. a short-lived auth token). Its output overrides `headers` and, like `headers`, is inherited by same-origin archive downloads from this marketplace. Runs from a fixed directory (the Claude config home, never the session's), so give a bare command found via PATH or an absolute path; it is re-run on later refreshes of this marketplace."
 								}
 							},
@@ -1794,19 +1766,7 @@
 												"description": "HTTP headers sent when downloading this entry's `archive` source."
 											},
 											"headersHelper": {
-												"type": "object",
-												"properties": {
-													"type": {
-														"const": "text"
-													},
-													"text": {
-														"type": "string"
-													}
-												},
-												"required": [
-													"type",
-													"text"
-												],
+												"type": "string",
 												"description": "Command that prints a JSON object of HTTP headers for downloading this entry's `archive` source. Runs only when a user explicitly installs or updates this plugin. Unlike a catalog entry, an entry written here does not need `strict: false`: it is declared in a settings file, which has no manifest fields to inline. A declaration in project settings is not operator-authored, so request-routing and client-identity header names are still filtered there. Use an absolute path."
 											}
 										},
@@ -1873,19 +1833,7 @@
 									"description": "Custom HTTP headers (e.g., for authentication)"
 								},
 								"headersHelper": {
-									"type": "object",
-									"properties": {
-										"type": {
-											"const": "text"
-										},
-										"text": {
-											"type": "string"
-										}
-									},
-									"required": [
-										"type",
-										"text"
-									],
+									"type": "string",
 									"description": "Command that prints a JSON object of HTTP headers (e.g. a short-lived auth token). Its output overrides `headers` and, like `headers`, is inherited by same-origin archive downloads from this marketplace. Runs from a fixed directory (the Claude config home, never the session's), so give a bare command found via PATH or an absolute path; it is re-run on later refreshes of this marketplace."
 								}
 							},
@@ -2284,19 +2232,7 @@
 												"description": "HTTP headers sent when downloading this entry's `archive` source."
 											},
 											"headersHelper": {
-												"type": "object",
-												"properties": {
-													"type": {
-														"const": "text"
-													},
-													"text": {
-														"type": "string"
-													}
-												},
-												"required": [
-													"type",
-													"text"
-												],
+												"type": "string",
 												"description": "Command that prints a JSON object of HTTP headers for downloading this entry's `archive` source. Runs only when a user explicitly installs or updates this plugin. Unlike a catalog entry, an entry written here does not need `strict: false`: it is declared in a settings file, which has no manifest fields to inline. A declaration in project settings is not operator-authored, so request-routing and client-identity header names are still filtered there. Use an absolute path."
 											}
 										},
@@ -2572,159 +2508,18 @@
 									"type": "object",
 									"properties": {
 										"accessKeyIdVar": {
-											"type": "object",
-											"properties": {
-												"id": {
-													"type": "string"
-												},
-												"subject": {
-													"type": "string"
-												},
-												"description": {
-													"type": "string"
-												},
-												"activeForm": {
-													"type": "string"
-												},
-												"owner": {
-													"type": "string"
-												},
-												"status": {
-													"enum": [
-														"pending",
-														"in_progress",
-														"completed"
-													]
-												},
-												"blocks": {
-													"type": "array",
-													"items": {
-														"type": "string"
-													}
-												},
-												"blockedBy": {
-													"type": "array",
-													"items": {
-														"type": "string"
-													}
-												},
-												"metadata": {
-													"type": "object",
-													"additionalProperties": {}
-												}
-											},
-											"required": [
-												"id",
-												"subject",
-												"description",
-												"status",
-												"blocks",
-												"blockedBy"
-											],
+											"type": "string",
+											"pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
 											"description": "Name of the masked env var holding the AWS access key id."
 										},
 										"secretAccessKeyVar": {
-											"type": "object",
-											"properties": {
-												"id": {
-													"type": "string"
-												},
-												"subject": {
-													"type": "string"
-												},
-												"description": {
-													"type": "string"
-												},
-												"activeForm": {
-													"type": "string"
-												},
-												"owner": {
-													"type": "string"
-												},
-												"status": {
-													"enum": [
-														"pending",
-														"in_progress",
-														"completed"
-													]
-												},
-												"blocks": {
-													"type": "array",
-													"items": {
-														"type": "string"
-													}
-												},
-												"blockedBy": {
-													"type": "array",
-													"items": {
-														"type": "string"
-													}
-												},
-												"metadata": {
-													"type": "object",
-													"additionalProperties": {}
-												}
-											},
-											"required": [
-												"id",
-												"subject",
-												"description",
-												"status",
-												"blocks",
-												"blockedBy"
-											],
+											"type": "string",
+											"pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
 											"description": "Name of the masked env var holding the AWS secret access key."
 										},
 										"sessionTokenVar": {
-											"type": "object",
-											"properties": {
-												"id": {
-													"type": "string"
-												},
-												"subject": {
-													"type": "string"
-												},
-												"description": {
-													"type": "string"
-												},
-												"activeForm": {
-													"type": "string"
-												},
-												"owner": {
-													"type": "string"
-												},
-												"status": {
-													"enum": [
-														"pending",
-														"in_progress",
-														"completed"
-													]
-												},
-												"blocks": {
-													"type": "array",
-													"items": {
-														"type": "string"
-													}
-												},
-												"blockedBy": {
-													"type": "array",
-													"items": {
-														"type": "string"
-													}
-												},
-												"metadata": {
-													"type": "object",
-													"additionalProperties": {}
-												}
-											},
-											"required": [
-												"id",
-												"subject",
-												"description",
-												"status",
-												"blocks",
-												"blockedBy"
-											],
+											"type": "string",
+											"pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
 											"description": "Optional name of the masked env var holding the AWS session token (temporary credentials). When set, the proxy sends the real token as x-amz-security-token on re-signed requests and adds it to the signed header set if the client did not."
 										}
 									},
@@ -2865,7 +2660,7 @@
 					},
 					"checker": {
 						"type": "string",
-						"description": "`Which spell checker to run: ${Fse.map((r)=>`\"${r}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
+						"description": "`Which spell checker to run: ${uie.map((i)=>`\"${i}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
 					},
 					"language": {
 						"type": "string",
@@ -2877,7 +2672,7 @@
 					}
 				},
 				"additionalProperties": true,
-				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${Fse.slice(0,-1).join(\", \")} or ${Fse.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
+				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${uie.slice(0,-1).join(\", \")} or ${uie.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
 			},
 			"terminalTitleFromRename": {
 				"type": "boolean",
@@ -2918,283 +2713,7 @@
 				"description": "Enable ultracode for the session: xhigh effort plus standing dynamic-workflow orchestration. \"+\"Session-scoped \\u2014 typically provided via --settings or the apply_flag_settings control request; \"+\"interactive toggles never persist it. Requires workflows to be enabled and an xhigh-capable model."
 			},
 			"autoCompactWindow": {
-				"oneOf": [
-					{
-						"type": "object",
-						"properties": {
-							"type": {
-								"const": "regex"
-							},
-							"name": {
-								"type": "string"
-							},
-							"target": {
-								"type": "object",
-								"properties": {
-									"uuids": {
-										"type": "array",
-										"items": {
-											"type": "string",
-											"minLength": 1,
-											"maxLength": 64
-										},
-										"minItems": 1,
-										"maxItems": 32,
-										"description": "directoryUuid or server_id values to resolve."
-									}
-								},
-								"required": [
-									"uuids"
-								],
-								"additionalProperties": false,
-								"default": "last_message"
-							},
-							"pattern": {
-								"type": "string"
-							},
-							"flags": {
-								"type": "string",
-								"pattern": "^[dgimsuvy]*$",
-								"default": ""
-							},
-							"match": {
-								"anyOf": [
-									{
-										"enum": [
-											"contains",
-											"not_contains"
-										]
-									},
-									{
-										"type": "string",
-										"pattern": "^count:\\d+$"
-									}
-								],
-								"default": "contains"
-							},
-							"weight": {
-								"type": "number",
-								"default": 1
-							},
-							"arm": {}
-						},
-						"required": [
-							"type",
-							"name",
-							"pattern",
-							"arm"
-						],
-						"additionalProperties": false
-					},
-					{
-						"type": "object",
-						"properties": {
-							"type": {
-								"const": "tool_order"
-							},
-							"name": {
-								"type": "string"
-							},
-							"before": {
-								"type": "object",
-								"properties": {
-									"name": {
-										"type": "string",
-										"minLength": 1,
-										"description": "Display name of the plugin author or organization"
-									},
-									"email": {
-										"type": "string",
-										"description": "Contact email for support or feedback"
-									},
-									"url": {
-										"type": "string",
-										"description": "Website, GitHub profile, or organization URL"
-									}
-								},
-								"required": [
-									"name"
-								]
-							},
-							"after": {
-								"type": "object",
-								"properties": {
-									"name": {
-										"type": "string",
-										"minLength": 1,
-										"description": "Display name of the plugin author or organization"
-									},
-									"email": {
-										"type": "string",
-										"description": "Contact email for support or feedback"
-									},
-									"url": {
-										"type": "string",
-										"description": "Website, GitHub profile, or organization URL"
-									}
-								},
-								"required": [
-									"name"
-								]
-							},
-							"weight": {
-								"type": "number",
-								"default": 1
-							},
-							"arm": {}
-						},
-						"required": [
-							"type",
-							"name",
-							"before",
-							"after",
-							"arm"
-						],
-						"additionalProperties": false
-					},
-					{
-						"type": "object",
-						"properties": {
-							"type": {
-								"const": "tool_used"
-							},
-							"name": {
-								"type": "string"
-							},
-							"tool": {
-								"type": "string"
-							},
-							"input_match": {
-								"type": "string"
-							},
-							"min": {
-								"type": "number"
-							},
-							"max": {
-								"type": "number"
-							},
-							"weight": {
-								"type": "number",
-								"default": 1
-							},
-							"arm": {}
-						},
-						"required": [
-							"type",
-							"name",
-							"tool",
-							"arm"
-						],
-						"additionalProperties": false
-					},
-					{
-						"type": "object",
-						"properties": {
-							"type": {
-								"const": "file_exists"
-							},
-							"name": {
-								"type": "string"
-							},
-							"path": {
-								"type": "string"
-							},
-							"exists": {
-								"type": "boolean",
-								"default": "!0"
-							},
-							"weight": {
-								"type": "number",
-								"default": 1
-							},
-							"arm": {}
-						},
-						"required": [
-							"type",
-							"name",
-							"path",
-							"arm"
-						],
-						"additionalProperties": false
-					},
-					{
-						"type": "object",
-						"properties": {
-							"type": {
-								"const": "llm"
-							},
-							"name": {
-								"type": "string"
-							},
-							"criteria": {
-								"type": "string"
-							},
-							"focus": {
-								"type": "object",
-								"properties": {
-									"uuids": {
-										"type": "array",
-										"items": {
-											"type": "string",
-											"minLength": 1,
-											"maxLength": 64
-										},
-										"minItems": 1,
-										"maxItems": 32,
-										"description": "directoryUuid or server_id values to resolve."
-									}
-								},
-								"required": [
-									"uuids"
-								],
-								"additionalProperties": false,
-								"default": "last_message"
-							},
-							"weight": {
-								"type": "number",
-								"default": 1
-							},
-							"arm": {}
-						},
-						"required": [
-							"type",
-							"name",
-							"criteria",
-							"arm"
-						],
-						"additionalProperties": false
-					},
-					{
-						"type": "object",
-						"properties": {
-							"type": {
-								"const": "baseline"
-							},
-							"name": {
-								"type": "string"
-							},
-							"baseline_file": {
-								"type": "string"
-							},
-							"criteria": {
-								"type": "string"
-							},
-							"weight": {
-								"type": "number",
-								"default": 1
-							},
-							"arm": {}
-						},
-						"required": [
-							"type",
-							"name",
-							"baseline_file",
-							"criteria",
-							"arm"
-						],
-						"additionalProperties": false
-					}
-				],
+				"type": "number",
 				"description": "Auto-compact window size"
 			},
 			"advisorModel": {
@@ -3544,7 +3063,11 @@
 				"description": "Key binding mode for the prompt input"
 			},
 			"keybindingFlavor": {
-				"description": "`Which conventions the prompt's word-editing keys follow: \"readline\" matches Bash and other readline programs (Ctrl+W deletes back to the previous whitespace; Alt+F and Alt+D stop at the end of the current word and Ctrl+Y can paste back what Alt+D deleted; for Alt+B, Alt+F, Alt+D, Ctrl/Option+Arrow and Option/Ctrl+Backspace a word is a run of letters and digits, so punctuation separates words); \"classic\" (default) keeps Claude Code's long-standing behavior (Ctrl+W deletes the previous word; the word keys use Unicode word segmentation, so foo_bar and 3.14 are one word)`"
+				"enum": [
+					"classic",
+					"readline"
+				],
+				"description": "Deprecated: no longer has any effect. The prompt's word-editing keys always follow Bash (readline) conventions."
 			},
 			"vimInsertModeRemaps": {
 				"type": "object",
@@ -3608,6 +3131,20 @@
 			"remoteControlAtStartup": {
 				"type": "boolean",
 				"description": "Start Remote Control bridge automatically each session"
+			},
+			"remoteControl": {
+				"type": "object",
+				"properties": {
+					"shareHostProfile": {
+						"enum": [
+							"off",
+							"basic",
+							"full"
+						],
+						"description": "@internal What a Remote Control environment reports about this machine when it registers: 'off' reports nothing, 'basic' the OS, architecture and detected developer tools, 'full' also the names of MCP servers configured on this machine (never a repository's .mcp.json). When unset, the level comes from the feature rollout, which may be any of the three. Managed, --settings and user settings choose the level (the most restrictive wins); project and local settings can only lower it, never raise it. Read when Remote Control starts; lowering it later applies from the next registration, raising it from the next start."
+					}
+				},
+				"description": "@internal Remote Control (`claude remote-control`) options"
 			},
 			"isolatePeerMachines": {
 				"type": "boolean",
