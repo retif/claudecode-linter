@@ -904,7 +904,23 @@ export function indexDefinitions(
 		// "stamp-control"]` vetoed the skill module's `u_=aJe`, which is why
 		// `name`/`description` came out untyped on all three frontmatter
 		// schemas while the sibling alias `O1=aJe` resolved fine.
-		if (defs.has(name)) continue;
+		//
+		// And only a definition in the alias's OWN module blocks it. This used to
+		// be `defs.has(name)` — a corpus-wide veto — which meant a factory bound
+		// to the same minified name in any *other* module silenced the alias
+		// here. Being silenced is not neutral (see the factory scan above): the
+		// referring module then has no binding of the name at all, and
+		// `resolveDefSite` falls through to that other module's factory. On
+		// 2.1.261 the frontmatter module declares `var z4e=()=>Ne([s(),w(),P(),
+		// Fp()]),__=z4e,BU=z4e` — the string/number/boolean/null union — while
+		// an unrelated module binds `BU=m(()=>c({name:s(),permission_policy:…,
+		// org_max_permission:…}))`, the MCP per-tool permission-policy object.
+		// The object was indexed first, the alias was vetoed, and
+		// `disable-model-invocation`, `user-invocable`, `background`, `fallback`
+		// and `observeSubagents` were all published as that object: 12/6/6
+		// property paths on skill/agent/command frontmatter that exist nowhere
+		// in the upstream source (oleks/claudecode-linter#43).
+		if (defSites.get(name)?.some((s) => s.module === aliasModule)) continue;
 		const targets = aliasPairs.get(name);
 		if (targets) {
 			if (
@@ -930,10 +946,18 @@ export function indexDefinitions(
 			const seen = new Set<string>([name]);
 			let target: string | undefined = candidate.target;
 			while (target !== undefined && !seen.has(target)) {
-				// Prefer the alias's own module's binding of the target, falling
-				// back to the corpus-wide first — the same rule `resolveDefSite`
-				// applies, inlined because the index is still being built.
-				const targetSites = defSites.get(target);
+				// The target must be a factory in the alias's OWN module. An alias
+				// is a plain `X=Y` with no Zod call in it, so nothing about it
+				// says "schema" except the binding of `Y` it can actually see —
+				// and a minified `Y` is module-scoped. Accepting a `Y` bound only
+				// in some other module would record `X` as that foreign factory
+				// on a guess, which is exactly how #41 and #43 fabricated paths.
+				// An alias whose target is not visible in its module stays
+				// unindexed. (A module-less index, as in the unit tests, has
+				// every site at -1, so the check is trivially true there.)
+				const targetSites = defSites
+					.get(target)
+					?.filter((s) => candidate.module < 0 || s.module === candidate.module);
 				if (targetSites && targetSites.length > 0) {
 					// `LW()` is `target()` — calling the aliased factory. Which
 					// binding of `target` that call means is decided later, by
@@ -953,14 +977,13 @@ export function indexDefinitions(
 					break;
 				}
 				seen.add(target);
-				// Follow the chain through whichever binding of the next hop
-				// resolves; the same shadowing applies one link down. Same-module
-				// hops are preferred over cross-module ones.
+				// Follow the chain one hop, within the same module only — a
+				// cross-module hop is the same guess as a cross-module target.
 				const hops = aliasPairs.get(target)?.filter((t) => !seen.has(t.target));
 				target =
-					(candidate.module >= 0
+					candidate.module >= 0
 						? hops?.find((t) => t.module === candidate.module)?.target
-						: undefined) ?? hops?.[0]?.target;
+						: hops?.[0]?.target;
 			}
 		}
 	}
