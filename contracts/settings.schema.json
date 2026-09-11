@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.268",
-	"extractedAt": "2026-09-10T20:41:36.442Z",
+	"extractedFromClaudeCodeVersion": "2.1.269",
+	"extractedAt": "2026-09-11T20:47:05.413Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -710,6 +710,10 @@
 					"powershell"
 				],
 				"description": "Default shell for input-box ! commands. Defaults to 'bash' on all platforms (no Windows auto-flip)."
+			},
+			"bashEditDiffEnabled": {
+				"type": "boolean",
+				"description": "Whether the Bash tool shows a diff of the files a Bash command changed (PostToolUse Bash hooks get the changed-file list in tool_response). Set to false to turn that off. Default: on when the Bash tool handles file edits. Only user, flag or policy settings can turn it on outside auto and bypassPermissions modes."
 			},
 			"bashOutputMaxChars": {
 				"type": "number",
@@ -2681,7 +2685,7 @@
 					},
 					"checker": {
 						"type": "string",
-						"description": "`Which spell checker to run: ${Xce.map((i)=>`\"${i}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
+						"description": "`Which spell checker to run: ${ude.map((i)=>`\"${i}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
 					},
 					"language": {
 						"type": "string",
@@ -2693,7 +2697,7 @@
 					}
 				},
 				"additionalProperties": true,
-				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${Xce.slice(0,-1).join(\", \")} or ${Xce.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
+				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${ude.slice(0,-1).join(\", \")} or ${ude.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
 			},
 			"terminalTitleFromRename": {
 				"type": "boolean",
