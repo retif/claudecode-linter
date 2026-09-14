@@ -12,6 +12,17 @@
 				"id": "deep-merge"
 			}
 		},
+		"@better-auth/cli": {
+			"type": "module",
+			"moduleName": "@better-auth/cli",
+			"replacements": [
+				"auth"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "better-auth-cli"
+			}
+		},
 		"@cypress/request": {
 			"type": "module",
 			"moduleName": "@cypress/request",
@@ -447,6 +458,17 @@
 				"id": "crypto-js"
 			}
 		},
+		"css-loader": {
+			"type": "module",
+			"moduleName": "css-loader",
+			"replacements": [
+				"webpack.experiments.css"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "css-loader"
+			}
+		},
 		"cwd": {
 			"type": "module",
 			"moduleName": "cwd",
@@ -493,6 +515,18 @@
 			"url": {
 				"type": "e18e",
 				"id": "deep-equal"
+			}
+		},
+		"deep-extend": {
+			"type": "module",
+			"moduleName": "deep-extend",
+			"replacements": [
+				"defu",
+				"@fastify/deepmerge"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "deep-merge"
 			}
 		},
 		"deepmerge": {
@@ -826,6 +860,17 @@
 				"id": "find-pkg"
 			}
 		},
+		"find-process": {
+			"type": "module",
+			"moduleName": "find-process",
+			"replacements": [
+				"find-proc"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "find-process"
+			}
+		},
 		"find-up": {
 			"type": "module",
 			"moduleName": "find-up",
@@ -1103,6 +1148,17 @@
 			"url": {
 				"type": "e18e",
 				"id": "istanbul-lib-coverage"
+			}
+		},
+		"istanbul-lib-instrument": {
+			"type": "module",
+			"moduleName": "istanbul-lib-instrument",
+			"replacements": [
+				"@vitest/istanbul-lib-instrument"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "istanbul-lib-instrument"
 			}
 		},
 		"jquery": {
@@ -4960,6 +5016,17 @@
 				"id": "rimraf"
 			}
 		},
+		"rollup-plugin-terser": {
+			"type": "module",
+			"moduleName": "rollup-plugin-terser",
+			"replacements": [
+				"@rollup/plugin-terser"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "rollup-plugin-terser"
+			}
+		},
 		"safe-compare": {
 			"type": "module",
 			"moduleName": "safe-compare",
@@ -5131,6 +5198,17 @@
 			"url": {
 				"type": "e18e",
 				"id": "strip-ansi"
+			}
+		},
+		"tar": {
+			"type": "module",
+			"moduleName": "tar",
+			"replacements": [
+				"modern-tar"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "tar-fs"
 			}
 		},
 		"tar-fs": {
@@ -5595,6 +5673,11 @@
 			"type": "documented",
 			"replacementModule": "@placemarkio/tokml"
 		},
+		"@rollup/plugin-terser": {
+			"id": "@rollup/plugin-terser",
+			"type": "documented",
+			"replacementModule": "@rollup/plugin-terser"
+		},
 		"@vitest/eslint-plugin": {
 			"id": "@vitest/eslint-plugin",
 			"type": "documented",
@@ -5604,6 +5687,11 @@
 			"id": "@vitest/istanbul-lib-coverage",
 			"type": "documented",
 			"replacementModule": "@vitest/istanbul-lib-coverage"
+		},
+		"@vitest/istanbul-lib-instrument": {
+			"id": "@vitest/istanbul-lib-instrument",
+			"type": "documented",
+			"replacementModule": "@vitest/istanbul-lib-instrument"
 		},
 		"@xmldom/xmldom": {
 			"id": "@xmldom/xmldom",
@@ -5803,6 +5891,11 @@
 			"id": "ansis",
 			"type": "documented",
 			"replacementModule": "ansis"
+		},
+		"auth": {
+			"id": "auth",
+			"type": "documented",
+			"replacementModule": "auth"
 		},
 		"bcryptjs": {
 			"id": "bcryptjs",
@@ -6042,6 +6135,11 @@
 				"type": "mdn",
 				"id": "Web/API/Fetch_API"
 			}
+		},
+		"find-proc": {
+			"id": "find-proc",
+			"type": "documented",
+			"replacementModule": "find-proc"
 		},
 		"fs": {
 			"id": "fs",
@@ -6676,6 +6774,11 @@
 			"id": "webpack-bundle-analyzer",
 			"type": "documented",
 			"replacementModule": "webpack-bundle-analyzer"
+		},
+		"webpack.experiments.css": {
+			"id": "webpack.experiments.css",
+			"type": "documented",
+			"replacementModule": "webpack"
 		},
 		"webpack.output.clean": {
 			"id": "webpack.output.clean",
