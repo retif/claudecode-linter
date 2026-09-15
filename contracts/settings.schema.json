@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.270",
-	"extractedAt": "2026-09-12T20:24:12.101Z",
+	"extractedFromClaudeCodeVersion": "2.1.272",
+	"extractedAt": "2026-09-15T04:22:42.332Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -246,7 +246,7 @@
 						"additionalProperties": {}
 					}
 				},
-				"description": "Price usage at your organization's contracted rates instead of list price. \"+\"Affects every spend figure Claude Code reports \\u2014 /cost, the status line, the SDK total_cost_usd, \"+\"--max-budget-usd, and the OpenTelemetry cost metric and events \\u2014 which remain USD estimates, not an invoice \"+'(the per-Mtok price labels in /model stay at list). \"overrides\" maps a model ID to its USD-per-million-token rates (input, output, cacheRead, '+\"cacheWrite \\u2014 all four required, each 0 to 10000; cacheWrite prices both 5-minute and 1-hour cache writes). \"+\"A matching row is charged exactly as written; fast-mode and US-data-residency surcharges are not added on top. \"+'A key Claude Code itself uses for a built-in model \\u2014 its ID such as \"claude-sonnet-4-6\", or its '+\"first-party, Bedrock (any or no region prefix), Vertex or Foundry ID \\u2014 covers every dated and provider form \"+\"of that model; any other key \\u2014 a gateway model alias, or a spelling Claude Code does not itself use \\u2014 \"+'matches that model ID only (case-insensitive), and such an exact match wins over a built-in row. On Bedrock an application inference profile is matched by its backing model. An invalid row or multiplier is reported and skipped; the rest still apply. \"multiplier\" in (0, 1] scales every computed cost, overridden or not (0.85 = 85% of the price). Only honored from managed settings (server-managed, MDM / OS policy, or managed-settings.json), '+\"or \\u2014 when none of those sets it \\u2014 when supplied by a host application that manages the model \"+\"provider; ignored in user, project, local and --settings sources."
+				"description": "Price usage at your organization's contracted rates instead of list price. \"+\"Affects every spend figure Claude Code reports \\u2014 /cost, the status line, the SDK total_cost_usd, \"+\"--max-budget-usd, and the OpenTelemetry cost metric and events \\u2014 which remain USD estimates, not an invoice \"+'(the per-Mtok price labels in /model stay at list). \"overrides\" maps a model ID to its USD-per-million-token rates (input, output, cacheRead, '+\"cacheWrite \\u2014 all four required, each 0 to 10000; cacheWrite prices both 5-minute and 1-hour cache writes). \"+\"A matching row is charged exactly as written; fast-mode and US-data-residency surcharges are not added on top. \"+'A key Claude Code itself uses for a built-in model \\u2014 its ID such as \"claude-sonnet-4-6\", or its '+\"first-party, Bedrock (any or no region prefix), Vertex or Foundry ID \\u2014 covers every dated and provider form \"+\"of that model; any other key \\u2014 a gateway model alias, or a spelling Claude Code does not itself use \\u2014 \"+'matches that model ID only (case-insensitive), and such an exact match wins over a built-in row. On Bedrock an application inference profile is matched by its backing model. An invalid row or multiplier is reported and skipped; the rest still apply. \"multiplier\" in (0, 10] scales every computed cost, overridden or not (0.85 = 85% of the price, 1.2 = 120%). Only honored from managed settings (server-managed, MDM / OS policy, or managed-settings.json), '+\"or \\u2014 when none of those sets it \\u2014 when supplied by a host application that manages the model \"+\"provider; ignored in user, project, local and --settings sources."
 			},
 			"enableAllProjectMcpServers": {
 				"type": "boolean",
@@ -694,7 +694,7 @@
 					"medium",
 					"large"
 				],
-				"description": "Advisory size guideline for the dynamic workflows Claude writes: \"small\" aims for fewer than 5 agents, \"medium\" (the default) fewer than 15, \"large\" fewer than 50, and \"unrestricted\" sends no guideline. A value here \\u2014 including from managed settings \\u2014 takes precedence over the \"Dynamic workflow size\" choice in /config, and that /config row is hidden while a settings file provides the key. This is a guideline, not an enforced limit."
+				"description": "Advisory size guideline for the dynamic workflows Claude writes: \"small\" aims for fewer than 5 agents, \"medium\" fewer than 10, \"large\" fewer than 50, and \"unrestricted\" sends no guideline. Unset defaults to \"medium\", or \"small\" on Pro plans. A value here \\u2014 including from managed settings \\u2014 takes precedence over the \"Dynamic workflow size\" choice in /config, and that /config row is hidden while a settings file provides the key. This is a guideline, not an enforced limit."
 			},
 			"workflowKeywordTriggerEnabled": {
 				"type": "boolean",
@@ -2685,7 +2685,7 @@
 					},
 					"checker": {
 						"type": "string",
-						"description": "`Which spell checker to run: ${ude.map((i)=>`\"${i}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
+						"description": "`Which spell checker to run: ${Vfe.map((i)=>`\"${i}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
 					},
 					"language": {
 						"type": "string",
@@ -2697,7 +2697,7 @@
 					}
 				},
 				"additionalProperties": true,
-				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${ude.slice(0,-1).join(\", \")} or ${ude.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
+				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${Vfe.slice(0,-1).join(\", \")} or ${Vfe.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
 			},
 			"terminalTitleFromRename": {
 				"type": "boolean",

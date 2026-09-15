@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.270",
-	"extractedAt": "2026-09-12T20:24:12.109Z",
+	"extractedFromClaudeCodeVersion": "2.1.272",
+	"extractedAt": "2026-09-15T04:22:42.337Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code agent .md frontmatter",
@@ -259,6 +259,23 @@
 					}
 				],
 				"description": "If true, the agent runs in the background by default."
+			},
+			"omitClaudeMd": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
+				"description": "If true, the agent runs without the user, project and local CLAUDE.md instruction files when spawned as a subagent; managed policy files are kept. For agents that take everything they need from the delegation prompt."
 			},
 			"isolation": {
 				"anyOf": [

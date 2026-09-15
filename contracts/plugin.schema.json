@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.270",
-	"extractedAt": "2026-09-12T20:24:12.055Z",
+	"extractedFromClaudeCodeVersion": "2.1.272",
+	"extractedAt": "2026-09-15T04:22:42.288Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code plugin.json",
@@ -917,6 +917,16 @@
 									"max": {
 										"type": "number",
 										"description": "Maximum value (number type only)"
+									},
+									"options": {
+										"type": "array",
+										"items": {
+											"type": "string",
+											"minLength": 1,
+											"maxLength": 64
+										},
+										"minItems": 1,
+										"description": "For string type: the only values the field takes. /config shows the field as a picker over them, and a stored value outside them counts as unset"
 									}
 								},
 								"required": [
@@ -2061,6 +2071,10 @@
 				"additionalProperties": {},
 				"description": "Settings to merge into the user settings while this plugin is enabled. Only the documented allowlisted keys are applied."
 			},
+			"types": {
+				"type": "string",
+				"description": "Path to the plugin's type contract, relative to the plugin root and starting with ./: a self-contained .d.ts (no import, export-from, require or reference) that exports the types of the noun the plugin's hooks module adds in engine.create at its top level and declares the noun in a `declare module 'claude-code' { interface EngineInterface { ... } }` block, nothing else. /plugin-types copies each enabled plugin's contract to .claude/types/claude-code-plugins/<plugin>.d.ts and indexes them in claude-code-plugins.d.ts for dependents to type against; claude plugin validate checks the file."
+			},
 			"userConfig": {
 				"type": "object",
 				"additionalProperties": {
@@ -2123,6 +2137,16 @@
 						"max": {
 							"type": "number",
 							"description": "Maximum value (number type only)"
+						},
+						"options": {
+							"type": "array",
+							"items": {
+								"type": "string",
+								"minLength": 1,
+								"maxLength": 64
+							},
+							"minItems": 1,
+							"description": "For string type: the only values the field takes. /config shows the field as a picker over them, and a stored value outside them counts as unset"
 						}
 					},
 					"required": [

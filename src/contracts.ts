@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.270 — extracted 2026-09-12T20:24:05.033Z
+// Claude Code v2.1.272 — extracted 2026-09-15T04:22:36.170Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -184,6 +184,7 @@ export const AGENT_FRONTMATTER = new Set<string>([
 	"model",
 	"observer",
 	"observerMessage",
+	"omitClaudeMd",
 	"permissionMode",
 	"prompt",
 	"skills",
