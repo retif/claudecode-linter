@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.274",
-	"extractedAt": "2026-09-17T04:24:51.244Z",
+	"extractedFromClaudeCodeVersion": "2.1.276",
+	"extractedAt": "2026-09-18T04:09:05.491Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -1006,7 +1006,16 @@
 								},
 								"package": {
 									"type": "string",
-									"description": "NPM package containing marketplace.json"
+									"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). In strictKnownMarketplaces / blockedMarketplaces an entry also governs plugins installed straight from the npm marketplace (`<package>@npm`): an exact package name matches that package, and \"@acme/*\" matches every package under the scope."
+								},
+								"version": {
+									"type": "string",
+									"description": "Version or range to fetch (e.g. \"1.4.0\", \"^1.4\"); defaults to the latest dist-tag"
+								},
+								"registry": {
+									"type": "string",
+									"format": "uri",
+									"description": "`Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). In a policy entry: the origin and path prefix the package's RESOLVED tarball URL must fall under (e.g. \"https://npm.example.com/api/npm/internal/\").`"
 								}
 							},
 							"required": [
@@ -1472,7 +1481,16 @@
 								},
 								"package": {
 									"type": "string",
-									"description": "NPM package containing marketplace.json"
+									"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). In strictKnownMarketplaces / blockedMarketplaces an entry also governs plugins installed straight from the npm marketplace (`<package>@npm`): an exact package name matches that package, and \"@acme/*\" matches every package under the scope."
+								},
+								"version": {
+									"type": "string",
+									"description": "Version or range to fetch (e.g. \"1.4.0\", \"^1.4\"); defaults to the latest dist-tag"
+								},
+								"registry": {
+									"type": "string",
+									"format": "uri",
+									"description": "`Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). In a policy entry: the origin and path prefix the package's RESOLVED tarball URL must fall under (e.g. \"https://npm.example.com/api/npm/internal/\").`"
 								}
 							},
 							"required": [
@@ -1938,7 +1956,16 @@
 								},
 								"package": {
 									"type": "string",
-									"description": "NPM package containing marketplace.json"
+									"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). In strictKnownMarketplaces / blockedMarketplaces an entry also governs plugins installed straight from the npm marketplace (`<package>@npm`): an exact package name matches that package, and \"@acme/*\" matches every package under the scope."
+								},
+								"version": {
+									"type": "string",
+									"description": "Version or range to fetch (e.g. \"1.4.0\", \"^1.4\"); defaults to the latest dist-tag"
+								},
+								"registry": {
+									"type": "string",
+									"format": "uri",
+									"description": "`Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). In a policy entry: the origin and path prefix the package's RESOLVED tarball URL must fall under (e.g. \"https://npm.example.com/api/npm/internal/\").`"
 								}
 							},
 							"required": [
@@ -2685,7 +2712,7 @@
 					},
 					"checker": {
 						"type": "string",
-						"description": "`Which spell checker to run: ${Phe.map((i)=>`\"${i}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
+						"description": "`Which spell checker to run: ${Xye.map((i)=>`\"${i}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
 					},
 					"language": {
 						"type": "string",
@@ -2697,7 +2724,7 @@
 					}
 				},
 				"additionalProperties": true,
-				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${Phe.slice(0,-1).join(\", \")} or ${Phe.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
+				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${Xye.slice(0,-1).join(\", \")} or ${Xye.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
 			},
 			"terminalTitleFromRename": {
 				"type": "boolean",
