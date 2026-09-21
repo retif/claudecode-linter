@@ -138,6 +138,12 @@
 			"description": "You can use the `includes` method on the `process.argv` array to check if a flag is present.",
 			"example": "process.argv.includes('--flag')"
 		},
+		"snippet::indent-string": {
+			"id": "snippet::indent-string",
+			"type": "simple",
+			"description": "You can indent every non-empty line with `String.prototype.replace`, or use `/^/gm` to also indent empty lines, matching the package's `includeEmptyLines` option.",
+			"example": "const indentString = (string, count = 1, indent = ' ') =>\n  string.replace(/^(?!\\s*$)/gm, indent.repeat(count));"
+		},
 		"snippet::is-arguments": {
 			"id": "snippet::is-arguments",
 			"type": "simple",
@@ -186,11 +192,29 @@
 			"description": "You can use `instanceof Date`, or if cross-realm, use `Object.prototype.toString.call(v) === \"[object Date]\"`",
 			"example": "const isDate = v instanceof Date;\n// for cross-realm\nconst isDateCrossRealm = Object.prototype.toString.call(v) === \"[object Date]\""
 		},
+		"snippet::is-decimal": {
+			"id": "snippet::is-decimal",
+			"type": "simple",
+			"description": "You can check if a character, or a character code, is a decimal digit by comparing its character code against the `0`-`9` range.",
+			"example": "const isDecimal = (character) => {\n  const code =\n    typeof character === 'string' ? character.charCodeAt(0) : character;\n  return code >= 48 && code <= 57;\n};"
+		},
 		"snippet::is-deflate-buffer": {
 			"id": "snippet::is-deflate-buffer",
 			"type": "simple",
 			"description": "You can check the first two bytes of a buffer to detect if it's compressed using deflate.",
 			"example": "function isDeflate(buf) {\n  if (buf.length < 2 || buf[0] !== 0x78) return false;\n  const b = buf[1];\n  return b === 1 || b === 0x9c || b === 0xda;\n}"
+		},
+		"snippet::is-directory": {
+			"id": "snippet::is-directory",
+			"type": "simple",
+			"description": "You can call `isDirectory()` on the result of `stat` from `node:fs/promises`, or of `statSync` from `node:fs`, treating an `ENOENT` error as `false`.",
+			"example": "import { stat } from 'node:fs/promises'\n\nconst isDirectory = async (filepath) => {\n  try {\n    return (await stat(filepath)).isDirectory()\n  } catch (err) {\n    if (err.code === 'ENOENT') return false\n    throw err\n  }\n}"
+		},
+		"snippet::is-dotfile": {
+			"id": "snippet::is-dotfile",
+			"type": "simple",
+			"description": "You can test whether a path ends in a dotfile such as `.gitignore` using a regular expression.",
+			"example": "const isDotfile = (str) => /(?:\\/|^)\\.[^/.][^/]*$/.test(str)"
 		},
 		"snippet::is-electron": {
 			"id": "snippet::is-electron",
@@ -228,6 +252,12 @@
 			"description": "You can check first three bytes of a buffer to detect if it is a gzip file.",
 			"example": "function isGzip(buf) {\n  if (buf.length < 3) return false;\n  return buf[0] === 31 && buf[1] === 139 && buf[2] === 8;\n}"
 		},
+		"snippet::is-identifier-name": {
+			"id": "snippet::is-identifier-name",
+			"type": "simple",
+			"description": "You can test a string against the `ID_Start` and `ID_Continue` Unicode properties to check whether it is a valid identifier name, and so usable as an unquoted property.",
+			"example": "const isProperty = (str) => /^[$_\\p{ID_Start}][$\\p{ID_Continue}]*$/u.test(str)"
+		},
 		"snippet::is-in-ssh": {
 			"id": "snippet::is-in-ssh",
 			"type": "simple",
@@ -239,6 +269,18 @@
 			"type": "simple",
 			"description": "You can check if the current environment is interactive using `process.stdout.isTTY` and checking that it is not running in CI.",
 			"example": "Boolean(stream?.isTTY && !process.env.CI)"
+		},
+		"snippet::is-jpg-buffer": {
+			"id": "snippet::is-jpg-buffer",
+			"type": "simple",
+			"description": "You can check the first three bytes of a buffer against the JPEG file signature to detect if it is a JPEG image.",
+			"example": "function isJpg(buf) {\n  if (!buf || buf.length < 3) return false;\n  return buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;\n}"
+		},
+		"snippet::is-lower-case": {
+			"id": "snippet::is-lower-case",
+			"type": "simple",
+			"description": "You can compare the string against its lower-cased form to determine if the string is entirely lower case",
+			"example": "const isLowerCase = (input, locale) =>\n  input.toLocaleLowerCase(locale) === input &&\n  input !== input.toLocaleUpperCase(locale)"
 		},
 		"snippet::is-map": {
 			"id": "snippet::is-map",
@@ -306,6 +348,18 @@
 			"description": "You can check if a path equals the current working directory using `path.relative`.",
 			"example": "import { relative } from 'node:path'\n\nconst isPathCwd = (p) => !relative(p, process.cwd())"
 		},
+		"snippet::is-png-buffer": {
+			"id": "snippet::is-png-buffer",
+			"type": "simple",
+			"description": "You can check the first eight bytes of a buffer against the PNG file signature to detect if it is a PNG image.",
+			"example": "function isPng(buf) {\n  if (!buf || buf.length < 8) return false;\n  return buf[0] === 0x89 && buf[1] === 0x50\n    && buf[2] === 0x4e && buf[3] === 0x47\n    && buf[4] === 0x0d && buf[5] === 0x0a\n    && buf[6] === 0x1a && buf[7] === 0x0a;\n}"
+		},
+		"snippet::is-posix-bracket": {
+			"id": "snippet::is-posix-bracket",
+			"type": "simple",
+			"description": "You can test for a POSIX bracket expression such as `[:alpha:]` using a regular expression.",
+			"example": "const isPosixBracket = (str) => /\\[([:.=+])(?:[^\\[\\]]|)+\\1\\]/.test(str);"
+		},
 		"snippet::is-primitve": {
 			"id": "snippet::is-primitve",
 			"type": "simple",
@@ -342,6 +396,12 @@
 			"description": "You can use `typeof` to check if a value is a string.",
 			"example": "typeof value === \"string\""
 		},
+		"snippet::is-supported-regexp-flag": {
+			"id": "snippet::is-supported-regexp-flag",
+			"type": "simple",
+			"description": "The `RegExp` constructor throws on an unsupported or invalid flag, so you can check support with a `try`/`catch`.",
+			"example": "const isSupportedRegexpFlag = (flag) => {\n  try {\n    RegExp(\"\", flag);\n    return true;\n  } catch {\n    return false;\n  }\n};"
+		},
 		"snippet::is-symbol": {
 			"id": "snippet::is-symbol",
 			"type": "simple",
@@ -365,6 +425,12 @@
 			"type": "simple",
 			"description": "You can check if a value is a Typed Array using `ArrayBuffer.isView` and checking if it is not a `DataView`.",
 			"example": "const isTypedArray = (v) => ArrayBuffer.isView(v) && !(v instanceof DataView);"
+		},
+		"snippet::is-unc-path": {
+			"id": "snippet::is-unc-path",
+			"type": "simple",
+			"description": "You can test for a Windows UNC path such as `\\\\server\\share` using a regular expression.",
+			"example": "const isUncPath = (filepath) => /^[\\\\\\/]{2,}[^\\\\\\/]+[\\\\\\/]+[^\\\\\\/]+/.test(filepath)"
 		},
 		"snippet::is-undefined": {
 			"id": "snippet::is-undefined",
@@ -420,6 +486,12 @@
 			"description": "You can use `Math.random()` or `crypto.getRandomValues` if cryptographic randomness is required.",
 			"example": "crypto.getRandomValues(new Uint32Array(1))[0] / (2 ** 32);\n// or\nMath.random();"
 		},
+		"snippet::min-indent": {
+			"id": "snippet::min-indent",
+			"type": "simple",
+			"description": "You can use a regular expression with `Array.prototype.reduce` to find the shortest leading whitespace across the lines of a string.",
+			"example": "const minIndent = (string) => (string.match(/^[ \\t]*(?=\\S)/gm) ?? ['']).reduce((r, a) => Math.min(r, a.length), Infinity)"
+		},
 		"snippet::noop": {
 			"id": "snippet::noop",
 			"type": "simple",
@@ -444,6 +516,12 @@
 			"description": "You can use `Object.fromEntries` with `Object.entries` to invert keys and values.",
 			"example": "Object.fromEntries(Object.entries(object).map(([k, v]) => [v, k]))"
 		},
+		"snippet::object-iterate": {
+			"id": "snippet::object-iterate",
+			"type": "simple",
+			"description": "You can use a `for...of` loop over `Object.entries` to iterate an object's own enumerable properties, and `break` to stop early.",
+			"example": "for (const [key, value] of Object.entries(obj)) {\n  if (key === 'stop') break\n  // do something\n}\n// Or for arrays\nfor (const [index, value] of arr.entries()) {\n  // do something\n}"
+		},
 		"snippet::object-map": {
 			"id": "snippet::object-map",
 			"type": "simple",
@@ -461,6 +539,12 @@
 			"type": "simple",
 			"description": "You can use `Object.keys` with `Array.prototype.findLast` to find the case-insensitive `PATH` environment variable key.",
 			"example": "const pathKey = Object.keys(process.env).findLast((k) => k.toUpperCase() === 'PATH') ?? 'PATH';"
+		},
+		"snippet::path-root": {
+			"id": "snippet::path-root",
+			"type": "simple",
+			"description": "You can use `parse` from `node:path` and read its `root` property to get the root of a path.",
+			"example": "import { parse } from 'node:path'\n\nconst pathRoot = (filepath) => parse(filepath).root"
 		},
 		"snippet::regexp-copy": {
 			"id": "snippet::regexp-copy",
@@ -503,6 +587,12 @@
 			"type": "simple",
 			"description": "You can check if the first character of the string is the BOM and strip it using `String.prototype.slice` if it is.",
 			"example": "str.charCodeAt(0) === 0xFEFF ? str.slice(1) : str;"
+		},
+		"snippet::to-identifier": {
+			"id": "snippet::to-identifier",
+			"type": "simple",
+			"description": "You can transform a string into an identifier (alphanumeric PascalCase) using `map` and a regular expression.",
+			"example": "function toIdentifier(str) {\n  return str\n    .split(' ')\n    .map(t => t.charAt(0).toUpperCase() + t.slice(1))\n    .join('')\n    .replace(/[^ _0-9a-z]/gi, '')\n}"
 		},
 		"snippet::trim-repeated-characters": {
 			"id": "snippet::trim-repeated-characters",
@@ -554,6 +644,13 @@
 			"moduleName": "arr-flatten",
 			"replacements": [
 				"snippet::array-flatten"
+			]
+		},
+		"arr-union": {
+			"type": "module",
+			"moduleName": "arr-union",
+			"replacements": [
+				"snippet::array-union"
 			]
 		},
 		"array-back": {
@@ -738,6 +835,13 @@
 				"snippet::has-argv"
 			]
 		},
+		"indent-string": {
+			"type": "module",
+			"moduleName": "indent-string",
+			"replacements": [
+				"snippet::indent-string"
+			]
+		},
 		"invert-kv": {
 			"type": "module",
 			"moduleName": "invert-kv",
@@ -801,11 +905,32 @@
 				"snippet::is-date"
 			]
 		},
+		"is-decimal": {
+			"type": "module",
+			"moduleName": "is-decimal",
+			"replacements": [
+				"snippet::is-decimal"
+			]
+		},
 		"is-deflate": {
 			"type": "module",
 			"moduleName": "is-deflate",
 			"replacements": [
 				"snippet::is-deflate-buffer"
+			]
+		},
+		"is-directory": {
+			"type": "module",
+			"moduleName": "is-directory",
+			"replacements": [
+				"snippet::is-directory"
+			]
+		},
+		"is-dotfile": {
+			"type": "module",
+			"moduleName": "is-dotfile",
+			"replacements": [
+				"snippet::is-dotfile"
 			]
 		},
 		"is-electron": {
@@ -871,11 +996,25 @@
 				"snippet::is-interactive"
 			]
 		},
+		"is-jpg": {
+			"type": "module",
+			"moduleName": "is-jpg",
+			"replacements": [
+				"snippet::is-jpg-buffer"
+			]
+		},
 		"is-lambda": {
 			"type": "module",
 			"moduleName": "is-lambda",
 			"replacements": [
 				"snippet::is-aws-lambda"
+			]
+		},
+		"is-lower-case": {
+			"type": "module",
+			"moduleName": "is-lower-case",
+			"replacements": [
+				"snippet::is-lower-case"
 			]
 		},
 		"is-map": {
@@ -969,11 +1108,32 @@
 				"snippet::is-object"
 			]
 		},
+		"is-png": {
+			"type": "module",
+			"moduleName": "is-png",
+			"replacements": [
+				"snippet::is-png-buffer"
+			]
+		},
+		"is-posix-bracket": {
+			"type": "module",
+			"moduleName": "is-posix-bracket",
+			"replacements": [
+				"snippet::is-posix-bracket"
+			]
+		},
 		"is-primitive": {
 			"type": "module",
 			"moduleName": "is-primitive",
 			"replacements": [
 				"snippet::is-primitve"
+			]
+		},
+		"is-property": {
+			"type": "module",
+			"moduleName": "is-property",
+			"replacements": [
+				"snippet::is-identifier-name"
 			]
 		},
 		"is-regex": {
@@ -1018,6 +1178,13 @@
 				"snippet::is-string"
 			]
 		},
+		"is-supported-regexp-flag": {
+			"type": "module",
+			"moduleName": "is-supported-regexp-flag",
+			"replacements": [
+				"snippet::is-supported-regexp-flag"
+			]
+		},
 		"is-symbol": {
 			"type": "module",
 			"moduleName": "is-symbol",
@@ -1044,6 +1211,13 @@
 			"moduleName": "is-typedarray",
 			"replacements": [
 				"snippet::is-typed-array"
+			]
+		},
+		"is-unc-path": {
+			"type": "module",
+			"moduleName": "is-unc-path",
+			"replacements": [
+				"snippet::is-unc-path"
 			]
 		},
 		"is-whitespace": {
@@ -1095,6 +1269,13 @@
 				"snippet::is-stream"
 			]
 		},
+		"iterate-object": {
+			"type": "module",
+			"moduleName": "iterate-object",
+			"replacements": [
+				"snippet::object-iterate"
+			]
+		},
 		"js-base64": {
 			"type": "module",
 			"moduleName": "js-base64",
@@ -1121,6 +1302,13 @@
 			"moduleName": "last-char",
 			"replacements": [
 				"snippet::char-last"
+			]
+		},
+		"libbase64": {
+			"type": "module",
+			"moduleName": "libbase64",
+			"replacements": [
+				"snippet::base64"
 			]
 		},
 		"load-json-file": {
@@ -1298,6 +1486,13 @@
 				"snippet::math-random"
 			]
 		},
+		"min-indent": {
+			"type": "module",
+			"moduleName": "min-indent",
+			"replacements": [
+				"snippet::min-indent"
+			]
+		},
 		"minimalistic-assert": {
 			"type": "module",
 			"moduleName": "minimalistic-assert",
@@ -1339,6 +1534,28 @@
 			"replacements": [
 				"snippet::path-key"
 			]
+		},
+		"path-root": {
+			"type": "module",
+			"moduleName": "path-root",
+			"replacements": [
+				"snippet::path-root"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "path-root"
+			}
+		},
+		"path-root-regex": {
+			"type": "module",
+			"moduleName": "path-root-regex",
+			"replacements": [
+				"snippet::path-root"
+			],
+			"url": {
+				"type": "e18e",
+				"id": "path-root"
+			}
 		},
 		"reduce-object": {
 			"type": "module",
@@ -1410,6 +1627,13 @@
 				"snippet::array-coerce"
 			]
 		},
+		"toidentifier": {
+			"type": "module",
+			"moduleName": "toidentifier",
+			"replacements": [
+				"snippet::to-identifier"
+			]
+		},
 		"trim-repeated": {
 			"type": "module",
 			"moduleName": "trim-repeated",
@@ -1424,6 +1648,13 @@
 				"snippet::typed-array-to-buffer"
 			]
 		},
+		"unc-path-regex": {
+			"type": "module",
+			"moduleName": "unc-path-regex",
+			"replacements": [
+				"snippet::is-unc-path"
+			]
+		},
 		"uniq": {
 			"type": "module",
 			"moduleName": "uniq",
@@ -1436,6 +1667,13 @@
 			"moduleName": "upper-case-first",
 			"replacements": [
 				"snippet::uppercase-first-character"
+			]
+		},
+		"util-arity": {
+			"type": "module",
+			"moduleName": "util-arity",
+			"replacements": [
+				"snippet::set-function-length"
 			]
 		},
 		"validate.io-function": {
