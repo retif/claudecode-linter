@@ -55,7 +55,17 @@ jobs:
         run: npm ci
 
       - name: Extract contracts (dry-run)
-        run: npx tsx scripts/extract-contracts.ts
+        # Pin the extractor to the version `npm view` resolves, as release.yml
+        # does (oleks/claudecode-linter#30). Unpinned, `npm pack` served
+        # 2.1.197 while the `latest` dist-tag said 2.1.301, so this job
+        # compared a two-hundred-release-old contract set against the committed
+        # one and reported `tools: changed` on every PR and every push to
+        # main — including the release commit that had just refreshed the
+        # contracts (oleks/claudecode-linter#50).
+        run: |
+          LATEST=$(npm view @anthropic-ai/claude-code version)
+          echo "Extracting contracts from Claude Code $LATEST"
+          npx tsx scripts/extract-contracts.ts --version "$LATEST"
 
       - name: Generate contracts
         run: npm run generate-contracts
