@@ -805,8 +805,15 @@ export function indexDefinitions(
 	// Restricted to bodies that return the Zod alias directly. A body returning a
 	// *helper* call could be anything, and resolving it on a guess is the failure
 	// this whole block exists to stop.
+	//
+	// A parameter list is accepted: 2.1.301 declares the marketplace-source
+	// union as `function ka(e){return __zod.discriminatedUnion("source",[…])}`
+	// and calls it `ka(!0)`. The parameter only toggles branches inside the
+	// body; references to it degrade to the permissive `{}` like any other
+	// unresolved identifier, so evaluating the body without the argument
+	// under-validates rather than fabricates.
 	const fnFactoryRe = new RegExp(
-		`function\\s+([A-Za-z_$][\\w$]*)\\s*\\(\\)\\s*\\{\\s*return\\s+(?=${escapeRegExp(zodAlias)}\\.)`,
+		`function\\s+([A-Za-z_$][\\w$]*)\\s*\\([^()]*\\)\\s*\\{\\s*return\\s+(?=${escapeRegExp(zodAlias)}\\.)`,
 		"g",
 	);
 	let fm: RegExpExecArray | null;
@@ -920,6 +927,38 @@ export function indexDefinitions(
 		// and `observeSubagents` were all published as that object: 12/6/6
 		// property paths on skill/agent/command frontmatter that exist nowhere
 		// in the upstream source (oleks/claudecode-linter#43).
+		if (defSites.get(name)?.some((s) => s.module === aliasModule)) continue;
+		const targets = aliasPairs.get(name);
+		if (targets) {
+			if (
+				!targets.some((t) => t.target === target && t.module === aliasModule)
+			) {
+				targets.push({ target, module: aliasModule });
+			}
+		} else {
+			aliasPairs.set(name, [{ target, module: aliasModule }]);
+		}
+	}
+	// A function statement that merely forwards to another factory —
+	// `function <name>(){return <target>()}` — is the same alias in a
+	// different costume, and is treated exactly like `<name>=<target>` below:
+	// recorded only when `<target>` is a factory in the function's OWN
+	// module. The factory scan above skips it (its body returns a helper call,
+	// not the Zod alias), and an unindexed name is not neutral: on 2.1.301 the
+	// settings module declares `function Oa(){return Aa()}` for the marketplace
+	// entry, `resolveDefSite` fell through to an unrelated module's `Oa` — the
+	// MCP elicitation schema — and `strictKnownMarketplaces`,
+	// `allowedMarketplaces` and `blockedMarketplaces` were published as arrays
+	// of `{subtype:"elicitation",mcp_server_name,…}`: 200 property paths lost
+	// and 33 fabricated.
+	const fnAliasRe =
+		/function\s+([A-Za-z_$][\w$]*)\s*\(\)\s*\{\s*return\s+([A-Za-z_$][\w$]*)\(\)\s*;?\s*\}/g;
+	let fam: RegExpExecArray | null;
+	while ((fam = fnAliasRe.exec(source)) !== null) {
+		const name = fam[1];
+		const target = fam[2];
+		if (name === target) continue;
+		const aliasModule = moduleOfOffset(moduleRanges, fam.index);
 		if (defSites.get(name)?.some((s) => s.module === aliasModule)) continue;
 		const targets = aliasPairs.get(name);
 		if (targets) {
@@ -1541,8 +1580,99 @@ function evalBlockBody(block: string, ctx: EvalContext): JSONSchema | null {
 		}
 	}
 
+	// Plain local declarations in the prelude — `let i=<ZodExpr>;` — bind the
+	// name to its expression. 2.1.301's `attribution` settings field is
+	// `()=>{let i=y.object({…}).passthrough();return y.union([y.boolean(),i],…)}`;
+	// without this binding the body resolved to nothing and the field, with
+	// its `commit`/`pr` sub-fields, dropped out of the settings schema.
+	collectLocalBindings(prelude, bindings);
+
 	if (bindings.size === 0) return null;
 	return evalZod(retExpr, { ...ctx, bindings });
+}
+
+/**
+ * Collect the local names a function prelude declares, as `name → expr`
+ * bindings the evaluator consults BEFORE the module index:
+ *
+ *   - `function <name>(<params>){return <expr>}` → `<expr>` (a helper whose
+ *     only job is to build a schema; its parameters, if any, are dropped);
+ *   - `let|var|const <name>=<expr>` → `<expr>`.
+ *
+ * Why local scope matters: the module index keeps one binding per minified
+ * name per module, and a function-local helper routinely reuses a one-letter
+ * name the same module binds at top level. On 2.1.301 the settings factory
+ * declares `function r(i){return y.record(y.string(),Er())…}` and
+ * `let s=(i,c)=>…`; resolved through the module index, `r(…)` became an
+ * `mcp_tool` hook entry and `s(…)` an `http` hook entry, and
+ * `extraKnownMarketplaces`/`additionalMarketplaces`/`policyHelper` were
+ * published with `tool`, `server`, `url`, `onFailure` sub-fields that exist
+ * nowhere upstream. An existing binding is never overwritten.
+ */
+export function collectLocalBindings(
+	prelude: string,
+	bindings: Map<string, string>,
+): void {
+	// Function declarations first. They are not `;`-terminated, so they are
+	// cut out of the text before the statement split below sees it.
+	let rest = "";
+	let cursor = 0;
+	const fnRe = /function\s+([A-Za-z_$][\w$]*)\s*\(([^()]*)\)\s*(?=\{)/g;
+	let fm: RegExpExecArray | null;
+	while ((fm = fnRe.exec(prelude)) !== null) {
+		const bodyStart = fm.index + fm[0].length;
+		const body = extractBalanced(prelude, bodyStart, "{", "}");
+		if (!body) continue;
+		const ret = /^\{\s*return\s+([\s\S]*?);?\s*\}$/.exec(body);
+		if (ret && !bindings.has(fm[1])) bindings.set(fm[1], ret[1]);
+		rest += prelude.slice(cursor, fm.index) + ";";
+		cursor = bodyStart + body.length;
+		fnRe.lastIndex = cursor;
+	}
+	rest += prelude.slice(cursor);
+
+	for (const stmt of splitTopLevelStatements(rest)) {
+		const decl = /^(?:let|var|const)\s+([\s\S]+)$/.exec(stmt.trim());
+		if (!decl) continue;
+		for (const part of splitTopLevelArgs(decl[1])) {
+			const assign = /^([\w$]+)=([\s\S]+)$/.exec(part.trim());
+			if (assign && !bindings.has(assign[1])) {
+				bindings.set(assign[1], assign[2]);
+			}
+		}
+	}
+}
+
+/** Split a statement list at top-level `;` (outside strings and brackets). */
+function splitTopLevelStatements(body: string): string[] {
+	const out: string[] = [];
+	let depth = 0;
+	let inStr: string | null = null;
+	let start = 0;
+	for (let i = 0; i < body.length; i++) {
+		const c = body[i];
+		if (inStr) {
+			if (c === "\\") {
+				i++;
+				continue;
+			}
+			if (c === inStr) inStr = null;
+			continue;
+		}
+		if (c === '"' || c === "'" || c === "`") {
+			inStr = c;
+			continue;
+		}
+		if (c === "(" || c === "[" || c === "{") depth++;
+		else if (c === ")" || c === "]" || c === "}") depth--;
+		else if (c === ";" && depth === 0) {
+			out.push(body.slice(start, i));
+			start = i + 1;
+		}
+	}
+	const tail = body.slice(start);
+	if (tail.trim().length > 0) out.push(tail);
+	return out;
 }
 
 /**
@@ -1739,6 +1869,65 @@ function evalHead(head: string, ctx: EvalContext): JSONSchema {
 		}
 	}
 
+	// `<fn>(()=><ZodExpr>)` — a deferred wrapper other than the detected lazy
+	// wrapper. 2.1.301 wraps optional settings sub-schemas in a
+	// `deferredOptional` helper (`hooks:()=>De(()=>a4())`, `env:()=>De(()=>__())`)
+	// whose body builds a custom Zod type around the callback's result. The
+	// callback IS the schema; a wrapper that takes exactly one thunk is
+	// transparent to its shape, so evaluate the thunk. The known lazy wrapper
+	// is peeled in `evalZod` before we get here; this covers the rest. Checked
+	// before the call-with-arguments case below: `De` is bound in a dozen
+	// unrelated modules, and resolving the wrapper by name would pick one.
+	const thunkCall = head.match(/^([\w$]+)\(\(\)=>/);
+	if (thunkCall && thunkCall[1] !== zodAlias) {
+		const args = extractBalanced(head, thunkCall[1].length, "(", ")");
+		if (args && args.length === head.length - thunkCall[1].length) {
+			const argList = splitTopLevelArgs(args.slice(1, -1));
+			if (argList.length === 1 && argList[0].startsWith("()=>")) {
+				return evalZod(argList[0].slice(4), ctx);
+			}
+		}
+	}
+
+	// `<ident>(<args>)` — a call WITH arguments to a factory indexed in THIS
+	// module. The factory index only holds schema factories, and a factory's
+	// arguments select among branches of the one schema it returns
+	// (`Aa=p(()=>ka(!0))` on 2.1.301, where `ka(e)` returns the
+	// marketplace-source union). The arguments are dropped and the body
+	// evaluated as for `<ident>()`. Unlike the no-argument case there is no
+	// corpus-wide fallback: an argument-taking helper bound only elsewhere is
+	// far more likely a different function than a re-export, and a wrong
+	// resolution fabricates paths. A name with no same-module factory falls
+	// through to `{}` below.
+	const idCallArgs = head.match(/^([\w$]+)\(/);
+	if (
+		idCallArgs &&
+		idCallArgs[1] !== zodAlias &&
+		extractBalanced(head, idCallArgs[1].length, "(", ")").length ===
+			head.length - idCallArgs[1].length
+	) {
+		const name = idCallArgs[1];
+		// A function-local helper shadows any module-level binding of the name
+		// (see `collectLocalBindings`).
+		const localBound = ctx.bindings?.get(name);
+		const site = localBound
+			? undefined
+			: resolveDefSite(ctx.index, name, ctx.module);
+		const def =
+			localBound ??
+			(site && (ctx.module < 0 || site.module === ctx.module)
+				? site.value
+				: undefined);
+		if (def !== undefined && !ctx.resolving.has(name)) {
+			ctx.resolving.add(name);
+			try {
+				return evalZod(def, ctx);
+			} finally {
+				ctx.resolving.delete(name);
+			}
+		}
+	}
+
 	// E.<method>(...args)
 	if (head.startsWith(`${zodAlias}.`)) {
 		const rest = head.slice(zodAlias.length + 1);
@@ -1758,6 +1947,35 @@ function evalHead(head: string, ctx: EvalContext): JSONSchema {
 	}
 
 	return {};
+}
+
+/**
+ * Evaluate a union's branch list. A branch written `...<expr>.options`
+ * splices in the branches of the union `<expr>` evaluates to — Zod exposes a
+ * union's members as `.options`, and 2.1.301 extends the marketplace-source
+ * union that way: `{let e=Oa();return y.discriminatedUnion("source",
+ * [y.object({source:y.literal("pluginDirectory")}),...e.options])}`. Left as
+ * a plain spread the branch evaluated to `{}` and `blockedMarketplaces` lost
+ * every real source shape. A spread of anything that does not evaluate to a
+ * union stays the permissive `{}` it always was.
+ */
+function evalUnionBranches(arrayBody: string, ctx: EvalContext): JSONSchema[] {
+	const out: JSONSchema[] = [];
+	for (const branch of splitUnionBranches(arrayBody)) {
+		const spread = /^\.\.\.([\s\S]+)\.options$/.exec(branch.trim());
+		if (spread) {
+			const inner = evalZod(spread[1], ctx);
+			const members = inner.oneOf ?? inner.anyOf;
+			if (Array.isArray(members)) {
+				out.push(...(members as JSONSchema[]));
+				continue;
+			}
+			out.push({});
+			continue;
+		}
+		out.push(evalZod(branch, ctx));
+	}
+	return out;
 }
 
 function evalZodPrimitive(
@@ -1875,10 +2093,7 @@ function evalZodPrimitive(
 			if (args.length === 0) return {};
 			const arr = args[0];
 			if (arr.startsWith("[") && arr.endsWith("]")) {
-				const branches = splitUnionBranches(arr.slice(1, -1)).map((e) =>
-					evalZod(e, ctx),
-				);
-				return { anyOf: branches };
+				return { anyOf: evalUnionBranches(arr.slice(1, -1), ctx) };
 			}
 			return {};
 		}
@@ -1887,10 +2102,7 @@ function evalZodPrimitive(
 			if (args.length < 2) return {};
 			const arr = args[1];
 			if (arr.startsWith("[") && arr.endsWith("]")) {
-				const branches = splitUnionBranches(arr.slice(1, -1)).map((e) =>
-					evalZod(e, ctx),
-				);
-				return { oneOf: branches };
+				return { oneOf: evalUnionBranches(arr.slice(1, -1), ctx) };
 			}
 			return {};
 		}
@@ -2356,50 +2568,71 @@ export function buildSettingsSchema(index: DefinitionIndex): JSONSchema | null {
 	let anchorIdx = source.lastIndexOf(anchor);
 	if (anchorIdx === -1) return null;
 
-	// Walk back to the nearest `<alias>.object(` that encloses this anchor.
-	const objMarker = `${zodAlias}.object(`;
-	let objIdx = -1;
-	for (;;) {
-		const cand = source.lastIndexOf(objMarker, anchorIdx);
-		if (cand === -1) return null;
-		const block = extractBalanced(
-			source,
-			cand + `${zodAlias}.object`.length,
-			"(",
-			")",
-		);
-		if (block && cand + `${zodAlias}.object`.length + block.length > anchorIdx) {
-			objIdx = cand;
-			break;
+	// 2.1.301 declares the settings fields as a map of thunks returned from a
+	// factory — `return{$schema:()=><alias>.string()…,apiKeyHelper:()=>…}` —
+	// that a registry class materialises field by field. There is no enclosing
+	// `<alias>.object(` any more, so the walk-back below landed on whatever
+	// unrelated object literal preceded the anchor (a credentials sub-schema)
+	// and the drift gate reported Settings lost 100% of its paths
+	// (oleks/claudecode-linter#31 class). Try the thunk map first.
+	const thunkMap = findSettingsThunkMap(source, anchorIdx, zodAlias);
+	let expr: string;
+	let headStart: number;
+	let bindings: Map<string, string> | undefined;
+	if (thunkMap) {
+		expr = thunkMap.expr;
+		headStart = thunkMap.offset;
+		bindings = thunkMap.bindings;
+	} else {
+		// Walk back to the nearest `<alias>.object(` that encloses this anchor.
+		const objMarker = `${zodAlias}.object(`;
+		let objIdx = -1;
+		for (;;) {
+			const cand = source.lastIndexOf(objMarker, anchorIdx);
+			if (cand === -1) return null;
+			const block = extractBalanced(
+				source,
+				cand + `${zodAlias}.object`.length,
+				"(",
+				")",
+			);
+			if (
+				block &&
+				cand + `${zodAlias}.object`.length + block.length > anchorIdx
+			) {
+				objIdx = cand;
+				break;
+			}
+			anchorIdx = cand - 1;
+			if (anchorIdx < 0) return null;
 		}
-		anchorIdx = cand - 1;
-		if (anchorIdx < 0) return null;
+
+		// Capture the full method chain: `<alias>.object({...}).passthrough()` etc.
+		headStart = objIdx;
+		let exprEnd = objIdx + `${zodAlias}.object`.length;
+		const parenBlock = extractBalanced(source, exprEnd, "(", ")");
+		if (!parenBlock) return null;
+		exprEnd += parenBlock.length;
+		// Fold trailing `.method(...)` chain steps into the expression.
+		while (source[exprEnd] === ".") {
+			const m = /^\.[\w$]+/.exec(source.slice(exprEnd));
+			if (!m) break;
+			let stepEnd = exprEnd + m[0].length;
+			if (source[stepEnd] === "(") {
+				const argBlock = extractBalanced(source, stepEnd, "(", ")");
+				if (!argBlock) break;
+				stepEnd += argBlock.length;
+			}
+			exprEnd = stepEnd;
+		}
+		expr = source.slice(headStart, exprEnd);
 	}
 
-	// Capture the full method chain: `<alias>.object({...}).passthrough()` etc.
-	const headStart = objIdx;
-	let exprEnd = objIdx + `${zodAlias}.object`.length;
-	const parenBlock = extractBalanced(source, exprEnd, "(", ")");
-	if (!parenBlock) return null;
-	exprEnd += parenBlock.length;
-	// Fold trailing `.method(...)` chain steps into the expression.
-	while (source[exprEnd] === ".") {
-		const m = /^\.[\w$]+/.exec(source.slice(exprEnd));
-		if (!m) break;
-		let stepEnd = exprEnd + m[0].length;
-		if (source[stepEnd] === "(") {
-			const argBlock = extractBalanced(source, stepEnd, "(", ")");
-			if (!argBlock) break;
-			stepEnd += argBlock.length;
-		}
-		exprEnd = stepEnd;
-	}
-
-	const expr = source.slice(headStart, exprEnd);
 	const schema = evalZod(expr, {
 		index,
 		resolving: new Set(),
 		module: moduleOfOffset(index.moduleRanges, headStart),
+		...(bindings && bindings.size > 0 ? { bindings } : {}),
 	});
 
 	if (schema.type !== "object") return null;
@@ -2424,6 +2657,95 @@ export function buildSettingsSchema(index: DefinitionIndex): JSONSchema | null {
 		description:
 			"Claude Code settings.json / settings.local.json. Validates the structure of known fields; the top level is intentionally permissive (Claude Code's validator uses .passthrough()), so unknown top-level keys are not schema errors — the advisory settings-json/no-unknown-fields rule reports those separately.",
 	};
+}
+
+/**
+ * Locate the settings thunk map that encloses `anchorIdx` and rewrite it into
+ * a `<alias>.object({…}).passthrough()` expression the walker evaluates.
+ *
+ * Shape (2.1.301):
+ *   `function _d(e,{…}={}){ …; return{ $schema:()=>y.string().optional()…,
+ *      hooks:()=>De(()=>a4()).describe(…), attribution:()=>{let i=…;return …},
+ *      ...a.FLAG&&{xaaIdp:()=>…}, ...!1, ...Gr(jl(e),(i)=>()=>i) } }`
+ *
+ * Each `key:()=>EXPR` entry becomes `key:EXPR`; a block-bodied thunk is kept
+ * as-is (evalZod resolves `{let …;return …}` bodies); spreads are dropped —
+ * they are feature-flag-gated or plugin-contributed fields the walker cannot
+ * see statically, and dropping them under-validates, which is the safe
+ * direction. Returns null when no thunk map encloses the anchor, so the
+ * pre-2.1.301 `<alias>.object(` walk still applies to older bundles.
+ */
+export function findSettingsThunkMap(
+	source: string,
+	anchorIdx: number,
+	zodAlias: string,
+): { expr: string; offset: number; bindings: Map<string, string> } | null {
+	const marker = "return{";
+	let searchFrom = anchorIdx;
+	for (;;) {
+		const cand = source.lastIndexOf(marker, searchFrom);
+		if (cand === -1) return null;
+		const braceIdx = cand + marker.length - 1;
+		const block = extractBalanced(source, braceIdx, "{", "}");
+		if (block && braceIdx + block.length > anchorIdx) {
+			const entries = splitObjectEntries(block.slice(1, -1));
+			const rewritten: string[] = [];
+			let thunks = 0;
+			for (const entry of entries) {
+				const m = /^((?:[\w$]+|"[^"]*"|'[^']*')):\(\)=>([\s\S]+)$/.exec(
+					entry.trim(),
+				);
+				if (!m) continue; // spread or non-thunk entry — dropped
+				thunks++;
+				rewritten.push(`${m[1]}:${m[2]}`);
+			}
+			// A map that is not made of thunks is not the settings map — keep
+			// walking back rather than evaluating an arbitrary returned object.
+			if (thunks === 0 || thunks < entries.length / 2) {
+				searchFrom = cand - 1;
+				if (searchFrom < 0) return null;
+				continue;
+			}
+			// The helpers the enclosing factory declares before `return{` —
+			// `function r(i){…}`, `let s=(i,c)=>…` — are function-local and must
+			// shadow the module index when the thunks call them.
+			const bindings = new Map<string, string>();
+			const prelude = enclosingFunctionPrelude(source, cand);
+			if (prelude) collectLocalBindings(prelude, bindings);
+			return {
+				expr: `${zodAlias}.object({${rewritten.join(",")}}).passthrough()`,
+				offset: braceIdx,
+				bindings,
+			};
+		}
+		searchFrom = cand - 1;
+		if (searchFrom < 0) return null;
+	}
+}
+
+/**
+ * The text between the opening brace of the nearest function whose body
+ * encloses `pos` and `pos` itself — the statements that run before the
+ * expression at `pos`. Null when no enclosing function is found.
+ */
+function enclosingFunctionPrelude(source: string, pos: number): string | null {
+	let searchFrom = pos;
+	for (;;) {
+		const fn = source.lastIndexOf("function", searchFrom);
+		if (fn === -1) return null;
+		const m = /^function\s*(?:[A-Za-z_$][\w$]*)?\s*\([^()]*\)\s*\{/.exec(
+			source.slice(fn, fn + 400),
+		);
+		if (m) {
+			const braceIdx = fn + m[0].length - 1;
+			const body = extractBalanced(source, braceIdx, "{", "}");
+			if (body && braceIdx + body.length > pos) {
+				return source.slice(braceIdx + 1, pos);
+			}
+		}
+		searchFrom = fn - 1;
+		if (searchFrom < 0) return null;
+	}
 }
 
 /**
@@ -2658,6 +2980,14 @@ export function buildHooksJsonSchema(
 				module: hcSite.module,
 			});
 			if (candidate.type !== "object") continue;
+			// 2.1.301 declares the hooks config as `<lazy>(()=>y.record(y.enum(ev),
+			// y.array(matcher())))` — plain `record`, no `partialRecord` left in
+			// the corpus — so this loop reached the `record` fallback and took the
+			// first record that evaluated to an object: a model-registry table
+			// (`advisor_rank`, `context.window`, …). "Is an object" is not
+			// "is the hooks config". Require the documented shape instead: a map
+			// whose values are arrays of matcher entries carrying a `hooks` list.
+			if (!looksLikeHooksConfig(candidate)) continue;
 			hooksValue = candidate;
 			break outer;
 		}
@@ -2674,6 +3004,20 @@ export function buildHooksJsonSchema(
 		description:
 			"Claude Code hooks/hooks.json. The `hooks` key maps hook-event names (PreToolUse, PostToolUse, …) to arrays of matcher entries, each holding a list of hook definitions (command / prompt / http / agent / mcp_tool). Same shape as the `hooks` block inside settings.json. Validates the structure of known fields; unknown hook fields are not schema errors — the advisory hooks-json hand-written rules report those.",
 	};
+}
+
+/**
+ * True when `schema` has the hooks-config shape: `{ <event>: [ {matcher?,
+ * hooks:[…]} ] }`, i.e. an object whose `additionalProperties` (the per-event
+ * value) is an array of objects declaring a `hooks` property.
+ */
+export function looksLikeHooksConfig(schema: JSONSchema): boolean {
+	const perEvent = schema.additionalProperties;
+	if (!perEvent || typeof perEvent !== "object") return false;
+	const entry = (perEvent as JSONSchema).items;
+	if (!entry || typeof entry !== "object" || Array.isArray(entry)) return false;
+	const props = (entry as JSONSchema).properties;
+	return !!props && typeof props === "object" && "hooks" in props;
 }
 
 /**
