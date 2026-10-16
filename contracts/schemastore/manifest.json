@@ -1,10 +1,10 @@
 {
-	"fetchedAt": "2026-09-18T04:09:06.661Z",
+	"fetchedAt": "2026-10-16T15:41:49.985Z",
 	"sources": {
 		"plugin-manifest.schema.json": {
 			"url": "https://www.schemastore.org/claude-code-plugin-manifest.json",
 			"artifact": "plugin-json",
-			"sha256": "73b89e5d99829bc513167d2422a785921fa3c8114065c653192d34863e2a6db5"
+			"sha256": "2c87ca0451baab96bb04f3dc90a259ea3880446db90546942d967c0a09ef6747"
 		},
 		"marketplace.schema.json": {
 			"url": "https://www.schemastore.org/claude-code-marketplace.json",
@@ -19,7 +19,7 @@
 		"settings.schema.json": {
 			"url": "https://www.schemastore.org/claude-code-settings.json",
 			"artifact": "settings-json",
-			"sha256": "dd9fc9a9259eb8c6acd84fad1e1eeeccc293031d70a7885445dee906e78d313e"
+			"sha256": "3b87dc3df6bc7fe665ab1b82ee022b9d72ac6d8597a1a70f4599d2ae138138c9"
 		}
 	}
 }

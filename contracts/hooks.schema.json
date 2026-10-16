@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.276",
-	"extractedAt": "2026-09-18T04:09:05.515Z",
+	"extractedFromClaudeCodeVersion": "2.1.301",
+	"extractedAt": "2026-10-16T15:41:48.784Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code hooks.json",
@@ -53,6 +53,13 @@
 												"timeout": {
 													"type": "number",
 													"description": "Timeout in seconds for this specific command"
+												},
+												"onFailure": {
+													"enum": [
+														"continue",
+														"block"
+													],
+													"description": "What a failure of this hook does: it could not start (a missing script or plugin directory), timed out, exited with a code other than 0 or 2, or printed JSON that is invalid or fails validation. 'continue' (default): the failure is reported and the action goes ahead. 'block': the failure counts as exit code 2, so the action the event guards (a tool call, a permission request, a prompt) is blocked. Ignored for async hooks and on Stop, SubagentStop, TaskCompleted and TeammateIdle."
 												},
 												"statusMessage": {
 													"type": "string",
@@ -190,6 +197,13 @@
 												"timeout": {
 													"type": "number",
 													"description": "Timeout in seconds for this specific request"
+												},
+												"onFailure": {
+													"enum": [
+														"continue",
+														"block"
+													],
+													"description": "What a failure of this hook does: it could not start (a missing script or plugin directory), timed out, exited with a code other than 0 or 2, or printed JSON that is invalid or fails validation. 'continue' (default): the failure is reported and the action goes ahead. 'block': the failure counts as exit code 2, so the action the event guards (a tool call, a permission request, a prompt) is blocked. Ignored for async hooks and on Stop, SubagentStop, TaskCompleted and TeammateIdle."
 												},
 												"headers": {
 													"type": "object",

@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.276",
-	"extractedAt": "2026-09-18T04:09:05.443Z",
+	"extractedFromClaudeCodeVersion": "2.1.301",
+	"extractedAt": "2026-10-16T15:41:48.675Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code plugin.json",
@@ -159,6 +159,13 @@
 															"type": "number",
 															"description": "Timeout in seconds for this specific command"
 														},
+														"onFailure": {
+															"enum": [
+																"continue",
+																"block"
+															],
+															"description": "What a failure of this hook does: it could not start (a missing script or plugin directory), timed out, exited with a code other than 0 or 2, or printed JSON that is invalid or fails validation. 'continue' (default): the failure is reported and the action goes ahead. 'block': the failure counts as exit code 2, so the action the event guards (a tool call, a permission request, a prompt) is blocked. Ignored for async hooks and on Stop, SubagentStop, TaskCompleted and TeammateIdle."
+														},
 														"statusMessage": {
 															"type": "string",
 															"description": "Custom status message to display in spinner while hook runs"
@@ -295,6 +302,13 @@
 														"timeout": {
 															"type": "number",
 															"description": "Timeout in seconds for this specific request"
+														},
+														"onFailure": {
+															"enum": [
+																"continue",
+																"block"
+															],
+															"description": "What a failure of this hook does: it could not start (a missing script or plugin directory), timed out, exited with a code other than 0 or 2, or printed JSON that is invalid or fails validation. 'continue' (default): the failure is reported and the action goes ahead. 'block': the failure counts as exit code 2, so the action the event guards (a tool call, a permission request, a prompt) is blocked. Ignored for async hooks and on Stop, SubagentStop, TaskCompleted and TeammateIdle."
 														},
 														"headers": {
 															"type": "object",
@@ -442,6 +456,13 @@
 																		"type": "number",
 																		"description": "Timeout in seconds for this specific command"
 																	},
+																	"onFailure": {
+																		"enum": [
+																			"continue",
+																			"block"
+																		],
+																		"description": "What a failure of this hook does: it could not start (a missing script or plugin directory), timed out, exited with a code other than 0 or 2, or printed JSON that is invalid or fails validation. 'continue' (default): the failure is reported and the action goes ahead. 'block': the failure counts as exit code 2, so the action the event guards (a tool call, a permission request, a prompt) is blocked. Ignored for async hooks and on Stop, SubagentStop, TaskCompleted and TeammateIdle."
+																	},
 																	"statusMessage": {
 																		"type": "string",
 																		"description": "Custom status message to display in spinner while hook runs"
@@ -578,6 +599,13 @@
 																	"timeout": {
 																		"type": "number",
 																		"description": "Timeout in seconds for this specific request"
+																	},
+																	"onFailure": {
+																		"enum": [
+																			"continue",
+																			"block"
+																		],
+																		"description": "What a failure of this hook does: it could not start (a missing script or plugin directory), timed out, exited with a code other than 0 or 2, or printed JSON that is invalid or fails validation. 'continue' (default): the failure is reported and the action goes ahead. 'block': the failure counts as exit code 2, so the action the event guards (a tool call, a permission request, a prompt) is blocked. Ignored for async hooks and on Stop, SubagentStop, TaskCompleted and TeammateIdle."
 																	},
 																	"headers": {
 																		"type": "object",
@@ -999,6 +1027,9 @@
 										"alwaysLoad": {
 											"type": "boolean"
 										},
+										"bareElicitationCapability": {
+											"type": "boolean"
+										},
 										"role": {
 											"const": "comms"
 										}
@@ -1076,6 +1107,9 @@
 											}
 										},
 										"alwaysLoad": {
+											"type": "boolean"
+										},
+										"bareElicitationCapability": {
 											"type": "boolean"
 										},
 										"discoveryCache": {
@@ -1239,6 +1273,9 @@
 										"alwaysLoad": {
 											"type": "boolean"
 										},
+										"bareElicitationCapability": {
+											"type": "boolean"
+										},
 										"discoveryCache": {
 											"type": "boolean"
 										},
@@ -1285,6 +1322,9 @@
 										"alwaysLoad": {
 											"type": "boolean"
 										},
+										"bareElicitationCapability": {
+											"type": "boolean"
+										},
 										"role": {
 											"const": "comms"
 										}
@@ -1308,6 +1348,30 @@
 										},
 										"alwaysLoad": {
 											"type": "boolean"
+										},
+										"disableAutoBackground": {
+											"type": "boolean"
+										},
+										"tools": {
+											"type": "array",
+											"items": {
+												"type": "object",
+												"properties": {
+													"name": {
+														"type": "string"
+													},
+													"permission_policy": {
+														"enum": [
+															"always_allow",
+															"always_ask",
+															"always_deny"
+														]
+													}
+												},
+												"required": [
+													"name"
+												]
+											}
 										}
 									},
 									"required": [
@@ -1442,6 +1506,9 @@
 													"alwaysLoad": {
 														"type": "boolean"
 													},
+													"bareElicitationCapability": {
+														"type": "boolean"
+													},
 													"role": {
 														"const": "comms"
 													}
@@ -1519,6 +1586,9 @@
 														}
 													},
 													"alwaysLoad": {
+														"type": "boolean"
+													},
+													"bareElicitationCapability": {
 														"type": "boolean"
 													},
 													"discoveryCache": {
@@ -1682,6 +1752,9 @@
 													"alwaysLoad": {
 														"type": "boolean"
 													},
+													"bareElicitationCapability": {
+														"type": "boolean"
+													},
 													"discoveryCache": {
 														"type": "boolean"
 													},
@@ -1728,6 +1801,9 @@
 													"alwaysLoad": {
 														"type": "boolean"
 													},
+													"bareElicitationCapability": {
+														"type": "boolean"
+													},
 													"role": {
 														"const": "comms"
 													}
@@ -1751,6 +1827,30 @@
 													},
 													"alwaysLoad": {
 														"type": "boolean"
+													},
+													"disableAutoBackground": {
+														"type": "boolean"
+													},
+													"tools": {
+														"type": "array",
+														"items": {
+															"type": "object",
+															"properties": {
+																"name": {
+																	"type": "string"
+																},
+																"permission_policy": {
+																	"enum": [
+																		"always_allow",
+																		"always_ask",
+																		"always_deny"
+																	]
+																}
+															},
+															"required": [
+																"name"
+															]
+														}
 													}
 												},
 												"required": [
@@ -1901,6 +2001,11 @@
 									"type": "number",
 									"description": "Maximum time to wait for graceful shutdown (milliseconds)"
 								},
+								"requestTimeout": {
+									"type": "number",
+									"maximum": 2147483647,
+									"description": "Maximum time to wait for the server to answer a request (milliseconds). Defaults to 60000."
+								},
 								"restartOnCrash": {
 									"type": "boolean",
 									"description": "Whether to restart the server if it crashes"
@@ -1989,6 +2094,11 @@
 												"type": "number",
 												"description": "Maximum time to wait for graceful shutdown (milliseconds)"
 											},
+											"requestTimeout": {
+												"type": "number",
+												"maximum": 2147483647,
+												"description": "Maximum time to wait for the server to answer a request (milliseconds). Defaults to 60000."
+											},
 											"restartOnCrash": {
 												"type": "boolean",
 												"description": "Whether to restart the server if it crashes"
@@ -2073,7 +2183,7 @@
 			},
 			"types": {
 				"type": "string",
-				"description": "Path to the plugin's type contract, relative to the plugin root and starting with ./: a self-contained .d.ts (no import, export-from, require or reference) that exports the types of the noun the plugin's hooks module adds in engine.create at its top level and declares the noun in a `declare module 'claude-code' { interface EngineInterface { ... } }` block, nothing else. /plugin-types copies each enabled plugin's contract to .claude/types/claude-code-plugins/<plugin>.d.ts and indexes them in claude-code-plugins.d.ts for dependents to type against; claude plugin validate checks the file."
+				"description": "Path to the plugin's type contract, relative to the plugin root and starting with ./: a self-contained .d.ts (no import, export-from, require or reference) that exports the types of the noun the plugin's hooks module adds in engine.create at its top level and declares the noun in a `declare module 'claude-code' { interface EngineInterface { ... } }` block, nothing else. A mod that lists this plugin under dependencies gets the contract laid at .claude-plugin/types/<plugin>/index.d.ts each time the engine loads it from a folder the person owns, so it types against the noun with nothing copied; claude plugin validate checks the file."
 			},
 			"userConfig": {
 				"type": "object",

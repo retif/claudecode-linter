@@ -1,6 +1,6 @@
 {
-	"version": "2.1.276",
-	"extractedAt": "2026-09-18T04:08:58.168Z",
+	"version": "2.1.301",
+	"extractedAt": "2026-10-16T15:41:40.582Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -27,6 +27,7 @@
 			"Monitor",
 			"NotebookEdit",
 			"NotebookRead",
+			"OfferChromeSetup",
 			"PowerShell",
 			"Projects",
 			"ProposeGoal",
@@ -166,6 +167,7 @@
 			"version"
 		],
 		"agentFrontmatter": [
+			"autoCompactWindow",
 			"background",
 			"criticalSystemReminder_EXPERIMENTAL",
 			"description",
@@ -195,6 +197,7 @@
 		"mcpServerFields": [
 			"alwaysLoad",
 			"args",
+			"bareElicitationCapability",
 			"command",
 			"cwd",
 			"discoveryCache",

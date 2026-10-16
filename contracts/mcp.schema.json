@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.276",
-	"extractedAt": "2026-09-18T04:09:05.500Z",
+	"extractedFromClaudeCodeVersion": "2.1.301",
+	"extractedAt": "2026-10-16T15:41:48.749Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code .mcp.json",
@@ -37,6 +37,9 @@
 									"type": "number"
 								},
 								"alwaysLoad": {
+									"type": "boolean"
+								},
+								"bareElicitationCapability": {
 									"type": "boolean"
 								},
 								"role": {
@@ -116,6 +119,9 @@
 									}
 								},
 								"alwaysLoad": {
+									"type": "boolean"
+								},
+								"bareElicitationCapability": {
 									"type": "boolean"
 								},
 								"discoveryCache": {
@@ -279,6 +285,9 @@
 								"alwaysLoad": {
 									"type": "boolean"
 								},
+								"bareElicitationCapability": {
+									"type": "boolean"
+								},
 								"discoveryCache": {
 									"type": "boolean"
 								},
@@ -325,6 +334,9 @@
 								"alwaysLoad": {
 									"type": "boolean"
 								},
+								"bareElicitationCapability": {
+									"type": "boolean"
+								},
 								"role": {
 									"const": "comms"
 								}
@@ -348,6 +360,30 @@
 								},
 								"alwaysLoad": {
 									"type": "boolean"
+								},
+								"disableAutoBackground": {
+									"type": "boolean"
+								},
+								"tools": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"name": {
+												"type": "string"
+											},
+											"permission_policy": {
+												"enum": [
+													"always_allow",
+													"always_ask",
+													"always_deny"
+												]
+											}
+										},
+										"required": [
+											"name"
+										]
+									}
 								}
 							},
 							"required": [

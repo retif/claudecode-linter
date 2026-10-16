@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.276",
-	"extractedAt": "2026-09-18T04:09:05.496Z",
+	"extractedFromClaudeCodeVersion": "2.1.301",
+	"extractedAt": "2026-10-16T15:41:48.744Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code agent .md frontmatter",
@@ -181,6 +181,20 @@
 					}
 				],
 				"description": "Maximum conversation turns before the agent stops."
+			},
+			"autoCompactWindow": {
+				"anyOf": [
+					{
+						"type": "number"
+					},
+					{
+						"type": "string"
+					},
+					{
+						"type": "null"
+					}
+				],
+				"description": "`Auto-compact window for this agent, in tokens from ${GI} to ${Y$}. Overrides the window it would inherit.`"
 			},
 			"skills": {
 				"anyOf": [
