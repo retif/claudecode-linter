@@ -953,8 +953,9 @@ export function indexDefinitions(
 	// and 33 fabricated.
 	const fnAliasRe =
 		/function\s+([A-Za-z_$][\w$]*)\s*\(\)\s*\{\s*return\s+([A-Za-z_$][\w$]*)\(\)\s*;?\s*\}/g;
-	let fam: RegExpExecArray | null;
-	while ((fam = fnAliasRe.exec(source)) !== null) {
+	for (;;) {
+		const fam = fnAliasRe.exec(source);
+		if (fam === null) break;
 		const name = fam[1];
 		const target = fam[2];
 		if (name === target) continue;
@@ -1618,14 +1619,15 @@ export function collectLocalBindings(
 	let rest = "";
 	let cursor = 0;
 	const fnRe = /function\s+([A-Za-z_$][\w$]*)\s*\(([^()]*)\)\s*(?=\{)/g;
-	let fm: RegExpExecArray | null;
-	while ((fm = fnRe.exec(prelude)) !== null) {
+	for (;;) {
+		const fm = fnRe.exec(prelude);
+		if (fm === null) break;
 		const bodyStart = fm.index + fm[0].length;
 		const body = extractBalanced(prelude, bodyStart, "{", "}");
 		if (!body) continue;
 		const ret = /^\{\s*return\s+([\s\S]*?);?\s*\}$/.exec(body);
 		if (ret && !bindings.has(fm[1])) bindings.set(fm[1], ret[1]);
-		rest += prelude.slice(cursor, fm.index) + ";";
+		rest += `${prelude.slice(cursor, fm.index)};`;
 		cursor = bodyStart + body.length;
 		fnRe.lastIndex = cursor;
 	}
