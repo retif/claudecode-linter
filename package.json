@@ -1,6 +1,6 @@
 {
 	"name": "claudecode-linter",
-	"version": "2.1.261",
+	"version": "2.1.276",
 	"description": "Standalone linter for Claude Code plugins and configuration files",
 	"type": "module",
 	"bin": {
@@ -68,13 +68,13 @@
 		"yaml": "^2.8.3"
 	},
 	"devDependencies": {
-		"@types/node": "^25.3.3",
+		"@types/node": "^26.5.1",
 		"acorn": "^8.16.0",
 		"acorn-walk": "^8.3.5",
 		"knip": "^6.0.5",
-		"npm-check-updates": "^22.2.0",
+		"npm-check-updates": "^23.1.0",
 		"tsx": "^4.21.0",
 		"typescript": "^6.0.2",
-		"vitest": "4.1.11"
+		"vitest": "5.0.4"
 	}
 }

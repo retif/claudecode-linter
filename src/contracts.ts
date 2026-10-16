@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.261 — extracted 2026-09-05T10:20:36.610Z
+// Claude Code v2.1.276 — extracted 2026-09-18T04:08:58.168Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -17,6 +17,7 @@ export const TOOLS = new Set<string>([
 	"EnterWorktree",
 	"ExitPlanMode",
 	"ExitWorktree",
+	"FetchInboxMessage",
 	"Glob",
 	"Grep",
 	"LSP",
@@ -184,6 +185,7 @@ export const AGENT_FRONTMATTER = new Set<string>([
 	"model",
 	"observer",
 	"observerMessage",
+	"omitClaudeMd",
 	"permissionMode",
 	"prompt",
 	"skills",

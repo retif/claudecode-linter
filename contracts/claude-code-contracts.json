@@ -1,6 +1,6 @@
 {
-	"version": "2.1.261",
-	"extractedAt": "2026-09-05T10:20:36.610Z",
+	"version": "2.1.276",
+	"extractedAt": "2026-09-18T04:08:58.168Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -17,6 +17,7 @@
 			"EnterWorktree",
 			"ExitPlanMode",
 			"ExitWorktree",
+			"FetchInboxMessage",
 			"Glob",
 			"Grep",
 			"LSP",
@@ -177,6 +178,7 @@
 			"model",
 			"observer",
 			"observerMessage",
+			"omitClaudeMd",
 			"permissionMode",
 			"prompt",
 			"skills",
