@@ -1,5 +1,15 @@
+import { existsSync, readFileSync } from "node:fs";
+import { basename, dirname, relative, resolve } from "node:path";
 import type { Linter, LintDiagnostic, LinterConfig, Severity, ConfigScope } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
+import {
+  extractImports,
+  findProjectRoot,
+  isDir,
+  isInside,
+  resolveImport,
+  type ImportRef,
+} from "../utils/references.js";
 
 interface RuleDef { id: string; defaultSeverity: Severity; }
 
@@ -14,7 +24,88 @@ const RULES: RuleDef[] = [
   { id: "claude-md/no-absolute-paths", defaultSeverity: "info" },
   { id: "claude-md/no-todo-markers", defaultSeverity: "info" },
   { id: "claude-md/no-trailing-whitespace", defaultSeverity: "info" },
+  { id: "claude-md/import-resolves", defaultSeverity: "warning" },
+  { id: "claude-md/import-circular", defaultSeverity: "info" },
+  { id: "claude-md/import-depth", defaultSeverity: "warning" },
 ];
+
+// Claude Code 2.1.301 `Tfr = 5`: the loader refuses a file at depth >= 5, so
+// the root CLAUDE.md plus four nested hops load and a fifth is dropped.
+const MAX_IMPORT_DEPTH = 5;
+
+/**
+ * Follow `@path` imports the way Claude Code's loader does — one global
+ * visited set (a diamond loads once), cycles and over-deep hops silently
+ * skipped at runtime — and report what the runtime would silently lose.
+ * Only markdown files inside the project root are read; anything else is
+ * existence-checked. Nested findings are reported at the root file's
+ * top-level import that leads to them.
+ */
+function checkImports(
+  filePath: string,
+  content: string,
+  config: LinterConfig,
+  push: (d: LintDiagnostic | null) => void,
+): void {
+  if (!["claude-md/import-resolves", "claude-md/import-circular", "claude-md/import-depth"]
+    .some((r) => isRuleEnabled(config, r))) return;
+  const rootFile = resolve(filePath);
+  const root = findProjectRoot(rootFile) ?? dirname(rootFile);
+  const visited = new Set<string>([rootFile]);
+  const stack: string[] = [];
+
+  const walk = (file: string, text: string, depth: number, top: ImportRef | null, chain: string[]) => {
+    stack.push(file);
+    const where = chain.length > 0 ? ` (in ${relative(dirname(rootFile), file)}, via ${chain.join(" → ")})` : "";
+    for (const imp of extractImports(text)) {
+      if (imp.path.includes("$")) continue;
+      const at = top ?? imp;
+      const target = resolveImport(imp.path, file);
+      if (!existsSync(target)) {
+        // `@name` mentions and `@scope/pkg` names are also tried as paths
+        // and silently miss; only flag what looks like a file reference.
+        const bare = !/^(\.\/|~\/|\/)/.test(imp.path);
+        const hasExt = /\.[^/.]+$/.test(basename(imp.path));
+        if (bare && !hasExt && (!imp.path.includes("/") || !isDir(dirname(target)))) continue;
+        push(diag(config, filePath, "claude-md/import-resolves", "warning",
+          `Import "@${imp.path}"${where} does not resolve — ${target} does not exist`, at.line, at.column));
+        continue;
+      }
+      if (isDir(target)) {
+        push(diag(config, filePath, "claude-md/import-resolves", "warning",
+          `Import "@${imp.path}"${where} is a directory — Claude Code only imports files`, at.line, at.column));
+        continue;
+      }
+      if (stack.includes(target)) {
+        push(diag(config, filePath, "claude-md/import-circular", "info",
+          `Import "@${imp.path}"${where} is circular — it leads back to ${relative(dirname(rootFile), target) || basename(target)}, which Claude Code skips`,
+          at.line, at.column));
+        continue;
+      }
+      if (visited.has(target)) continue;
+      // Depth is gated before the runtime marks a file processed, so a file
+      // too deep on one path still loads if reached by a shorter one.
+      if (depth + 1 >= MAX_IMPORT_DEPTH) {
+        push(diag(config, filePath, "claude-md/import-depth", "warning",
+          `Import "@${imp.path}"${where} is ${depth + 1} hops deep — Claude Code stops at ${MAX_IMPORT_DEPTH - 1} and silently drops it`,
+          at.line, at.column));
+        continue;
+      }
+      visited.add(target);
+      if (!isInside(root, target) || !/\.(md|markdown)$/i.test(target)) continue;
+      let next: string;
+      try {
+        next = readFileSync(target, "utf-8");
+      } catch {
+        continue;
+      }
+      walk(target, next, depth + 1, at, [...chain, `@${imp.path}`]);
+    }
+    stack.pop();
+  };
+
+  walk(rootFile, content, 0, null, []);
+}
 
 function diag(
   config: LinterConfig,
@@ -128,6 +219,8 @@ export const claudeMdLinter: Linter = {
         }
       }
     }
+
+    checkImports(filePath, content, config, push);
 
     // check for TODO/FIXME markers left in instructions
     for (let i = 0; i < lines.length; i++) {

@@ -21,6 +21,7 @@ rules:
   plugin-json/keywords-no-duplicates: warning
   plugin-json/no-unknown-fields: info
   plugin-json/license-spdx: info
+  plugin-json/component-paths-exist: warning
 
   # ── SKILL.md ─────────────────────────────────────────────
   skill-md/valid-frontmatter: error
@@ -39,6 +40,7 @@ rules:
   skill-md/no-unknown-frontmatter: warning
   skill-md/body-word-count: warning
   skill-md/body-has-headers: info
+  skill-md/referenced-files-exist: warning
 
   # ── Agent .md ────────────────────────────────────────────
   agent-md/valid-frontmatter: error
@@ -56,6 +58,7 @@ rules:
   agent-md/system-prompt-present: error
   agent-md/system-prompt-length: warning
   agent-md/system-prompt-second-person: info
+  agent-md/skills-exist: warning
 
   # ── marketplace.json (schemastore-only) ──────────────────
   marketplace-json/valid-json: error
@@ -87,6 +90,7 @@ rules:
   hooks-json/prompt-has-prompt: error
   hooks-json/prompt-event-support: warning
   hooks-json/timeout-range: warning
+  hooks-json/script-exists: warning
 
   # ── settings.json ────────────────────────────────────────
   settings-json/valid-json: error
@@ -112,6 +116,7 @@ rules:
   settings-json/plugins-boolean: warning
   settings-json/plugins-format: warning
   settings-json/skip-prompt-boolean: error
+  settings-json/hook-script-exists: warning
 
   # ── mcp.json ─────────────────────────────────────────────
   mcp-json/scope-file-name: warning
@@ -143,6 +148,9 @@ rules:
   claude-md/no-absolute-paths: info
   claude-md/no-todo-markers: info
   claude-md/no-trailing-whitespace: info
+  claude-md/import-resolves: warning
+  claude-md/import-circular: info
+  claude-md/import-depth: warning
 
   # ── .lsp.json ────────────────────────────────────────────
   # Standalone LSP config files at plugin root. Most common bug:

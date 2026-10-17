@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { AGENT_MODELS } from "../contracts.js";
 import {
   formatAjvError,
@@ -13,6 +15,7 @@ import {
   classifyUnknownFrontmatterKey,
 } from "../utils/frontmatter-keys.js";
 import { isKebabCase } from "../utils/kebab-case.js";
+import { extractLocalLinks } from "../utils/references.js";
 import { toolNameProblem } from "../utils/tool-names.js";
 
 interface RuleDef { id: string; defaultSeverity: Severity; }
@@ -34,6 +37,7 @@ const RULES: RuleDef[] = [
   { id: "skill-md/no-unknown-frontmatter", defaultSeverity: "info" },
   { id: "skill-md/body-word-count", defaultSeverity: "info" },
   { id: "skill-md/body-has-headers", defaultSeverity: "info" },
+  { id: "skill-md/referenced-files-exist", defaultSeverity: "warning" },
 ];
 
 /**
@@ -273,6 +277,19 @@ export const skillMdLinter: Linter = {
       if (cls?.kind === "owned-by-other" && cls.owner) {
         push(diag(config, filePath, "skill-md/no-unknown-frontmatter", "info",
           `"${key}" is ${artifactLabel(cls.owner)} frontmatter — Claude Code ignores it on a skill`));
+      }
+    }
+
+    // referenced-files-exist — relative links in the body are how a skill
+    // points Claude at its references/, scripts/ and assets; a broken one
+    // sends it reading a file that isn't there.
+    if (isRuleEnabled(config, "skill-md/referenced-files-exist")) {
+      const dir = dirname(resolve(filePath));
+      for (const link of extractLocalLinks(fm.body)) {
+        if (existsSync(resolve(dir, link.target))) continue;
+        push(diag(config, filePath, "skill-md/referenced-files-exist", "warning",
+          `Link target "${link.target}" does not exist (relative to ${dir})`,
+          fm.bodyStartLine + link.line - 1, link.column));
       }
     }
 

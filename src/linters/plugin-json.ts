@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { basename, dirname, resolve } from "node:path";
 import { PLUGIN_JSON_FIELDS } from "../contracts.js";
 import {
 	formatAjvError,
@@ -35,6 +37,13 @@ const RULES: RuleDef[] = [
   { id: "plugin-json/no-unknown-fields", defaultSeverity: "info" },
   { id: "plugin-json/license-spdx", defaultSeverity: "info" },
   { id: "plugin-json/no-inline-mcp-servers", defaultSeverity: "warning" },
+  { id: "plugin-json/component-paths-exist", defaultSeverity: "warning" },
+];
+
+// Manifest fields whose string values (alone or in an array) are paths
+// relative to the plugin root. Inline objects are configuration, not paths.
+const COMPONENT_PATH_FIELDS = [
+  "commands", "agents", "skills", "hooks", "mcpServers", "lspServers", "outputStyles", "monitors",
 ];
 
 function findKeyPosition(content: string, key: string): { line: number; column: number } | undefined {
@@ -238,6 +247,27 @@ export const pluginJsonLinter: Linter = {
         const p = pos("license");
         push(diag(config, filePath, "plugin-json/license-spdx", "info",
           `"license" "${parsed.license}" is not a common SPDX identifier`, p?.line, p?.column));
+      }
+    }
+
+    // component-paths-exist — a declared component path that isn't there
+    // drops that component at load time; for commands/agents/outputStyles it
+    // also disables auto-discovery of the default directory.
+    if (isRuleEnabled(config, "plugin-json/component-paths-exist")) {
+      const dir = dirname(resolve(filePath));
+      const pluginRoot = basename(dir) === ".claude-plugin" ? dirname(dir) : dir;
+      for (const field of COMPONENT_PATH_FIELDS) {
+        const v = parsed[field];
+        const values = typeof v === "string" ? [v] : Array.isArray(v) ? v : [];
+        for (const p of values) {
+          if (typeof p !== "string" || !p) continue;
+          if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(p) || /[$~*?]/.test(p)) continue;
+          if (existsSync(resolve(pluginRoot, p))) continue;
+          const kp = pos(field);
+          push(diag(config, filePath, "plugin-json/component-paths-exist", "warning",
+            `"${field}" path "${p}" does not exist relative to the plugin root (${pluginRoot})`,
+            kp?.line, kp?.column));
+        }
       }
     }
 

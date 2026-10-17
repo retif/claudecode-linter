@@ -140,16 +140,37 @@ No issues found.
 
 | Type | Files | Rules |
 |------|-------|-------|
-| plugin-json | `.claude-plugin/plugin.json` | 13 |
-| skill-md | `skills/*/SKILL.md` | 16 |
+| plugin-json | `.claude-plugin/plugin.json` | 15 |
+| skill-md | `skills/*/SKILL.md` | 17 |
 | agent-md | `agents/*.md` | 20 |
 | command-md | `commands/*.md` | 10 |
-| hooks-json | `hooks/hooks.json` | 9 |
-| settings-json | `.claude-plugin/settings.json` | 25 |
-| mcp-json | `.claude-plugin/mcp.json` | 16 |
-| claude-md | `CLAUDE.md` | 10 |
+| hooks-json | `hooks/hooks.json` | 11 |
+| settings-json | `.claude-plugin/settings.json` | 26 |
+| mcp-json | `.claude-plugin/mcp.json` | 18 |
+| claude-md | `CLAUDE.md` | 13 |
 | lsp-json | `.lsp.json` | 3 |
 | monitors-json | `monitors/monitors.json` | 3 |
+
+## Cross-file reference rules
+
+These rules check that a reference in one file points at something that exists. Claude Code drops a broken reference without telling you.
+
+| Rule | Checks |
+|------|--------|
+| `hooks-json/script-exists`, `settings-json/hook-script-exists` | `${CLAUDE_PLUGIN_ROOT}/…` and `${CLAUDE_PROJECT_DIR}/…` paths in command hooks |
+| `claude-md/import-resolves` | `@path` imports, followed recursively, resolve to files |
+| `claude-md/import-circular` | no import cycle back onto the import chain |
+| `claude-md/import-depth` | no import more than 4 hops deep (Claude Code drops the 5th) |
+| `agent-md/skills-exist` | `skills:` names exist in the plugin, the project or `~/.claude/skills` |
+| `plugin-json/component-paths-exist` | `commands`, `agents`, `skills`, `hooks`, `mcpServers`, `lspServers`, `outputStyles` and `monitors` paths exist |
+| `skill-md/referenced-files-exist` | relative Markdown links and images in the SKILL.md body |
+
+Import extraction follows Claude Code's loader:
+- Code fences, code spans and HTML comments are skipped.
+- `#fragments` are stripped.
+- A bare `@name` with no extension, such as a mention or an `@scope/pkg` name, is not treated as a file.
+
+Only Markdown files inside the project root are read for nested imports. Anything outside the root is only checked for existence. Paths that use `$VAR`, `~` (in links) or globs can't be resolved statically and are skipped.
 
 ## Schema-derived rules
 

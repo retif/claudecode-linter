@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { HOOK_EVENTS, HOOK_TYPES, PROMPT_EVENTS } from "../contracts.js";
 import {
   formatAjvError,
@@ -6,6 +7,7 @@ import {
 } from "../plugin-schema.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
+import { commandHooks, findPluginRoot, hookScriptRefs } from "../utils/references.js";
 
 interface RuleDef { id: string; defaultSeverity: Severity; }
 
@@ -20,6 +22,7 @@ const RULES: RuleDef[] = [
   { id: "hooks-json/prompt-has-prompt", defaultSeverity: "error" },
   { id: "hooks-json/prompt-event-support", defaultSeverity: "warning" },
   { id: "hooks-json/timeout-range", defaultSeverity: "warning" },
+  { id: "hooks-json/script-exists", defaultSeverity: "warning" },
 ];
 
 function findKeyPosition(content: string, key: string): { line: number; column: number } | undefined {
@@ -167,6 +170,20 @@ export const hooksJsonLinter: Linter = {
                 `Hook timeout ${h.timeout}s is outside recommended range (5-600s)`, ep?.line, ep?.column));
             }
           }
+        }
+      }
+    }
+
+    // script-exists — a command hook pointing at ${CLAUDE_PLUGIN_ROOT}/…
+    // that isn't there fails on every event, silently from the user's view.
+    if (isRuleEnabled(config, "hooks-json/script-exists")) {
+      const pluginRoot = findPluginRoot(filePath);
+      for (const { event, command } of commandHooks(hooks)) {
+        for (const ref of hookScriptRefs(command, { plugin: pluginRoot })) {
+          if (existsSync(ref.resolved)) continue;
+          const ep = findKeyPosition(content, event);
+          push(diag(config, filePath, "hooks-json/script-exists", "warning",
+            `Hook command in ${event} references "${ref.raw}", which does not exist (${ref.resolved})`, ep?.line, ep?.column));
         }
       }
     }

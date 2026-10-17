@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { basename, dirname, join, resolve } from "node:path";
 import {
 	AGENT_MODELS,
 	AGENT_COLORS,
@@ -25,6 +26,7 @@ import {
 	artifactLabel,
 	classifyUnknownFrontmatterKey,
 } from "../utils/frontmatter-keys.js";
+import { findProjectRoot, isDir } from "../utils/references.js";
 import { toolNameProblem } from "../utils/tool-names.js";
 
 function findPluginRoot(agentFilePath: string): string | null {
@@ -106,6 +108,64 @@ function loadMcpServerNames(pluginRoot: string): Set<string> {
 	return out;
 }
 
+/**
+ * Skill names a directory of skills provides: each `<dir>/<name>/SKILL.md`
+ * counts under its directory name and its frontmatter `name`. `dir` may
+ * itself be a skill directory (plugin.json `skills: "./my-skill"`).
+ */
+function skillNamesIn(dir: string, out: Set<string>): void {
+	const addSkill = (skillDir: string) => {
+		const md = join(skillDir, "SKILL.md");
+		if (!existsSync(md)) return;
+		out.add(basename(skillDir));
+		try {
+			const name = parseFrontmatter(readFileSync(md, "utf-8")).data.name;
+			if (typeof name === "string") out.add(name);
+		} catch {
+			// unreadable SKILL.md — the directory name still counts
+		}
+	};
+	if (!isDir(dir)) return;
+	addSkill(dir);
+	try {
+		for (const e of readdirSync(dir, { withFileTypes: true })) {
+			if (e.isDirectory()) addSkill(join(dir, e.name));
+		}
+	} catch {
+		// unreadable dir — nothing to add
+	}
+}
+
+/** Command names (`<dir>/<name>.md`) — commands are invocable skills too. */
+function commandNamesIn(dir: string, out: Set<string>): void {
+	try {
+		for (const e of readdirSync(dir, { withFileTypes: true })) {
+			if (e.isFile() && e.name.endsWith(".md")) out.add(e.name.slice(0, -3));
+		}
+	} catch {
+		// no commands dir
+	}
+}
+
+/** Skills a plugin provides: skills/, plugin.json `skills` paths, commands/. */
+function pluginSkillNames(pluginRoot: string): Set<string> {
+	const out = new Set<string>();
+	skillNamesIn(join(pluginRoot, "skills"), out);
+	commandNamesIn(join(pluginRoot, "commands"), out);
+	const j = loadJson(join(pluginRoot, ".claude-plugin", "plugin.json"));
+	const declared = j && typeof j === "object" ? (j as Record<string, unknown>).skills : undefined;
+	const paths = typeof declared === "string" ? [declared] : Array.isArray(declared) ? declared : [];
+	for (const p of paths) {
+		if (typeof p === "string") skillNamesIn(resolve(pluginRoot, p), out);
+	}
+	return out;
+}
+
+function parseSkillsField(v: unknown): string[] {
+	if (Array.isArray(v)) return v.filter((x): x is string => typeof x === "string").map((x) => x.trim()).filter(Boolean);
+	return parseToolsField(v);
+}
+
 function parseToolsField(v: unknown): string[] {
 	if (typeof v !== "string") return [];
 	return v
@@ -142,6 +202,7 @@ const RULES: RuleDef[] = [
 	{ id: "agent-md/known-tools", defaultSeverity: "warning" },
 	{ id: "agent-md/mcp-tools-resolve", defaultSeverity: "error" },
 	{ id: "agent-md/plugin-subagent-blocked-tools", defaultSeverity: "warning" },
+	{ id: "agent-md/skills-exist", defaultSeverity: "warning" },
 ];
 
 function diag(
@@ -447,6 +508,52 @@ export const agentMdLinter: Linter = {
 						fm.bodyStartLine,
 					),
 				);
+			}
+		}
+
+		// skills-exist — a preloaded skill that isn't installed is dropped
+		// without a word, so the agent runs without the guidance it expects.
+		// `other-plugin:skill` can't be verified from here and is skipped; a
+		// bare name may come from this plugin, the project or the user.
+		const declaredSkills = parseSkillsField(fm.data.skills);
+		if (declaredSkills.length > 0 && isRuleEnabled(config, "agent-md/skills-exist")) {
+			const pluginRoot = findPluginRoot(filePath);
+			const pluginName = pluginRoot ? loadPluginName(pluginRoot) : null;
+			const projectRoot = findProjectRoot(filePath);
+			if (pluginRoot || projectRoot) {
+				const ownSkills = pluginRoot ? pluginSkillNames(pluginRoot) : new Set<string>();
+				const projectSkills = new Set<string>();
+				if (projectRoot) {
+					skillNamesIn(join(projectRoot, ".claude", "skills"), projectSkills);
+					commandNamesIn(join(projectRoot, ".claude", "commands"), projectSkills);
+				}
+				const userHas = (n: string) =>
+					existsSync(join(homedir(), ".claude", "skills", n, "SKILL.md")) ||
+					existsSync(join(homedir(), ".claude", "commands", `${n}.md`));
+				const lineIdx = content.split("\n").findIndex((l) => /^skills\s*:/.test(l));
+				for (const s of declaredSkills) {
+					const colon = s.indexOf(":");
+					let found: boolean;
+					if (colon !== -1) {
+						if (!pluginName || s.slice(0, colon) !== pluginName) continue;
+						found = ownSkills.has(s.slice(colon + 1));
+					} else {
+						found = ownSkills.has(s) || projectSkills.has(s) || userHas(s);
+					}
+					if (found) continue;
+					push(
+						diag(
+							config,
+							filePath,
+							"agent-md/skills-exist",
+							"warning",
+							colon !== -1
+								? `Skill "${s}" is not provided by plugin "${pluginName}" (no matching skills/<name>/SKILL.md or command).`
+								: `Skill "${s}" was not found in ${pluginRoot ? "this plugin, " : ""}the project's .claude/skills or ~/.claude/skills.`,
+							lineIdx >= 0 ? lineIdx + 1 : undefined,
+						),
+					);
+				}
 			}
 		}
 

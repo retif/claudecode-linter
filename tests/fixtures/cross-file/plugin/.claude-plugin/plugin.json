@@ -1,0 +1,22 @@
+{
+  "name": "xref-plugin",
+  "version": "1.0.0",
+  "description": "Fixture for cross-file reference rules",
+  "commands": [
+    "./commands/present.md",
+    "./commands/missing.md"
+  ],
+  "agents": "./agents",
+  "skills": [
+    "./skills"
+  ],
+  "hooks": "./hooks/extra-hooks.json",
+  "outputStyles": "./output-styles",
+  "lspServers": {
+    "ts": {
+      "command": "typescript-language-server",
+      "extensionToExtension": {}
+    }
+  },
+  "monitors": "https://example.com/monitors.json"
+}

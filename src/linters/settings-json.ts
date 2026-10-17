@@ -1,4 +1,5 @@
-import { basename, dirname, join } from "node:path";
+import { homedir } from "node:os";
+import { basename, dirname, join, resolve } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
 import {
 	SETTINGS_USER_FIELDS,
@@ -17,6 +18,7 @@ import {
 } from "../plugin-schema.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity, ConfigScope } from "../types.js";
 import { isRuleEnabled, getRuleSeverity } from "../types.js";
+import { commandHooks, findPluginRoot, hookScriptRefs } from "../utils/references.js";
 import { toolNameProblem } from "../utils/tool-names.js";
 
 interface RuleDef { id: string; defaultSeverity: Severity; }
@@ -50,6 +52,7 @@ const RULES: RuleDef[] = [
   { id: "settings-json/plugins-format", defaultSeverity: "warning" },
   { id: "settings-json/skip-prompt-boolean", defaultSeverity: "error" },
   { id: "settings-json/disable-project-mcpjson-shadow", defaultSeverity: "warning" },
+  { id: "settings-json/hook-script-exists", defaultSeverity: "warning" },
 ];
 
 type FieldType = "boolean" | "string" | "number" | "string-array" | "object";
@@ -612,6 +615,25 @@ export const settingsJsonLinter: Linter = {
         const sp = findKeyPosition(content, "skipDangerousModePermissionPrompt");
         push(diag(config, filePath, "settings-json/skip-prompt-boolean", "error",
           "\"skipDangerousModePermissionPrompt\" must be a boolean", sp?.line, sp?.column));
+      }
+    }
+
+    // hook-script-exists — same check as hooks-json/script-exists for hooks
+    // declared in settings. ${CLAUDE_PROJECT_DIR} is only known for a
+    // project's .claude/settings*.json, ${CLAUDE_PLUGIN_ROOT} only for a
+    // plugin's own settings.json.
+    if (isRuleEnabled(config, "settings-json/hook-script-exists") && "hooks" in parsed) {
+      const dir = dirname(resolve(filePath));
+      const project = basename(dir) === ".claude" && dirname(dir) !== homedir() ? dirname(dir) : null;
+      const pluginRoot = findPluginRoot(filePath);
+      const plugin = pluginRoot && (dir === pluginRoot || dir === join(pluginRoot, ".claude-plugin")) ? pluginRoot : null;
+      const hp = findKeyPosition(content, "hooks");
+      for (const { event, command } of commandHooks(parsed.hooks)) {
+        for (const ref of hookScriptRefs(command, { plugin, project })) {
+          if (existsSync(ref.resolved)) continue;
+          push(diag(config, filePath, "settings-json/hook-script-exists", "warning",
+            `Hook command in ${event} references "${ref.raw}", which does not exist (${ref.resolved})`, hp?.line, hp?.column));
+        }
       }
     }
 
