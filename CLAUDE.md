@@ -198,7 +198,9 @@ ci/check-mirror-drift.sh` says which case you are in (`FAST-FORWARDABLE` vs
 `git fetch --all && git merge --ff-only origin/main && git push gitea main`, then
 re-run the gates — the lockfile usually changed, so a stale `node_modules` can gate
 green against the wrong dependency tree. Only a two-sided count means `main` has
-forked; that takes a merge pushed to both remotes, never a plain push.
+forked; that takes a merge pushed to both remotes, never a plain push. The
+`mirror-sync` Woodpecker cron (`ci/mirror-sync.sh`, gitea#47) does the
+fast-forward on its own once its schedule exists. It refuses every other shape.
 
 **A commit touching `.github/workflows/**` cannot be pushed to `origin` over
 HTTPS.** GitHub rejects it (`GH013 … without workflow scope`) because github.com

@@ -29,6 +29,9 @@ labels:
 
 when:
   event: cron
+  # Without a cron-name filter this fires on EVERY cron's tick — including
+  # mirror-sync's (oleks/claudecode-linter#47).
+  cron: mirror-drift
 
 # NOTE ON SHALLOW CLONES: ancestry between the two tips is not computable in a
 # shallow clone. Overriding `clone:` to force full depth was tried and rejected —

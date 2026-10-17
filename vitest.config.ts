@@ -9,6 +9,7 @@ import { defineConfig } from "vitest/config";
 const SUBPROCESS_SUITES = [
   "tests/scripts/check-deps.test.ts",
   "tests/scripts/check-mirror-drift.test.ts",
+  "tests/scripts/mirror-sync.test.ts",
   "tests/resource-limits.test.ts",
 ];
 

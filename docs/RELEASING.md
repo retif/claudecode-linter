@@ -66,6 +66,19 @@ npm ci && npm test        # the lockfile usually moved — do not gate against s
 Only a two-sided count (`N M`) means `main` has forked. That needs a merge, pushed
 to **both** remotes, not a push.
 
+**The fast-forward is automated** by `ci/mirror-sync.sh`, run from
+`.woodpecker/mirror-sync.yml` on the `mirror-sync` cron (oleks/claudecode-linter#47):
+- **When it pushes:** only when `merge-base --is-ancestor` proves gitea is strictly behind github. It uses the `gitea_token` secret that `release.yml` already uses.
+- **When it refuses:** on DIVERGED, gitea-ahead, an unreachable upstream, or a rejected push.
+- **What it never does:** force a push, or push github-ward.
+
+A red run of it is a refusal to read, not a flake. Like `mirror-drift`, the cron schedule is a one-time Woodpecker UI action. Both workflows filter on their own cron name, so neither fires on the other's tick.
+
+```bash
+bash ci/mirror-sync.sh            # dry run: what it would do
+bash ci/mirror-sync.sh --apply    # fast-forward gitea main, if and only if it is one
+```
+
 **This is now checked automatically.** `ci/check-mirror-drift.sh` compares both tips
 in both directions and fails once the oldest unmirrored commit is older than
 `MAX_DRIFT_HOURS` (default 24) — drift right after a merge is expected and clears

@@ -1,0 +1,41 @@
+# Woodpecker CI: fast-forward gitea main to github main (oleks/claudecode-linter#47).
+#
+# github main moves on its own — dependabot merges server-side and release.yml
+# commits its own version bump — leaving gitea main a strict ancestor until
+# someone fast-forwards it by hand. This job does that fast-forward, and only that.
+#
+# Runs on the GITEA side by operator decision (#47, 2026-09-06): GitHub Actions
+# never holds a gitea credential. The GitHub repo is public and read anonymously;
+# the push uses the same `gitea_token` secret .woodpecker/release.yml pushes with.
+#
+# ci/mirror-sync.sh fails closed: it pushes only on a proven fast-forward, never
+# forces, and refuses DIVERGED, gitea-ahead, an unreachable upstream and a push
+# the server rejects. A red run here is that refusal — read its log.
+#
+# Trigger: the `mirror-sync` cron ONLY (create it in the Woodpecker UI, e.g.
+# hourly). The `cron:` filter matters: without it this workflow would also fire
+# on every other cron's tick (mirror-drift's included), and vice versa.
+#
+# Deliberately NOT `event: manual`: a manual run fires every workflow matching
+# `manual`, and .woodpecker/release.yml matches it — a "sync" button would cut a
+# release. To run on demand, run the script: `bash ci/mirror-sync.sh [--apply]`.
+
+# oleks/fleet#230 — MANDATORY explicit arch label.
+labels:
+  arch: arm64
+
+when:
+  event: cron
+  cron: mirror-sync
+
+steps:
+  mirror-sync:
+    image: node:20
+    environment:
+      # Single token env var across CI + local (oleks/emmett#44); the Woodpecker
+      # secret is still named gitea_token. Never echoed by the script.
+      REGISTRY_TOKEN:
+        from_secret: gitea_token
+    commands:
+      - echo "▸ arch=$(uname -m)"
+      - bash ci/mirror-sync.sh --apply

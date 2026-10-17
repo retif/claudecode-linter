@@ -20,12 +20,20 @@ let github: string;
 let gitea: string;
 let work: string;
 
+// Keep host git config out: a system-wide core.hooksPath would run the fleet's
+// push hooks on every fixture push (oleks/claudecode-linter#47).
+const ISOLATED_GIT = (): Record<string, string> => ({
+	GIT_CONFIG_NOSYSTEM: "1",
+	GIT_CONFIG_GLOBAL: join(tmp, "empty-gitconfig"),
+});
+
 function git(cwd: string, ...args: string[]): string {
 	return execFileSync("git", args, {
 		cwd,
 		encoding: "utf8",
 		env: {
 			...process.env,
+			...ISOLATED_GIT(),
 			GIT_AUTHOR_NAME: "t",
 			GIT_AUTHOR_EMAIL: "t@example.invalid",
 			GIT_COMMITTER_NAME: "t",
@@ -46,6 +54,7 @@ function runCheck(env: Record<string, string> = {}) {
 		encoding: "utf8",
 		env: {
 			...process.env,
+			...ISOLATED_GIT(),
 			CI: "",
 			GITHUB_URL: github,
 			GITEA_REMOTE: "gitea",
@@ -58,6 +67,7 @@ function runCheck(env: Record<string, string> = {}) {
 
 beforeEach(() => {
 	tmp = mkdtempSync(join(tmpdir(), "ccl-mirror-drift-"));
+	writeFileSync(join(tmp, "empty-gitconfig"), "");
 	github = join(tmp, "github.git");
 	gitea = join(tmp, "gitea.git");
 	work = join(tmp, "work");
