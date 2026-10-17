@@ -1,6 +1,6 @@
 {
-	"version": "2.1.301",
-	"extractedAt": "2026-10-16T15:41:40.582Z",
+	"version": "2.1.302",
+	"extractedAt": "2026-10-17T03:52:34.127Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -138,10 +138,13 @@
 			"cyan",
 			"green",
 			"magenta",
+			"olive",
 			"orange",
 			"pink",
 			"purple",
 			"red",
+			"teal",
+			"violet",
 			"yellow"
 		],
 		"agentModels": [
