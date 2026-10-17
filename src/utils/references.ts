@@ -53,14 +53,6 @@ export function isDir(p: string): boolean {
   }
 }
 
-export function isFile(p: string): boolean {
-  try {
-    return statSync(p).isFile();
-  } catch {
-    return false;
-  }
-}
-
 // ── hook commands ─────────────────────────────────────────────────────
 
 export interface HookScriptRef {
