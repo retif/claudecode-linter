@@ -68,6 +68,7 @@ to **both** remotes, not a push.
 
 **The fast-forward is automated** by `ci/mirror-sync.sh`, run from
 `.woodpecker/mirror-sync.yml` on the `mirror-sync` cron (oleks/claudecode-linter#47):
+
 - **When it pushes:** only when `merge-base --is-ancestor` proves gitea is strictly behind github. It uses the `gitea_token` secret that `release.yml` already uses.
 - **When it refuses:** on DIVERGED, gitea-ahead, an unreachable upstream, or a rejected push.
 - **What it never does:** force a push, or push github-ward.
