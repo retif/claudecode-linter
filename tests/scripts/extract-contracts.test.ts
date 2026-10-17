@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractTopLevelKeys, collectObjectKeySets, classifyByOverlap, parseToolsDts, validateContracts, extractUserFacingToolNames } from "../../scripts/extract-contracts.js";
+import { extractTopLevelKeys, collectObjectKeySets, classifyByOverlap, pickColorPalette, parseToolsDts, validateContracts, extractUserFacingToolNames } from "../../scripts/extract-contracts.js";
 import * as acorn from "acorn";
 
 function parseCode(code: string) {
@@ -138,6 +138,36 @@ describe("classifyByOverlap", () => {
 
 	it("returns empty array for empty input", () => {
 		expect(classifyByOverlap([], knownPluginFields)).toEqual([]);
+	});
+});
+
+// oleks/claudecode-linter#52: the palette pick must depend on the bundle only.
+describe("pickColorPalette", () => {
+	const palette = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan", "olive", "teal", "violet"];
+	// The 2.1.302 junk: an object that carries colour keys next to non-colours.
+	const junk = ["blue", "cyan", "green", "magenta", "quiet", "red", "title", "words", "yellow"];
+
+	it("picks the all-colour palette over a larger set holding non-colour keys", () => {
+		expect(pickColorPalette([junk, palette])).toEqual(palette);
+		expect(pickColorPalette([palette, junk])).toEqual(palette);
+	});
+
+	it("accepts colours no anchor or previous file knows about", () => {
+		expect(pickColorPalette([palette])).toContain("teal");
+	});
+
+	it("rejects sets with fewer than three anchor colours", () => {
+		expect(pickColorPalette([["olive", "teal", "violet", "red"]])).toEqual([]);
+	});
+
+	it("is order-independent when candidates tie", () => {
+		const a = ["red", "blue", "green", "teal"];
+		const b = ["red", "blue", "green", "navy"];
+		expect(pickColorPalette([a, b])).toEqual(pickColorPalette([b, a]));
+	});
+
+	it("returns nothing for no candidates", () => {
+		expect(pickColorPalette([])).toEqual([]);
 	});
 });
 

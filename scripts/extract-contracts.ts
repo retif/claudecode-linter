@@ -532,6 +532,63 @@ function overlap(arr: string[], anchors: Set<string>): number {
 	return arr.filter((s) => anchors.has(s)).length;
 }
 
+// CSS named colours (CSS Color Module Level 4). Every agent palette name
+// Claude Code has shipped — including 2.1.302's olive/teal/violet — is one,
+// while the unrelated objects that also happen to carry a few colour keys
+// (`{color, title, words, quiet, …}`) are not. Used as a vocabulary gate so
+// a palette candidate is judged on its own contents, never against the
+// previous contracts file (oleks/claudecode-linter#52).
+const CSS_COLOR_NAMES = new Set(
+	`aliceblue antiquewhite aqua aquamarine azure beige bisque black
+	blanchedalmond blue blueviolet brown burlywood cadetblue chartreuse
+	chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan
+	darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta
+	darkolivegreen darkorange darkorchid darkred darksalmon darkseagreen
+	darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink
+	deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen
+	fuchsia gainsboro ghostwhite gold goldenrod gray green greenyellow grey
+	honeydew hotpink indianred indigo ivory khaki lavender lavenderblush
+	lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow
+	lightgray lightgreen lightgrey lightpink lightsalmon lightseagreen
+	lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime
+	limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid
+	mediumpurple mediumseagreen mediumslateblue mediumspringgreen
+	mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin
+	navajowhite navy oldlace olive olivedrab orange orangered orchid
+	palegoldenrod palegreen paleturquoise palevioletred papayawhip peachpuff
+	peru pink plum powderblue purple rebeccapurple red rosybrown royalblue
+	saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue
+	slateblue slategray slategrey snow springgreen steelblue tan teal thistle
+	tomato turquoise violet wheat white whitesmoke yellow yellowgreen`.split(/\s+/),
+);
+
+/**
+ * The agent palette among `candidates`, chosen from the candidates alone so
+ * the same bundle always yields the same answer: only sets made entirely of
+ * CSS colour names with at least three anchor colours qualify; the winner has
+ * the most anchors, then the most values, then the smallest signature.
+ */
+export function pickColorPalette(candidates: string[][]): string[] {
+	let best: string[] = [];
+	let bestKey: [number, number, string] | null = null;
+	for (const c of candidates) {
+		if (c.length > 30 || !c.every((v) => CSS_COLOR_NAMES.has(v))) continue;
+		const anchors = overlap(c, COLOR_ANCHORS);
+		if (anchors < 3) continue;
+		const key: [number, number, string] = [anchors, c.length, [...c].sort().join(",")];
+		if (
+			bestKey === null ||
+			key[0] > bestKey[0] ||
+			(key[0] === bestKey[0] && key[1] > bestKey[1]) ||
+			(key[0] === bestKey[0] && key[1] === bestKey[1] && key[2] < bestKey[2])
+		) {
+			best = c;
+			bestKey = key;
+		}
+	}
+	return [...best];
+}
+
 function isPascalCase(s: string): boolean {
 	return /^[A-Z][a-zA-Z0-9]+$/.test(s);
 }
@@ -1092,10 +1149,14 @@ function main() {
 			// which the array/Set classifier cannot see at all. Union the
 			// object-key census in so a representation change costs nothing;
 			// without it the drift gate hard-fails at 100% loss.
+			// Both picks are judged on the bundle alone: scoring the object
+			// census against prev made the result drift with the previous
+			// file, so CI's re-extraction of a just-released version picked
+			// a different object and failed (oleks/claudecode-linter#52).
 			const colors = [
 				...new Set([
-					...longestArray(classified.agentColors),
-					...classifyByOverlap(objectKeySets, prev["agentColors"] ?? []),
+					...pickColorPalette(classified.agentColors),
+					...pickColorPalette(objectKeySets.map((k) => k.keys)),
 				]),
 			];
 			if (colors.includes("purple") && !colors.includes("magenta"))
