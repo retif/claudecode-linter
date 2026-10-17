@@ -86,7 +86,9 @@ fi
 
 echo "▸ github upstream : ${GITHUB_URL}"
 echo "▸ gitea           : ${GITEA_LABEL}"
-echo "▸ mode            : $([[ ${APPLY} -eq 1 ]] && echo apply || echo 'dry run (pass --apply to push)')"
+MODE="dry run (pass --apply to push)"
+[[ ${APPLY} -eq 1 ]] && MODE="apply"
+echo "▸ mode            : ${MODE}"
 
 # --- Fetch both tips ------------------------------------------------------------
 git fetch --quiet "${GITHUB_URL}" main 2>/dev/null ||
@@ -98,7 +100,9 @@ GT_TIP="$(git rev-parse FETCH_HEAD)"
 echo "▸ github tip      : ${GH_TIP}"
 echo "▸ gitea tip       : ${GT_TIP}"
 
-if [[ "$(git rev-parse --is-shallow-repository 2>/dev/null || echo false)" = "true" ]]; then
+shallow="$(git rev-parse --is-shallow-repository 2>/dev/null)" ||
+	die_unknown "could not tell whether this clone is shallow"
+if [[ "${shallow}" = "true" ]]; then
 	git fetch --quiet --unshallow 2>/dev/null ||
 		die_unknown "shallow clone and could not unshallow — ancestry is not computable"
 	git fetch --quiet "${GITHUB_URL}" main 2>/dev/null ||
@@ -112,24 +116,29 @@ fi
 
 # --- Prove the shape ------------------------------------------------------------
 # `merge-base --is-ancestor` exits 0 (yes), 1 (no) or something else (error).
-# Only an explicit 0 or 1 counts as an answer.
-is_ancestor() {
+# Only an explicit 0 or 1 counts as an answer; anything else is "unknown".
+ancestry() {
 	local rc=0
 	git merge-base --is-ancestor "$1" "$2" 2>/dev/null || rc=$?
 	case "${rc}" in
-	0) return 0 ;;
-	1) return 1 ;;
+	0) ANSWER=yes ;;
+	1) ANSWER=no ;;
 	*) die_unknown "merge-base --is-ancestor $1 $2 failed (exit ${rc}) — history incomplete?" ;;
 	esac
 }
 
-if is_ancestor "${GT_TIP}" "${GH_TIP}"; then
+ancestry "${GT_TIP}" "${GH_TIP}"
+gitea_behind="${ANSWER}"
+ancestry "${GH_TIP}" "${GT_TIP}"
+github_behind="${ANSWER}"
+
+if [[ "${gitea_behind}" = "yes" ]]; then
 	behind="$(git rev-list --count "${GT_TIP}..${GH_TIP}")" ||
 		die_unknown "rev-list failed on a range whose ancestry was just proven"
 	[[ "${behind}" =~ ^[1-9][0-9]*$ ]] || die_unknown "unexpected rev-list count '${behind}'"
 	echo "▸ shape           : FAST-FORWARDABLE (gitea ${behind} commit(s) behind github)"
 	git log --format='    %h %<(20,trunc)%an %s' --no-decorate -n 10 "${GT_TIP}..${GH_TIP}"
-elif is_ancestor "${GH_TIP}" "${GT_TIP}"; then
+elif [[ "${github_behind}" = "yes" ]]; then
 	refuse "gitea is AHEAD of github. Publishing gitea commits to the public repo is a human
   decision (docs/RELEASING.md); this job only ever moves gitea forward."
 else
