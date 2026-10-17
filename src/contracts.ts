@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.301 — extracted 2026-10-16T15:41:40.582Z
+// Claude Code v2.1.302 — extracted 2026-10-17T03:52:34.127Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -142,10 +142,13 @@ export const AGENT_COLORS = new Set<string>([
 	"cyan",
 	"green",
 	"magenta",
+	"olive",
 	"orange",
 	"pink",
 	"purple",
 	"red",
+	"teal",
+	"violet",
 	"yellow",
 ]);
 
