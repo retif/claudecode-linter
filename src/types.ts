@@ -34,6 +34,8 @@ export interface LintResult {
 export interface RuleConfig {
   enabled: boolean;
   severity?: Severity;
+  /** Numeric threshold for rules that have one (e.g. description length). */
+  max?: number;
 }
 
 export interface LinterConfig {
@@ -66,6 +68,17 @@ export function isRuleEnabled(
   if (rule === undefined) return true;
   if (typeof rule === "boolean") return rule;
   return rule.enabled;
+}
+
+/** A rule's configured `max` threshold, or `defaultMax` when none is set. */
+export function getRuleMax(
+  config: LinterConfig,
+  ruleId: string,
+  defaultMax: number,
+): number {
+  const rule = config.rules[ruleId];
+  if (rule === undefined || typeof rule === "boolean") return defaultMax;
+  return rule.max ?? defaultMax;
 }
 
 export function getRuleSeverity(

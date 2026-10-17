@@ -30,7 +30,7 @@ rules:
   skill-md/name-kebab-case: error
   skill-md/name-max-length: error
   skill-md/description-required: error
-  skill-md/description-max-length: error
+  skill-md/description-max-length: warning  # also takes { max: N } — see README
   skill-md/description-no-angle-brackets: error
   skill-md/description-trigger-phrases: warning
   skill-md/model-valid: warning

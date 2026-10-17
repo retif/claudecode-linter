@@ -7,7 +7,7 @@ import {
   summarizeErrors,
 } from "../plugin-schema.js";
 import type { Linter, LintDiagnostic, LinterConfig, Severity } from "../types.js";
-import { isRuleEnabled, getRuleSeverity } from "../types.js";
+import { isRuleEnabled, getRuleMax, getRuleSeverity } from "../types.js";
 import { invalidEffortReason } from "../utils/effort.js";
 import { parseFrontmatter } from "../utils/frontmatter.js";
 import {
@@ -20,6 +20,16 @@ import { toolNameProblem } from "../utils/tool-names.js";
 
 interface RuleDef { id: string; defaultSeverity: Severity; }
 
+// Claude Code's skill listing cuts each entry — `description`, plus
+// ` - when_to_use` when set — to `skillListingMaxDescChars` characters (a
+// settings key) and appends "…". Nothing rejects a longer description; the
+// tail, usually the trigger vocabulary, silently stops reaching the model.
+// 2.1.301: `var xur=1536; function gxt(){return ut().skillListingMaxDescChars
+// ??xur}`, `function Mur(e){…n.length>r?n.slice(0,r-1)+"…":n}`
+// (oleks/claudecode-linter#48). Configurable as the rule's `max` for
+// installs that raised the setting.
+const SKILL_LISTING_MAX_DESC_CHARS = 1536;
+
 const RULES: RuleDef[] = [
   { id: "skill-md/valid-frontmatter", defaultSeverity: "error" },
   { id: "skill-md/schema-valid", defaultSeverity: "error" },
@@ -27,7 +37,7 @@ const RULES: RuleDef[] = [
   { id: "skill-md/name-kebab-case", defaultSeverity: "error" },
   { id: "skill-md/name-max-length", defaultSeverity: "error" },
   { id: "skill-md/description-required", defaultSeverity: "error" },
-  { id: "skill-md/description-max-length", defaultSeverity: "error" },
+  { id: "skill-md/description-max-length", defaultSeverity: "warning" },
   { id: "skill-md/description-no-angle-brackets", defaultSeverity: "error" },
   { id: "skill-md/description-trigger-phrases", defaultSeverity: "warning" },
   { id: "skill-md/model-valid", defaultSeverity: "warning" },
@@ -189,9 +199,13 @@ export const skillMdLinter: Linter = {
         "\"description\" is required in frontmatter"));
     } else {
       const desc = fm.data.description;
-      if (desc.length > 1024) {
-        push(diag(config, filePath, "skill-md/description-max-length", "error",
-          `"description" must be at most 1024 characters (got ${desc.length})`));
+      const whenToUse = fm.data.when_to_use;
+      const listed = whenToUse != null ? `${desc} - ${String(whenToUse)}` : desc;
+      const max = getRuleMax(config, "skill-md/description-max-length", SKILL_LISTING_MAX_DESC_CHARS);
+      if (listed.length > max) {
+        const what = whenToUse != null ? "\"description\" + \"when_to_use\"" : "\"description\"";
+        push(diag(config, filePath, "skill-md/description-max-length", "warning",
+          `${what} is ${listed.length} characters — Claude Code's skill listing truncates it at ${max} (skillListingMaxDescChars), dropping the last ${listed.length - max + 1}`));
       }
       // Well-formed HTML comments are exempt. The rule targets raw markup in a
       // description (`<html>`, a stray `<` that could break a consumer); it was

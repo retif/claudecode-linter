@@ -24,6 +24,8 @@ function isSeverity(value: unknown): value is Severity {
  *   rule: false                             -> disabled
  *   rule: info                              -> enabled at that severity
  *   rule: { enabled: true, severity: info } -> enabled at that severity
+ *   rule: { max: 2048 }                     -> enabled, with that threshold
+ *                                              (rules that have one)
  *
  * The scalar severity form used to be dropped on the floor: every rule in the
  * defaults file is written that way (`agent-md/valid-frontmatter: error`), so
@@ -43,11 +45,13 @@ function normalizeRule(value: unknown): RuleConfig | boolean | undefined {
   if (typeof value === "boolean") return value;
   if (isSeverity(value)) return { enabled: true, severity: value };
   if (typeof value === "object" && value !== null) {
-    const obj = value as { enabled?: unknown; severity?: unknown };
+    const obj = value as { enabled?: unknown; severity?: unknown; max?: unknown };
     if (obj.severity !== undefined && !isSeverity(obj.severity)) return undefined;
     if (obj.enabled !== undefined && typeof obj.enabled !== "boolean") return undefined;
+    if (obj.max !== undefined && !(Number.isInteger(obj.max) && (obj.max as number) > 0)) return undefined;
     const rule: RuleConfig = { enabled: obj.enabled ?? true };
     if (obj.severity !== undefined) rule.severity = obj.severity as Severity;
+    if (obj.max !== undefined) rule.max = obj.max as number;
     return rule;
   }
   return undefined;
@@ -73,7 +77,7 @@ export function loadConfig(configPath?: string): LinterConfig {
           // `--output json` stays machine-readable on stdout.
           console.error(
             `claudecode-linter: ignoring unusable config for rule "${key}" in ${path}: ` +
-              `expected false, one of ${SEVERITIES.join("/")}, or { enabled, severity }`,
+              `expected false, one of ${SEVERITIES.join("/")}, or { enabled, severity, max }`,
           );
           continue;
         }

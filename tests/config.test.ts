@@ -3,7 +3,7 @@ import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { loadConfig, mergeCliRules } from "../src/config.js";
-import { isRuleEnabled, getRuleSeverity } from "../src/types.js";
+import { isRuleEnabled, getRuleMax, getRuleSeverity } from "../src/types.js";
 
 describe("config", () => {
   it("returns default config when no file exists", () => {
@@ -76,6 +76,39 @@ describe("config", () => {
       expect(config.rules["skill-md/body-word-count"]).toBeUndefined();
       expect(spy).toHaveBeenCalledOnce();
       expect(spy.mock.calls[0][0]).toContain("skill-md/body-word-count");
+    } finally {
+      spy.mockRestore();
+      rmSync(dir, { recursive: true });
+    }
+  });
+
+  // oleks/claudecode-linter#48: a threshold can be raised without turning the
+  // rule off.
+  it("reads a rule's max threshold", () => {
+    const dir = mkdtempSync(join(tmpdir(), "claudecode-linter-test-"));
+    const path = join(dir, ".claudecode-lint.yaml");
+    writeFileSync(path, "rules:\n  skill-md/description-max-length:\n    max: 2048\n");
+
+    try {
+      const config = loadConfig(path);
+      expect(isRuleEnabled(config, "skill-md/description-max-length")).toBe(true);
+      expect(getRuleMax(config, "skill-md/description-max-length", 1536)).toBe(2048);
+      expect(getRuleMax(config, "skill-md/name-max-length", 64)).toBe(64);
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+
+  it.each(["0", "-5", "1.5", "lots"])("rejects max: %s instead of guessing", (max) => {
+    const dir = mkdtempSync(join(tmpdir(), "claudecode-linter-test-"));
+    const path = join(dir, ".claudecode-lint.yaml");
+    writeFileSync(path, `rules:\n  skill-md/description-max-length:\n    max: ${max}\n`);
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    try {
+      const config = loadConfig(path);
+      expect(config.rules["skill-md/description-max-length"]).toBeUndefined();
+      expect(spy).toHaveBeenCalledOnce();
     } finally {
       spy.mockRestore();
       rmSync(dir, { recursive: true });

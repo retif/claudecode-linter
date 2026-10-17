@@ -86,14 +86,52 @@ describe("skill-md linter", () => {
 		expect(diags.some((d) => d.rule === "skill-md/body-word-count")).toBe(true);
 	});
 
-	it("reports description too long", () => {
-		const longDesc = "x".repeat(1025);
-		const diags = lint(
-			`---\nname: test\ndescription: "${longDesc}"\n---\n\n# Test`,
-		);
-		expect(
-			diags.some((d) => d.rule === "skill-md/description-max-length"),
-		).toBe(true);
+	// oleks/claudecode-linter#48: the threshold is Claude Code's skill-listing
+	// truncation point (skillListingMaxDescChars, default 1536), not 1024.
+	describe("description-max-length", () => {
+		const skill = (desc: string, extra = "") =>
+			`---\nname: test\ndescription: "${desc}"\n${extra}---\n\n# Test`;
+		const hits = (content: string, config: LinterConfig = CONFIG) =>
+			skillMdLinter.lint("test.md", content, config)
+				.filter((d) => d.rule === "skill-md/description-max-length");
+
+		it("accepts 1536 characters, the listing's truncation point", () => {
+			expect(hits(skill("x".repeat(1536)))).toHaveLength(0);
+		});
+
+		it("accepts the 1107-character description the old 1024 cap rejected", () => {
+			expect(hits(skill("x".repeat(1107)))).toHaveLength(0);
+		});
+
+		it("warns at 1537 and says what gets truncated", () => {
+			const d = hits(skill("x".repeat(1537)));
+			expect(d).toHaveLength(1);
+			expect(d[0].severity).toBe("warning");
+			expect(d[0].message).toContain("truncates it at 1536");
+			expect(d[0].message).toContain("dropping the last 2");
+		});
+
+		it("counts when_to_use the way the listing joins it", () => {
+			// 1500 + " - ".length + 40 = 1543 > 1536
+			const d = hits(skill("x".repeat(1500), `when_to_use: "${"y".repeat(40)}"\n`));
+			expect(d).toHaveLength(1);
+			expect(d[0].message).toContain("\"when_to_use\"");
+			expect(d[0].message).toContain("1543 characters");
+		});
+
+		it("honours a configured max", () => {
+			const config: LinterConfig = { rules: { "skill-md/description-max-length": { enabled: true, max: 2048 } } };
+			expect(hits(skill("x".repeat(2000)), config)).toHaveLength(0);
+			expect(hits(skill("x".repeat(2049)), config)[0].message).toContain("truncates it at 2048");
+		});
+
+		it("applies max and severity together", () => {
+			const config: LinterConfig = {
+				rules: { "skill-md/description-max-length": { enabled: true, severity: "error", max: 100 } },
+			};
+			const d = hits(skill("x".repeat(101)), config);
+			expect(d[0].severity).toBe("error");
+		});
 	});
 
 	it("reports missing H2 headers", () => {

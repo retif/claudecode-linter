@@ -215,11 +215,13 @@ Example config:
 ```yaml
 rules:
   plugin-json/name-kebab-case: true
-  skill-md/word-count:
-    severity: warning
-    min: 50
-  claude-md/no-todos: false
+  skill-md/body-word-count: warning
+  skill-md/description-max-length:
+    max: 2048          # match a raised skillListingMaxDescChars
+  claude-md/no-todo-markers: false
 ```
+
+`skill-md/description-max-length` defaults to 1536. That is the point where Claude Code's skill listing truncates a skill's `description` (plus `- when_to_use`) with an ellipsis. The default comes from the `skillListingMaxDescChars` setting. If you raise that setting, raise `max` to match.
 
 ## Fixers
 
