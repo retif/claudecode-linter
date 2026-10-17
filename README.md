@@ -166,6 +166,7 @@ These rules check that a reference in one file points at something that exists. 
 | `skill-md/referenced-files-exist` | relative Markdown links and images in the SKILL.md body |
 
 Import extraction follows Claude Code's loader:
+
 - Code fences, code spans and HTML comments are skipped.
 - `#fragments` are stripped.
 - A bare `@name` with no extension, such as a mention or an `@scope/pkg` name, is not treated as a file.

@@ -6,3 +6,5 @@ config:
     siblings_only: true
 ignores:
   - tests/fixtures/demo-plugin/**
+  # Deliberately broken links and headless import files (oleks/claudecode-linter#51).
+  - tests/fixtures/cross-file/**
