@@ -1,0 +1,5 @@
+# Fixtures that are broken on purpose — the linter under test must see them
+# as written. The hooks pass rumdl an explicit file list, which bypasses the
+# `ignores:` in .markdownlint-cli2.yaml; this file is honoured either way.
+tests/fixtures/demo-plugin/
+tests/fixtures/cross-file/
