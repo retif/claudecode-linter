@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.303",
-	"extractedAt": "2026-10-19T04:07:52.120Z",
+	"extractedFromClaudeCodeVersion": "2.1.304",
+	"extractedAt": "2026-10-19T22:11:35.069Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -3511,18 +3511,18 @@
 				"properties": {
 					"enabled": {
 						"type": "boolean",
-						"description": "\"Run Bash commands inside the sandbox. Default: false. \"+xl"
+						"description": "\"Run Bash commands inside the sandbox. Default: false. \"+Js"
 					},
 					"failIfUnavailable": {
 						"type": "boolean",
-						"description": "\"Exit with an error at startup if sandbox.enabled is true but the sandbox cannot start (missing dependencies or unsupported platform). When false (default), a warning is shown and commands run unsandboxed. Intended for managed-settings deployments that require sandboxing as a hard gate. \"+xl"
+						"description": "\"Exit with an error at startup if sandbox.enabled is true but the sandbox cannot start (missing dependencies or unsupported platform). When false (default), a warning is shown and commands run unsandboxed. Intended for managed-settings deployments that require sandboxing as a hard gate. \"+Js"
 					},
 					"autoAllowBashIfSandboxed": {
 						"type": "boolean"
 					},
 					"allowUnsandboxedCommands": {
 						"type": "boolean",
-						"description": "`Allow commands to run outside the sandbox via the dangerouslyDisableSandbox parameter. When false, the dangerouslyDisableSandbox parameter is completely ignored and all commands must run sandboxed. Default: true. A false in managed, --settings or user settings holds whatever ${lt} say (false there still applies).`"
+						"description": "`Allow commands to run outside the sandbox via the dangerouslyDisableSandbox parameter. When false, the dangerouslyDisableSandbox parameter is completely ignored and all commands must run sandboxed. Default: true. A false in managed, --settings or user settings holds whatever ${Je} say (false there still applies).`"
 					},
 					"network": {
 						"type": "object",
@@ -3532,7 +3532,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "Domains sandboxed commands may reach without a prompt (wildcards such as *.example.com supported). \"+\"Merged with WebFetch(domain:\\u2026) allow rules and across settings sources. \"+Ct+\" With network.allowManagedDomainsOnly, only managed settings supply it."
+								"description": "Domains sandboxed commands may reach without a prompt (wildcards such as *.example.com supported). \"+\"Merged with WebFetch(domain:\\u2026) allow rules and across settings sources. \"+ct+\" With network.allowManagedDomainsOnly, only managed settings supply it."
 							},
 							"deniedDomains": {
 								"type": "array",
@@ -3543,7 +3543,7 @@
 							},
 							"strictAllowlist": {
 								"type": "boolean",
-								"description": "When true, the sandbox runtime deterministically denies hosts not in allowedDomains instead of prompting. \"+\"Enforced for sandboxed commands only \\u2014 in-process tools such as WebFetch are not gated by this setting. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`${lt} are ignored, and while it is on their allowedDomains `+\"and WebFetch(domain:\\u2026) allow rules are left out of the allowlist."
+								"description": "When true, the sandbox runtime deterministically denies hosts not in allowedDomains instead of prompting. \"+\"Enforced for sandboxed commands only \\u2014 in-process tools such as WebFetch are not gated by this setting. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`${Je} are ignored, and while it is on their allowedDomains `+\"and WebFetch(domain:\\u2026) allow rules are left out of the allowlist."
 							},
 							"allowManagedDomainsOnly": {
 								"type": "boolean",
@@ -3554,30 +3554,30 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"macOS only: Unix socket paths to allow. Ignored on Linux (seccomp cannot filter by path). Merged across settings sources. \"+Ct"
+								"description": "\"macOS only: Unix socket paths to allow. Ignored on Linux (seccomp cannot filter by path). Merged across settings sources. \"+ct"
 							},
 							"allowAllUnixSockets": {
 								"type": "boolean",
-								"description": "\"If true, allow all Unix sockets (disables blocking on both platforms). \"+jn"
+								"description": "\"If true, allow all Unix sockets (disables blocking on both platforms). \"+cn"
 							},
 							"allowLocalBinding": {
 								"type": "boolean",
-								"description": "\"macOS only: If true, sandboxed commands can bind to localhost ports. \"+jn"
+								"description": "\"macOS only: If true, sandboxed commands can bind to localhost ports. \"+cn"
 							},
 							"allowMachLookup": {
 								"type": "array",
 								"items": {
 									"type": "string"
 								},
-								"description": "'macOS only: Additional XPC/Mach service names to allow looking up. Supports trailing-wildcard prefix matching (e.g., \"com.apple.coresimulator.*\"). Needed for tools that communicate via XPC such as the iOS Simulator or Playwright. Merged across settings sources. '+Ct"
+								"description": "'macOS only: Additional XPC/Mach service names to allow looking up. Supports trailing-wildcard prefix matching (e.g., \"com.apple.coresimulator.*\"). Needed for tools that communicate via XPC such as the iOS Simulator or Playwright. Merged across settings sources. '+ct"
 							},
 							"httpProxyPort": {
 								"type": "number",
-								"description": "\"Local TCP port of your own HTTP proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+Il"
+								"description": "\"Local TCP port of your own HTTP proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+Zs"
 							},
 							"socksProxyPort": {
 								"type": "number",
-								"description": "\"Local TCP port of your own SOCKS5 proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+Il"
+								"description": "\"Local TCP port of your own SOCKS5 proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+Zs"
 							},
 							"tlsTerminate": {
 								"type": "object",
@@ -3603,7 +3603,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"Additional paths to allow writing within the sandbox. Merged with paths from Edit(...) allow permission rules. \"+e_"
+								"description": "\"Additional paths to allow writing within the sandbox. Merged with paths from Edit(...) allow permission rules. \"+Qp"
 							},
 							"denyWrite": {
 								"type": "array",
@@ -3624,7 +3624,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"Paths to re-allow reading within denyRead regions. Takes precedence over denyRead for matching paths. \"+qy"
+								"description": "\"Paths to re-allow reading within denyRead regions. Takes precedence over denyRead for matching paths. \"+qp"
 							},
 							"allowManagedReadPathsOnly": {
 								"type": "boolean",
@@ -3711,15 +3711,15 @@
 								"type": "string"
 							}
 						},
-						"description": "'Sandbox violations to leave unreported: a map of command patterns (\"*\" for every command) to the filesystem paths whose violations are ignored. Merged across settings sources. '+Ct"
+						"description": "'Sandbox violations to leave unreported: a map of command patterns (\"*\" for every command) to the filesystem paths whose violations are ignored. Merged across settings sources. '+ct"
 					},
 					"enableWeakerNestedSandbox": {
 						"type": "boolean",
-						"description": "\"Linux only: Run without the fresh /proc mount, for hosts such as unprivileged Docker containers that cannot create one. \"+\"**Reduces security** \\u2014 the host /proc stays readable by sandboxed commands. Default: false. \"+jn"
+						"description": "\"Linux only: Run without the fresh /proc mount, for hosts such as unprivileged Docker containers that cannot create one. \"+\"**Reduces security** \\u2014 the host /proc stays readable by sandboxed commands. Default: false. \"+cn"
 					},
 					"enableWeakerNetworkIsolation": {
 						"type": "boolean",
-						"description": "\"macOS only: Allow access to com.apple.trustd.agent in the sandbox. Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates when using httpProxyPort with a MITM proxy and custom CA. \"+\"**Reduces security** \\u2014 opens a potential data exfiltration vector through the trustd service. Default: false. \"+jn"
+						"description": "\"macOS only: Allow access to com.apple.trustd.agent in the sandbox. Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates when using httpProxyPort with a MITM proxy and custom CA. \"+\"**Reduces security** \\u2014 opens a potential data exfiltration vector through the trustd service. Default: false. \"+cn"
 					},
 					"allowAppleEvents": {
 						"type": "boolean",
@@ -3730,7 +3730,7 @@
 						"items": {
 							"type": "string"
 						},
-						"description": "\"Command patterns (Bash permission-rule syntax) that always run outside the sandbox. A convenience, not a security boundary: excluded commands still go through the permission flow. Merged across settings sources. \"+Ct"
+						"description": "\"Command patterns (Bash permission-rule syntax) that always run outside the sandbox. A convenience, not a security boundary: excluded commands still go through the permission flow. Merged across settings sources. \"+ct"
 					},
 					"ripgrep": {
 						"type": "object",
@@ -3836,7 +3836,7 @@
 					},
 					"checker": {
 						"type": "string",
-						"description": "`Which spell checker to run: ${vze.map((i)=>`\"${i}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
+						"description": "`Which spell checker to run: ${qze.map((i)=>`\"${i}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
 					},
 					"language": {
 						"type": "string",
@@ -3848,7 +3848,7 @@
 					}
 				},
 				"additionalProperties": true,
-				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${vze.slice(0,-1).join(\", \")} or ${vze.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
+				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${qze.slice(0,-1).join(\", \")} or ${qze.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
 			},
 			"terminalTitleFromRename": {
 				"type": "boolean",
@@ -4133,7 +4133,7 @@
 					"countdown",
 					"padded-countdown"
 				],
-				"description": "@internal Emit a <total_tokens>N tokens left</total_tokens> block in the system prompt, after each tool result, and (when totalTokensReminderAfterUserTurn is on) after each regular user prompt. 'infinite' uses the literal value Infinite, 'fixed' uses 5000000, 'countdown' uses the live remaining context-window tokens, 'padded-countdown' counts down from totalTokensReminderBudget (re-anchoring to the full budget on each regular user prompt when totalTokensReminderAfterUserTurn \"+\"is on \\u2014 task-budget semantics). Defaults to padded-countdown. \"+\"Env var CLAUDE_CODE_TOTAL_TOKENS_REMINDER overrides."
+				"description": "@internal Emit a <total_tokens>N tokens left</total_tokens> block in the system prompt, after each tool result, and (when totalTokensReminderAfterUserTurn is on) after each regular user prompt. 'infinite' uses the literal value Infinite, 'fixed' uses 5000000, 'countdown' uses the live remaining context-window tokens, 'padded-countdown' counts down from totalTokensReminderBudget (re-anchoring to the full budget on each regular user prompt when totalTokensReminderAfterUserTurn \"+\"is on \\u2014 task-budget semantics). Defaults to padded-countdown for a \"+\"model with the total_tokens_reminder capability, else off. Env var CLAUDE_CODE_TOTAL_TOKENS_REMINDER overrides."
 			},
 			"totalTokensReminderBudget": {
 				"type": "number",
