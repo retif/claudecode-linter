@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.304",
-	"extractedAt": "2026-10-19T22:11:35.077Z",
+	"extractedFromClaudeCodeVersion": "2.1.305",
+	"extractedAt": "2026-10-20T21:26:36.774Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code agent .md frontmatter",
@@ -194,7 +194,7 @@
 						"type": "null"
 					}
 				],
-				"description": "`Auto-compact window for this agent, in tokens from ${gP} to ${vN}. Overrides the window it would inherit.`"
+				"description": "`Auto-compact window for this agent, in tokens from ${EP} to ${DN}. Overrides the window it would inherit.`"
 			},
 			"skills": {
 				"anyOf": [

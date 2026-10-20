@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.304",
-	"extractedAt": "2026-10-19T22:11:35.105Z",
+	"extractedFromClaudeCodeVersion": "2.1.305",
+	"extractedAt": "2026-10-20T21:26:36.810Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code hooks.json",

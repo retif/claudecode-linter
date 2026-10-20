@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.1.305 (2026-10-20)
+
+Synced with Claude Code v2.1.305.
+
+### Contract Summary
+
+| Category | Count | Values |
+|----------|------:|--------|
+| Tools | 65 | Agent, Artifact, AskUserQuestion, Bash, ClaudeDesign, Config, CronCreate, CronDelete, CronList, Edit, … (65 total) |
+| Hook Events | 33 | ConfigChange, CwdChanged, DirectoryAdded, Elicitation, ElicitationResult, FileChanged, InstructionsLoaded, MessageDisplay, Notification, PermissionDenied, … (33 total) |
+| Hook Types | 4 | agent, command, http, prompt |
+| Prompt Events | 21 | ConfigChange, Elicitation, ElicitationResult, InstructionsLoaded, Notification, PermissionRequest, PostToolUse, PostToolUseFailure, PreCompact, PreToolUse, … (21 total) |
+| Agent Colors | 12 | blue, cyan, green, magenta, olive, orange, pink, purple, red, teal, … (12 total) |
+| Agent Models | 5 | fable, haiku, inherit, opus, sonnet |
+| Plugin JSON Fields | 13 | $schema, author, defaultEnabled, dependencies, description, displayName, homepage, keywords, license, metadata, … (13 total) |
+| Agent Frontmatter | 18 | autoCompactWindow, background, criticalSystemReminder_EXPERIMENTAL, description, disallowedTools, effort, initialPrompt, maxTurns, mcpServers, memory, … (18 total) |
+| Command Frontmatter | 6 | allowedTools, argumentHint, content, description, model, source |
+| MCP Server Fields | 17 | alwaysLoad, args, bareElicitationCapability, command, cwd, discoveryCache, env, headers, headersHelper, oauth, … (17 total) |
+| Skill Frontmatter | 26 | allowed-tools, argument-hint, author, config, contributors, dependencies, description, devDependencies, disable-model-invocation, engines, … (26 total) |
+| Settings (User) | 144 | $schema, advisorModel, agent, agentPushNotifEnabled, allowAllClaudeAiMcps, allowManagedHooksOnly, allowManagedMcpServersOnly, allowManagedPermissionRulesOnly, allowedChannelPlugins, allowedHttpHookUrls, … (144 total) |
+| Settings (Project) | 3 | hooks, permissions, sandbox |
+| Permissions Fields | 7 | additionalDirectories, allow, ask, defaultMode, deny, disableAutoMode, disableBypassPermissionsMode |
+| Sandbox Fields | 13 | allowAppleEvents, allowUnsandboxedCommands, autoAllowBashIfSandboxed, bwrapPath, enableWeakerNestedSandbox, enableWeakerNetworkIsolation, enabled, excludedCommands, failIfUnavailable, filesystem, … (13 total) |
+| Sandbox Network Fields | 10 | allowAllUnixSockets, allowLocalBinding, allowMachLookup, allowManagedDomainsOnly, allowUnixSockets, allowedDomains, deniedDomains, httpProxyPort, socksProxyPort, tlsTerminate |
+| Sandbox Filesystem Fields | 5 | allowManagedReadPathsOnly, allowRead, allowWrite, denyRead, denyWrite |
+| Permission Modes | 6 | acceptEdits, auto, bypassPermissions, default, dontAsk, plan |
+| Plugin Subagent Blocked Tools | 2 | Glob, Grep |
+
 ## 2.1.304 (2026-10-19)
 
 Synced with Claude Code v2.1.304.

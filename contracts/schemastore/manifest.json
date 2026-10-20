@@ -1,5 +1,5 @@
 {
-	"fetchedAt": "2026-10-19T22:11:36.068Z",
+	"fetchedAt": "2026-10-20T21:26:37.910Z",
 	"sources": {
 		"plugin-manifest.schema.json": {
 			"url": "https://www.schemastore.org/claude-code-plugin-manifest.json",
@@ -19,7 +19,7 @@
 		"settings.schema.json": {
 			"url": "https://www.schemastore.org/claude-code-settings.json",
 			"artifact": "settings-json",
-			"sha256": "3b87dc3df6bc7fe665ab1b82ee022b9d72ac6d8597a1a70f4599d2ae138138c9"
+			"sha256": "83de85ca6a86d42e9affcdf2751821ba3ebcebb0c3256a9ee1c1c4ed76717ca5"
 		}
 	}
 }
