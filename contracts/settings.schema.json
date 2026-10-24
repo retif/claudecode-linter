@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.309",
-	"extractedAt": "2026-10-23T04:13:50.779Z",
+	"extractedFromClaudeCodeVersion": "2.1.310",
+	"extractedAt": "2026-10-24T04:05:36.949Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -3525,11 +3525,11 @@
 				"properties": {
 					"enabled": {
 						"type": "boolean",
-						"description": "\"Run Bash commands inside the sandbox. Default: false. \"+di"
+						"description": "\"Run Bash commands inside the sandbox. Default: false. \"+ci"
 					},
 					"failIfUnavailable": {
 						"type": "boolean",
-						"description": "\"Exit with an error at startup if sandbox.enabled is true but the sandbox cannot start (missing dependencies or unsupported platform). When false (default), a warning is shown and commands run unsandboxed. Intended for managed-settings deployments that require sandboxing as a hard gate. \"+di"
+						"description": "\"Exit with an error at startup if sandbox.enabled is true but the sandbox cannot start (missing dependencies or unsupported platform). When false (default), a warning is shown and commands run unsandboxed. Intended for managed-settings deployments that require sandboxing as a hard gate. \"+ci"
 					},
 					"autoAllowBashIfSandboxed": {
 						"type": "boolean"
@@ -3546,7 +3546,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "Domains sandboxed commands may reach without a prompt (wildcards such as *.example.com supported). \"+\"Merged with WebFetch(domain:\\u2026) allow rules and across settings sources. \"+ft+\" With network.allowManagedDomainsOnly, only managed settings supply it."
+								"description": "Domains sandboxed commands may reach without a prompt (wildcards such as *.example.com supported). \"+\"Merged with WebFetch(domain:\\u2026) allow rules and across settings sources. \"+gt+\" With network.allowManagedDomainsOnly, only managed settings supply it."
 							},
 							"deniedDomains": {
 								"type": "array",
@@ -3568,30 +3568,30 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"macOS only: Unix socket paths to allow. Ignored on Linux (seccomp cannot filter by path). Merged across settings sources. \"+ft"
+								"description": "\"macOS only: Unix socket paths to allow. Ignored on Linux (seccomp cannot filter by path). Merged across settings sources. \"+gt"
 							},
 							"allowAllUnixSockets": {
 								"type": "boolean",
-								"description": "\"If true, allow all Unix sockets (disables blocking on both platforms). \"+hn"
+								"description": "\"If true, allow all Unix sockets (disables blocking on both platforms). \"+yn"
 							},
 							"allowLocalBinding": {
 								"type": "boolean",
-								"description": "\"macOS only: If true, sandboxed commands can bind to localhost ports. \"+hn"
+								"description": "\"macOS only: If true, sandboxed commands can bind to localhost ports. \"+yn"
 							},
 							"allowMachLookup": {
 								"type": "array",
 								"items": {
 									"type": "string"
 								},
-								"description": "'macOS only: Additional XPC/Mach service names to allow looking up. Supports trailing-wildcard prefix matching (e.g., \"com.apple.coresimulator.*\"). Needed for tools that communicate via XPC such as the iOS Simulator or Playwright. Merged across settings sources. '+ft"
+								"description": "'macOS only: Additional XPC/Mach service names to allow looking up. Supports trailing-wildcard prefix matching (e.g., \"com.apple.coresimulator.*\"). Needed for tools that communicate via XPC such as the iOS Simulator or Playwright. Merged across settings sources. '+gt"
 							},
 							"httpProxyPort": {
 								"type": "number",
-								"description": "\"Local TCP port of your own HTTP proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+ci"
+								"description": "\"Local TCP port of your own HTTP proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+ui"
 							},
 							"socksProxyPort": {
 								"type": "number",
-								"description": "\"Local TCP port of your own SOCKS5 proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+ci"
+								"description": "\"Local TCP port of your own SOCKS5 proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+ui"
 							},
 							"tlsTerminate": {
 								"type": "object",
@@ -3725,11 +3725,11 @@
 								"type": "string"
 							}
 						},
-						"description": "'Sandbox violations to leave unreported: a map of command patterns (\"*\" for every command) to the filesystem paths whose violations are ignored. Merged across settings sources. '+ft"
+						"description": "'Sandbox violations to leave unreported: a map of command patterns (\"*\" for every command) to the filesystem paths whose violations are ignored. Merged across settings sources. '+gt"
 					},
 					"enableWeakerNestedSandbox": {
 						"type": "boolean",
-						"description": "\"Linux only: Run without the fresh /proc mount, for hosts such as unprivileged Docker containers that cannot create one. \"+\"**Reduces security** \\u2014 the host /proc stays readable by sandboxed commands. Default: false. \"+hn"
+						"description": "\"Linux only: Run without the fresh /proc mount, for hosts such as unprivileged Docker containers that cannot create one. \"+\"**Reduces security** \\u2014 the host /proc stays readable by sandboxed commands. Default: false. \"+yn"
 					},
 					"allowNestedUserNamespaces": {
 						"type": "boolean",
@@ -3737,7 +3737,7 @@
 					},
 					"enableWeakerNetworkIsolation": {
 						"type": "boolean",
-						"description": "\"macOS only: Allow access to com.apple.trustd.agent in the sandbox. Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates when using httpProxyPort with a MITM proxy and custom CA. \"+\"**Reduces security** \\u2014 opens a potential data exfiltration vector through the trustd service. Default: false. \"+hn"
+						"description": "\"macOS only: Allow access to com.apple.trustd.agent in the sandbox. Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates when using httpProxyPort with a MITM proxy and custom CA. \"+\"**Reduces security** \\u2014 opens a potential data exfiltration vector through the trustd service. Default: false. \"+yn"
 					},
 					"allowAppleEvents": {
 						"type": "boolean",
@@ -3748,7 +3748,7 @@
 						"items": {
 							"type": "string"
 						},
-						"description": "\"Command patterns (Bash permission-rule syntax) that always run outside the sandbox. A convenience, not a security boundary: excluded commands still go through the permission flow. Merged across settings sources. \"+ft"
+						"description": "\"Command patterns (Bash permission-rule syntax) that always run outside the sandbox. A convenience, not a security boundary: excluded commands still go through the permission flow. Merged across settings sources. \"+gt"
 					},
 					"ripgrep": {
 						"type": "object",
@@ -3854,7 +3854,7 @@
 					},
 					"checker": {
 						"type": "string",
-						"description": "`Which spell checker to run: ${sqe.map((a)=>`\"${a}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
+						"description": "`Which spell checker to run: ${Yqe.map((a)=>`\"${a}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
 					},
 					"language": {
 						"type": "string",
@@ -3866,7 +3866,7 @@
 					}
 				},
 				"additionalProperties": true,
-				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${sqe.slice(0,-1).join(\", \")} or ${sqe.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
+				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${Yqe.slice(0,-1).join(\", \")} or ${Yqe.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
 			},
 			"terminalTitleFromRename": {
 				"type": "boolean",
