@@ -60,7 +60,7 @@
 	"dependencies": {
 		"ajv": "^8.20.0",
 		"ajv-formats": "^3.0.1",
-		"minimatch": "^10.2.4",
+		"minimatch": "^11.0.4",
 		"picocolors": "^1.1.1",
 		"prettier": "^3.8.1",
 		"sade": "^1.8.1",
