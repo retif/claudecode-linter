@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.310",
-	"extractedAt": "2026-10-24T04:05:36.965Z",
+	"extractedFromClaudeCodeVersion": "2.1.322",
+	"extractedAt": "2026-11-12T14:56:01.200Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code .mcp.json",
@@ -120,6 +120,9 @@
 								},
 								"alwaysLoad": {
 									"type": "boolean"
+								},
+								"displayName": {
+									"type": "string"
 								},
 								"bareElicitationCapability": {
 									"type": "boolean"
@@ -285,6 +288,9 @@
 								"alwaysLoad": {
 									"type": "boolean"
 								},
+								"displayName": {
+									"type": "string"
+								},
 								"bareElicitationCapability": {
 									"type": "boolean"
 								},
@@ -388,6 +394,12 @@
 								"connectorId": {
 									"type": "string",
 									"minLength": 1
+								},
+								"autoModeVerdictTools": {
+									"type": "array",
+									"items": {
+										"type": "string"
+									}
 								}
 							},
 							"required": [
@@ -409,6 +421,12 @@
 								},
 								"displayName": {
 									"type": "string"
+								},
+								"urlReportable": {
+									"type": "boolean"
+								},
+								"noDirectoryEntry": {
+									"type": "boolean"
 								},
 								"iconUrl": {
 									"type": "string"

@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.310",
-	"extractedAt": "2026-10-24T04:05:36.949Z",
+	"extractedFromClaudeCodeVersion": "2.1.322",
+	"extractedAt": "2026-11-12T14:56:01.186Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -104,11 +104,11 @@
 			},
 			"cleanupPeriodDays": {
 				"type": "number",
-				"description": "Number of days to retain chat transcripts before automatic cleanup (default: 30). Minimum 1. Use a large value for long retention; use --no-session-persistence to disable transcript writes entirely."
+				"description": "Number of days to retain chat transcripts before automatic cleanup (default: 30). Minimum 1. Use a large value for long retention; use --no-session-persistence to disable transcript writes entirely. Cleanup deletes data only on this computer, not anything stored by Anthropic."
 			},
 			"desktopSessionCleanupPeriodDays": {
 				"type": "number",
-				"description": "Retention ceiling in days for session transcripts created or last written by a desktop-host surface (Claude Desktop, Cowork), which are otherwise exempt from the cleanupPeriodDays sweep. 0 (the default) means no ceiling: such transcripts are kept until deleted another way. Unlike cleanupPeriodDays, 0 is allowed because this setting never disables writes — it only bounds an exemption from deletion. The ceiling is a hard cap: it also bounds an active archive grace, so the grace window of a release marker never keeps files past the ceiling. Ignored when cleanupPeriodDays is managed by org policy. A ceiling at or below cleanupPeriodDays effectively disables the exemption: those transcripts age out on the regular cleanupPeriodDays schedule, so the effective retention is whichever of the two periods is longer."
+				"description": "Retention ceiling in days for session transcripts created or last written by a desktop-host surface (Claude Desktop, Cowork), which are otherwise exempt from the cleanupPeriodDays sweep. 0 (the default) means no ceiling: such transcripts are kept until deleted another way. Unlike cleanupPeriodDays, 0 is allowed because this setting never disables writes — it only bounds an exemption from deletion. The ceiling is a hard cap: it also bounds an active archive grace, so the grace window of a release marker never keeps files past the ceiling. Ignored when cleanupPeriodDays is managed by org policy. A ceiling at or below cleanupPeriodDays effectively disables the exemption: those transcripts age out on the regular cleanupPeriodDays schedule, so the effective retention is whichever of the two periods is longer. Cleanup deletes data only on this computer, not anything stored by Anthropic."
 			},
 			"syncClaudeAiSkills": {
 				"type": "boolean",
@@ -165,14 +165,14 @@
 			},
 			"attributionProject": {
 				"type": "string",
-				"description": "`The claude.ai Project this session names for your organization's usage reports: the Project's UUID, or its ID starting with \"claude_proj_\". An empty string names none and stops lower-precedence files from naming one; the organization default still applies. Sent only when Claude Code uses your claude.ai login, connects directly to the Anthropic API, is not in a cloud session, and CLAUDE_CODE_ATTRIBUTION_HEADER is not 0. CLAUDE_CODE_ATTRIBUTION_PROJECT takes precedence over it. Set in managed settings, it overrides people's own settings files. A project's .claude/settings.json and settings.local.json count only once the folder is trusted; for runs in a folder nobody has trusted, such as CI, use CLAUDE_CODE_ATTRIBUTION_PROJECT.`"
+				"description": "`The claude.ai Project this session names for your organization's usage reports: the Project's ID, starting with \"claude_proj_\" or \"chan_\", or the UUID of a \"claude_proj_\" Project. An empty string names none and stops lower-precedence files from naming one; the organization default still applies. Sent only when Claude Code uses your claude.ai login, connects directly to the Anthropic API, is not in a cloud session, and CLAUDE_CODE_ATTRIBUTION_HEADER is not 0. CLAUDE_CODE_ATTRIBUTION_PROJECT takes precedence over it. Set in managed settings, it overrides people's own settings files. A project's .claude/settings.json and settings.local.json count only once the folder is trusted; for runs in a folder nobody has trusted, such as CI, use CLAUDE_CODE_ATTRIBUTION_PROJECT.`"
 			},
 			"attributionProjectPolicy": {
 				"type": "object",
 				"properties": {
 					"default": {
 						"type": "string",
-						"description": "The Project used when neither CLAUDE_CODE_ATTRIBUTION_PROJECT nor attributionProject names one: its UUID, or its ID starting with \"claude_proj_\"."
+						"description": "The Project used when neither CLAUDE_CODE_ATTRIBUTION_PROJECT nor attributionProject names one: its ID, starting with \"claude_proj_\" or \"chan_\", or the UUID of a \"claude_proj_\" Project."
 					}
 				},
 				"description": "Your organization's default for attributionProject. Only honored from managed settings (server-managed, MDM / OS policy, or managed-settings.json); ignored in user, project, local and --settings sources."
@@ -220,7 +220,35 @@
 					},
 					"blockReadsOutsideWorkingDirectories": {
 						"type": "boolean",
-						"description": "Refuse file-tool reads (Read, Grep, Glob, LSP) outside the working directories in every permission mode; true in any settings source wins. Also set when the user picks \"block\" on the one-time auto-mode prompt for a read outside the working directories."
+						"description": "Refuse file-tool reads (Read, Grep, Glob, LSP) outside the working directories in every permission mode; true in any settings source wins. No allow rule lifts it. Also set when the user picks \"block\" on the one-time auto-mode prompt for a read outside the working directories."
+					},
+					"blockWritesOutsideWorkingDirectories": {
+						"type": "boolean",
+						"description": "Refuse file-tool writes (Write, Edit, NotebookEdit) outside the working directories in every permission mode; true in any settings source wins. No allow rule lifts it. Files that Claude Code keeps for the session are not refused: its plan files, scratchpad and background job folder, and the auto-memory of this project, unless a repository settings file points it elsewhere. Nothing runs them unless the model asks. Also refuses file-tool writes to Claude Code settings files, inside the working directories too, and takes EnterWorktree and ExitWorktree, which move the working directory, out of the tools on offer. Does not limit shell commands, MCP tools, the programs that hooks run, or the memory tools. Cloud sessions (Claude Code on the web), whose file tools run in a container that is itself the boundary, may not apply it."
+					},
+					"blockReadsExemptPaths": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"description": "For the program that starts Claude Code: read only from --settings and from settings that program sends while the session runs; ignored in user, project, local and managed settings. Absolute paths, each a folder with all below it or one file, that blockReadsOutsideWorkingDirectories lets through beside the working directories. It allows nothing: an allow rule, the permission mode or the user still decides each read, as with that setting off, and a shell command that hands such a path to a program is still asked about unless a Read allow rule covers it. The paths do not become working directories, so blockWritesOutsideWorkingDirectories refuses writes to them, and they are not told to MCP servers or to the model. Each path counts as written: a link in it is not followed and a pattern is not expanded, so list every spelling that a read may arrive by. Ignored: an entry that starts with ~, has a \"..\" segment or has white space at either end (as written or once normalized), a relative or network path, and the root of a filesystem. Does not change what sandboxed commands may read (sandbox.filesystem.allowRead does)."
+					},
+					"workingDirectoriesAsGiven": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"description": "For the program that starts Claude Code: read only from --settings and from settings that program sends while the session runs; ignored in user, project, local and managed settings. Absolute paths of working directories, each spelled exactly as it is passed, letter case included (the session folder, --add-dir, permissions.additionalDirectories). To decide what lies inside a listed working directory, Claude Code takes it as written and follows no link at it, so a link that later stands in its place gives the file tools no access to where the link leads. List real paths: the files of a listed path that runs through a link count as outside the working directories, because where they really are lies outside it. List a mapped network drive by its drive-letter path: Claude Code still derives the UNC form of that path by itself and adds it, as for any mapped drive. A file path that is itself spelled as a UNC path is judged as written, so a link on the share is not seen by that spelling. It adds no working directory and allows nothing. Once listed, a path stays so until the process ends, also if later settings leave it out. Ignored: an entry that is not already normalized (a relative path, one that starts with ~, a \"..\" segment, a separator at its end unless it is a filesystem root, forward slashes on Windows, white space at either end). Does not change what sandboxed commands may write."
+					},
+					"disableAutoMode": {
+						"enum": [
+							"disable"
+						],
+						"description": "Disable auto mode"
+					},
+					"denyInsteadOfPrompting": {
+						"type": "boolean",
+						"description": "Never wait for a person to answer a tool permission prompt: a call that would prompt is denied at once, the model is told, and the turn carries on. This is what --permission-prompts none does for -p, in every kind of session, subagents and agent teams included. Allow rules, the permission mode, auto mode's classifier and PermissionRequest hooks decide first, as they do without it; it only ever denies, and allows nothing. Claude's questions and plan mode's tools are not offered to the model, and an MCP server's request for input is cancelled unless an Elicitation hook answers it. An app or script that answers prompts through canUseTool or --permission-prompt-tool is not asked either: answer from a PermissionRequest hook instead. Read from user settings, --settings and managed settings; project and local settings are ignored, and true in any of those sources wins."
 					},
 					"additionalDirectories": {
 						"type": "array",
@@ -789,6 +817,10 @@
 				"type": "boolean",
 				"description": "Disable all hooks and statusLine execution: the hooks defined in settings files and by installed plugins. Features built into Claude Code are not hooks in this sense and keep working; each has its own switch."
 			},
+			"disableReplyCheck": {
+				"type": "boolean",
+				"description": "Disable the reply check in Claude Tag sessions on a self-hosted runner. The check re-prompts Claude, at most four times a turn, when a turn ends without a call to one of Claude Tag's reply tools. It is not a hook, so disableAllHooks does not affect it. Disabling it also stops two messages to Claude that Anthropic's service can request for such a session: a nudge after a long stretch of work with no visible update, and a reminder added to prompts. Claude Code's built-in reminder to give progress updates, on models that have it, is then no longer held back. Set it in managed settings; false there keeps the check on. Everywhere else it is ignored and the check stays on. Has no effect on sessions that Anthropic hosts."
+			},
 			"disableAgentView": {
 				"type": "boolean",
 				"description": "Disable agent view (`claude agents`, `--bg`, /background, the on-demand daemon). Typically set in managed settings. Equivalent to CLAUDE_CODE_DISABLE_AGENT_VIEW=1."
@@ -830,6 +862,10 @@
 				"type": "boolean",
 				"description": "Disable inline shell execution in skills and custom slash commands from user, project, or plugin sources. Commands are replaced with a placeholder instead of being run."
 			},
+			"disableWindowsBashCommandSplit": {
+				"type": "boolean",
+				"description": "Windows only. Set to true to keep every Bash command in a single argument to bash, so that endpoint security tools that match text in process command lines see it whole. Otherwise Claude Code may split a long command over several arguments. With true, a command of about 7,000 characters or more, or fewer if it is full of quotes, may reach bash cut short, and then usually fails with a syntax error. Only honored from managed settings; ignored in user, project, local and --settings sources."
+			},
 			"defaultShell": {
 				"enum": [
 					"bash",
@@ -839,7 +875,7 @@
 			},
 			"bashEditDiffEnabled": {
 				"type": "boolean",
-				"description": "Whether the Bash tool shows a diff of the files a Bash command changed (PostToolUse Bash hooks get the changed-file list in tool_response). Set to false to turn that off. Default: on when the Bash tool handles file edits. Only user, flag or policy settings can turn it on outside auto and bypassPermissions modes."
+				"description": "Whether the Bash tool shows a diff of the files a Bash command changed (PostToolUse Bash hooks get the changed-file list in tool_response). Set to false to turn that off. Default: off, except in auto and bypassPermissions modes when the Bash tool handles file edits or the model's configuration turns it on. Only user, flag or policy settings can turn it on in other modes."
 			},
 			"bashOutputMaxChars": {
 				"type": "number",
@@ -1501,6 +1537,16 @@
 						"autoUpdate": {
 							"type": "boolean",
 							"description": "Whether to automatically update this marketplace and its installed plugins on startup"
+						},
+						"pluginDigests": {
+							"type": "object",
+							"additionalProperties": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							},
+							"description": "Managed settings only: the plugins of this marketplace that an organization delivers with its own tier, by plugin name, each with the digests of its releases. A plugin also enabled and listed in prependPlugins or appendPlugins by managed settings the session vouches for loads its hooks module only from a folder that proves one of them, and is then seated in that tier; any other copy does not load. A digest is sha256- and the base64 SHA-256 of, for every regular file in the folder in UTF-16 code unit order of its path, not normalized, \"f PATH\" NUL BYTE-LENGTH NUL BYTES, with / in paths; .git, .in_use, .orphaned_at, .claude-plugin-link and .links_materialized at the root are left out. The plugin keeps its manifest at .claude-plugin/plugin.json and names one module in hooks/hooks.json. A string of any other form, or a list that is empty or of any other shape, matches no folder. A symbolic link, or a surface module, proves nothing. A proved plugin ships bundled with no install step: the digest covers the whole folder, node_modules included. A checkout whose line endings were converted proves nothing."
 						}
 					},
 					"required": [
@@ -1990,6 +2036,16 @@
 						"autoUpdate": {
 							"type": "boolean",
 							"description": "Whether to automatically update this marketplace and its installed plugins on startup"
+						},
+						"pluginDigests": {
+							"type": "object",
+							"additionalProperties": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							},
+							"description": "Managed settings only: the plugins of this marketplace that an organization delivers with its own tier, by plugin name, each with the digests of its releases. A plugin also enabled and listed in prependPlugins or appendPlugins by managed settings the session vouches for loads its hooks module only from a folder that proves one of them, and is then seated in that tier; any other copy does not load. A digest is sha256- and the base64 SHA-256 of, for every regular file in the folder in UTF-16 code unit order of its path, not normalized, \"f PATH\" NUL BYTE-LENGTH NUL BYTES, with / in paths; .git, .in_use, .orphaned_at, .claude-plugin-link and .links_materialized at the root are left out. The plugin keeps its manifest at .claude-plugin/plugin.json and names one module in hooks/hooks.json. A string of any other form, or a list that is empty or of any other shape, matches no folder. A symbolic link, or a surface module, proves nothing. A proved plugin ships bundled with no install step: the digest covers the whole folder, node_modules included. A checkout whose line endings were converted proves nothing."
 						}
 					},
 					"required": [
@@ -3439,7 +3495,7 @@
 				"items": {
 					"type": "string"
 				},
-				"description": "Marketplace names whose plugins may surface as contextual install suggestions (relevance-based tips). No marketplace-declared suggestions surface without this allowlist; the built-in first-party frontend-design tip is unaffected. Only honored when set in managed settings (policy scope); the key is ignored in user, project, and local settings. A name only takes effect when the marketplace is registered on the machine AND its registered source is also declared in managed settings, either as the extraKnownMarketplaces entry for that name or as an entry of strictKnownMarketplaces. A marketplace registered from a different source under an allowlisted name is ignored. The official marketplace is exempt from the source requirement: allowlisting its name alone suffices, since that name can only register from the official Anthropic source."
+				"description": "Marketplace names whose plugins may surface as contextual install suggestions (relevance-based tips). No marketplace-declared suggestions surface without this allowlist; the built-in tips for Anthropic's own plugins are unaffected. Only honored when set in managed settings (policy scope); the key is ignored in user, project, and local settings. A name only takes effect when the marketplace is registered on the machine AND its registered source is also declared in managed settings, either as the extraKnownMarketplaces entry for that name or as an entry of strictKnownMarketplaces. A marketplace registered from a different source under an allowlisted name is ignored. The official marketplace is exempt from the source requirement: allowlisting its name alone suffices, since that name can only register from the official Anthropic source."
 			},
 			"forceLoginMethod": {
 				"enum": [
@@ -3447,7 +3503,7 @@
 					"console",
 					"gateway"
 				],
-				"description": "Force a specific login method: \"claudeai\" for Claude Pro/Max, \"console\" for Console billing, \"gateway\" for the Cloud gateway OIDC device flow"
+				"description": "Force a specific login method: \"claudeai\" for a Claude subscription (individual, Team, or Enterprise plans), \"console\" for Console billing, \"gateway\" for the Cloud gateway OIDC device flow"
 			},
 			"forceLoginGatewayUrl": {
 				"type": "string",
@@ -3490,7 +3546,7 @@
 				"description": "Organization UUID to require for OAuth login. Accepts a single UUID string or an array of UUIDs (any one is permitted). When set in managed settings, login fails if the authenticated account does not belong to a listed organization."
 			},
 			"allowedProviders": {
-				"description": "`Managed settings only (managed-settings.json, MDM, or server-managed). The API providers Claude Code may use on this machine: \"anthropic\" (the Anthropic API on Anthropic's own host, via a claude.ai or Console sign-in or an API key; pair it with forceLoginMethod / forceLoginOrgUUID to require a sign-in), \"bedrock\", \"vertex\", \"foundry\", \"anthropicAws\", \"mantle\" (each meaning that provider's own service: its regional, FIPS, private-endpoint and sovereign-cloud hosts), \"customEndpoint\" (the `+\"Anthropic API or a cloud provider's API sent to some other host \\u2014 ANTHROPIC_BASE_URL, that \"+\"provider's ANTHROPIC_*_BASE_URL, a Foundry resource name that is not a bare name, or for \"+\"Bedrock the AWS SDK's AWS_ENDPOINT_URL[_BEDROCK[_RUNTIME]] \\u2014 such as an LLM gateway; admitted \"+`only for the value pinned in the \"env\" block of the same managed source), or \"gateway\" (the Cloud gateway sign-in). A session on a provider that is not listed is refused at startup, at login, and when it next contacts the API, with a message naming what selected the provider and the entry that would allow it. Under a list, where first-party traffic goes (ANTHROPIC_BASE_URL, a gateway sign-in) is honored only when the same managed source pins it in \"env\" (or forceLoginGatewayUrl), and a claude ssh tunnel into the machine is refused. A cloud provider's credential and tenancy variables, and the network path and TLS trust (HTTPS_PROXY, NODE_EXTRA_CA_CERTS, CLAUDE_CODE_CERT_STORE), are not judged by this list; set those for the fleet in the managed \"env\" block, whose values replace the user's. To route Bedrock through a gateway for a fleet, pin ANTHROPIC_BEDROCK_BASE_URL there (it is what the clients use, ahead of an endpoint_url in ~/.aws/config, which this list does not judge); the AWS SDK's AWS_ENDPOINT_URL* pins only sanction where the SDK's own clients go and never stand in for the \"bedrock\" entry. Unset allows every provider; an empty array allows none. Only a list in managed-settings.json or MDM is enforcement on the machine: it cannot be widened or hidden by server-managed settings and reaches every session. A list set `+\"only in the admin console reaches only sessions that fetch your server-managed settings \\u2014 not \"+\"a session on a cloud provider, another organization or a non-Anthropic ANTHROPIC_BASE_URL, one authenticating only with apiKeyHelper or ANTHROPIC_AUTH_TOKEN, a Pro/Max login, --bare without \"+\"an API key, or a first launch before the fetch lands \\u2014 all conditions the user controls. \"+`Versions that predate this setting ignore it; pair it with a minimum-version policy on a mixed fleet. 'claude auth status' reports the Anthropic API as apiProvider \"firstParty\".`"
+				"description": "`Managed settings only (managed-settings.json, MDM, or server-managed). The API providers Claude Code may use on this machine: \"anthropic\" (the Anthropic API on Anthropic's own host, via a claude.ai or Console sign-in or an API key; pair it with forceLoginMethod / forceLoginOrgUUID to require a sign-in), \"bedrock\", \"vertex\", \"foundry\", \"anthropicAws\", \"mantle\" (each meaning that provider's own service: its regional, FIPS, private-endpoint and sovereign-cloud hosts), \"customEndpoint\" (the `+\"Anthropic API or a cloud provider's API sent to some other host \\u2014 ANTHROPIC_BASE_URL, that \"+\"provider's ANTHROPIC_*_BASE_URL, a Foundry resource name that is not a bare name, or for \"+\"Bedrock the AWS SDK's AWS_ENDPOINT_URL[_BEDROCK[_RUNTIME]] \\u2014 such as an LLM gateway; admitted \"+`only for the value pinned in the \"env\" block of the same managed source), or \"gateway\" (the Cloud gateway sign-in). A session on a provider that is not listed is refused at startup, at login, and when it next contacts the API, with a message naming what selected the provider and the entry that would allow it. Under a list, where first-party traffic goes (ANTHROPIC_BASE_URL, a gateway sign-in) is honored only when the same managed source pins it in \"env\" (or forceLoginGatewayUrl), and a claude ssh tunnel into the machine is refused. A cloud provider's credential and tenancy variables, and the network path and TLS trust (HTTPS_PROXY, NODE_EXTRA_CA_CERTS, CLAUDE_CODE_CERT_STORE), are not judged by this list; set those for the fleet in the managed \"env\" block, whose values replace the user's. To route Bedrock through a gateway for a fleet, pin ANTHROPIC_BEDROCK_BASE_URL there (it is what the clients use, ahead of an endpoint_url in ~/.aws/config, which this list does not judge); the AWS SDK's AWS_ENDPOINT_URL* pins only sanction where the SDK's own clients go and never stand in for the \"bedrock\" entry. Unset allows every provider; an empty array allows none. Only a list in managed-settings.json or MDM is enforcement on the machine: it cannot be widened or hidden by server-managed settings and reaches every session. A list set `+\"only in the admin console reaches only sessions that fetch your server-managed settings \\u2014 not \"+\"a session on a cloud provider, another organization or a non-Anthropic ANTHROPIC_BASE_URL, one authenticating only with apiKeyHelper or ANTHROPIC_AUTH_TOKEN, a Pro/Max/Ultra login, --bare without \"+\"an API key, or a first launch before the fetch lands \\u2014 all conditions the user controls. \"+`Versions that predate this setting ignore it; pair it with a minimum-version policy on a mixed fleet. 'claude auth status' reports the Anthropic API as apiProvider \"firstParty\".`"
 			},
 			"forceRemoteSettingsRefresh": {
 				"type": "boolean",
@@ -3525,18 +3581,18 @@
 				"properties": {
 					"enabled": {
 						"type": "boolean",
-						"description": "\"Run Bash commands inside the sandbox. Default: false. \"+ci"
+						"description": "\"Run Bash commands inside the sandbox. Default: false. \"+wl"
 					},
 					"failIfUnavailable": {
 						"type": "boolean",
-						"description": "\"Exit with an error at startup if sandbox.enabled is true but the sandbox cannot start (missing dependencies or unsupported platform). When false (default), a warning is shown and commands run unsandboxed. Intended for managed-settings deployments that require sandboxing as a hard gate. \"+ci"
+						"description": "\"Exit with an error at startup if sandbox.enabled is true but the sandbox cannot start (missing dependencies or unsupported platform). When false (default), a warning is shown and commands run unsandboxed. Intended for managed-settings deployments that require sandboxing as a hard gate. \"+wl"
 					},
 					"autoAllowBashIfSandboxed": {
 						"type": "boolean"
 					},
 					"allowUnsandboxedCommands": {
 						"type": "boolean",
-						"description": "`Allow commands to run outside the sandbox via the dangerouslyDisableSandbox parameter. When false, the dangerouslyDisableSandbox parameter is completely ignored and all commands must run sandboxed. Default: true. A false in managed, --settings or user settings holds whatever ${Be} say (false there still applies).`"
+						"description": "`Allow commands to run outside the sandbox via the dangerouslyDisableSandbox parameter. When false, the dangerouslyDisableSandbox parameter is completely ignored and all commands must run sandboxed. Default: true. A false in managed, --settings or user settings holds whatever ${at} say (false there still applies).`"
 					},
 					"network": {
 						"type": "object",
@@ -3546,7 +3602,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "Domains sandboxed commands may reach without a prompt (wildcards such as *.example.com supported). \"+\"Merged with WebFetch(domain:\\u2026) allow rules and across settings sources. \"+gt+\" With network.allowManagedDomainsOnly, only managed settings supply it."
+								"description": "Domains sandboxed commands may reach without a prompt (wildcards such as *.example.com supported). \"+\"Merged with WebFetch(domain:\\u2026) allow rules and across settings sources. \"+Ut+\" With network.allowManagedDomainsOnly, only managed settings supply it."
 							},
 							"deniedDomains": {
 								"type": "array",
@@ -3557,7 +3613,7 @@
 							},
 							"strictAllowlist": {
 								"type": "boolean",
-								"description": "When true, the sandbox runtime deterministically denies hosts not in allowedDomains instead of prompting. \"+\"Enforced for sandboxed commands only \\u2014 in-process tools such as WebFetch are not gated by this setting. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`${Be} are ignored, and while it is on their allowedDomains `+\"and WebFetch(domain:\\u2026) allow rules are left out of the allowlist."
+								"description": "When true, the sandbox runtime deterministically denies hosts not in allowedDomains instead of prompting. \"+\"Enforced for sandboxed commands only \\u2014 in-process tools such as WebFetch are not gated by this setting. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`${at} are ignored, and while it is on their allowedDomains `+\"and WebFetch(domain:\\u2026) allow rules are left out of the allowlist."
 							},
 							"allowManagedDomainsOnly": {
 								"type": "boolean",
@@ -3568,30 +3624,30 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"macOS only: Unix socket paths to allow. Ignored on Linux (seccomp cannot filter by path). Merged across settings sources. \"+gt"
+								"description": "\"macOS only: Unix socket paths to allow. Ignored on Linux (seccomp cannot filter by path). Merged across settings sources. \"+Ut"
 							},
 							"allowAllUnixSockets": {
 								"type": "boolean",
-								"description": "\"If true, allow all Unix sockets (disables blocking on both platforms). \"+yn"
+								"description": "\"If true, allow all Unix sockets (disables blocking on both platforms). \"+Gn"
 							},
 							"allowLocalBinding": {
 								"type": "boolean",
-								"description": "\"macOS only: If true, sandboxed commands can bind to localhost ports. \"+yn"
+								"description": "\"macOS only: If true, sandboxed commands can bind to localhost ports. \"+Gn"
 							},
 							"allowMachLookup": {
 								"type": "array",
 								"items": {
 									"type": "string"
 								},
-								"description": "'macOS only: Additional XPC/Mach service names to allow looking up. Supports trailing-wildcard prefix matching (e.g., \"com.apple.coresimulator.*\"). Needed for tools that communicate via XPC such as the iOS Simulator or Playwright. Merged across settings sources. '+gt"
+								"description": "'macOS only: Additional XPC/Mach service names to allow looking up. Supports trailing-wildcard prefix matching (e.g., \"com.apple.CoreSimulator.*\"). Needed for tools that communicate via XPC such as the iOS Simulator or Playwright. Each entry lets sandboxed commands reach services outside the sandbox, and the sandbox does not confine what those services do for them. Merged across settings sources. '+Ut"
 							},
 							"httpProxyPort": {
 								"type": "number",
-								"description": "\"Local TCP port of your own HTTP proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+ui"
+								"description": "\"Local TCP port of your own HTTP proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+Al"
 							},
 							"socksProxyPort": {
 								"type": "number",
-								"description": "\"Local TCP port of your own SOCKS5 proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+ui"
+								"description": "\"Local TCP port of your own SOCKS5 proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+Al"
 							},
 							"tlsTerminate": {
 								"type": "object",
@@ -3617,7 +3673,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"Additional paths to allow writing within the sandbox. Merged with paths from Edit(...) allow permission rules. \"+Tf"
+								"description": "\"Additional paths to allow writing within the sandbox. Merged with paths from Edit(...) allow permission rules. \"+Sh"
 							},
 							"denyWrite": {
 								"type": "array",
@@ -3638,7 +3694,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"Paths to re-allow reading within denyRead regions. Takes precedence over denyRead for matching paths. \"+Rf"
+								"description": "\"Paths to re-allow reading within denyRead regions. Takes precedence over denyRead for matching paths. \"+_h"
 							},
 							"allowManagedReadPathsOnly": {
 								"type": "boolean",
@@ -3725,19 +3781,19 @@
 								"type": "string"
 							}
 						},
-						"description": "'Sandbox violations to leave unreported: a map of command patterns (\"*\" for every command) to the filesystem paths whose violations are ignored. Merged across settings sources. '+gt"
+						"description": "'Sandbox violations to leave unreported: a map of command patterns (\"*\" for every command) to the filesystem paths whose violations are ignored. Merged across settings sources. '+Ut"
 					},
 					"enableWeakerNestedSandbox": {
 						"type": "boolean",
-						"description": "\"Linux only: Run without the fresh /proc mount, for hosts such as unprivileged Docker containers that cannot create one. \"+\"**Reduces security** \\u2014 the host /proc stays readable by sandboxed commands. Default: false. \"+yn"
+						"description": "\"Linux only: Run without the fresh /proc mount, for hosts such as unprivileged Docker containers that cannot create one. \"+\"**Reduces security** \\u2014 the host /proc stays readable by sandboxed commands. Default: false. \"+Gn"
 					},
 					"allowNestedUserNamespaces": {
 						"type": "boolean",
-						"description": "\"Linux/WSL only: Let sandboxed commands create user namespaces of their own, which the sandbox refuses by default. Needed by tools that sandbox themselves that way, such as Chromium's and Electron's sandbox, a nested bubblewrap, and `unshare`. \"+\"**Removes code-execution isolation** \\u2014 in any folder a hostile command may write, it can then bypass filesystem.denyWrite, filesystem.denyRead, credentials.files entries and the paths the sandbox always write-protects (such as .claude/settings.json, git hooks and git config), \"+\"and so plant code that later runs outside the sandbox; while autoAllowBashIfSandboxed is on, the command that plants it needs no approval. Default: false. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`true from ${Be} is ignored (false there still applies).`"
+						"description": "\"Linux/WSL only: Let sandboxed commands create user namespaces of their own, which the sandbox refuses by default. Needed by tools that sandbox themselves that way, such as Chromium's and Electron's sandbox, a nested bubblewrap, and `unshare`. \"+\"**Removes code-execution isolation** \\u2014 in any folder a hostile command may write, it can then bypass filesystem.denyWrite, filesystem.denyRead, credentials.files entries and the paths the sandbox always write-protects (such as .claude/settings.json, git hooks and git config), \"+\"and so plant code that later runs outside the sandbox; while autoAllowBashIfSandboxed is on, the command that plants it needs no approval. Default: false. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`true from ${at} is ignored (false there still applies).`"
 					},
 					"enableWeakerNetworkIsolation": {
 						"type": "boolean",
-						"description": "\"macOS only: Allow access to com.apple.trustd.agent in the sandbox. Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates when using httpProxyPort with a MITM proxy and custom CA. \"+\"**Reduces security** \\u2014 opens a potential data exfiltration vector through the trustd service. Default: false. \"+yn"
+						"description": "\"macOS only: Allow access to com.apple.trustd.agent in the sandbox. Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates when using httpProxyPort with a MITM proxy and custom CA. \"+\"**Reduces security** \\u2014 opens a potential data exfiltration vector through the trustd service. Default: false. \"+Gn"
 					},
 					"allowAppleEvents": {
 						"type": "boolean",
@@ -3748,7 +3804,7 @@
 						"items": {
 							"type": "string"
 						},
-						"description": "\"Command patterns (Bash permission-rule syntax) that always run outside the sandbox. A convenience, not a security boundary: excluded commands still go through the permission flow. Merged across settings sources. \"+gt"
+						"description": "\"Command patterns (Bash permission-rule syntax) for commands to run outside the sandbox. An entry takes a call out of the sandbox only when every command in the call matches an entry: in a Bash pipe or a chain such as `a && b`, each part needs its own match. Some calls stay sandboxed whatever the entries, such as one with a `cd`, a command substitution, or a redirect other than a file-descriptor duplication like `2>&1`, a heredoc included. A convenience, not a security boundary: excluded commands still go through the permission flow. Merged across settings sources. \"+Ut"
 					},
 					"ripgrep": {
 						"type": "object",
@@ -3854,7 +3910,7 @@
 					},
 					"checker": {
 						"type": "string",
-						"description": "`Which spell checker to run: ${Yqe.map((a)=>`\"${a}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
+						"description": "`Which spell checker to run: ${ert.map((l)=>`\"${l}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
 					},
 					"language": {
 						"type": "string",
@@ -3866,7 +3922,7 @@
 					}
 				},
 				"additionalProperties": true,
-				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${Yqe.slice(0,-1).join(\", \")} or ${Yqe.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
+				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${ert.slice(0,-1).join(\", \")} or ${ert.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
 			},
 			"terminalTitleFromRename": {
 				"type": "boolean",
@@ -3926,7 +3982,7 @@
 			},
 			"fastMode": {
 				"type": "boolean",
-				"description": "When true, fast mode is enabled. When absent or false, fast mode is off."
+				"description": "When true, fast mode is enabled. When absent or false, fast mode is off. On Vertex a saved value is ignored: use /fast each session."
 			},
 			"fastModePerSessionOptIn": {
 				"type": "boolean",
@@ -3943,6 +3999,10 @@
 			"awaySummaryEnabled": {
 				"type": "boolean",
 				"description": "@internal When false, the session recap (shown when you return after being away for 5+ minutes) is disabled. When absent or true, recap is enabled. Hidden from public SDK types until external launch."
+			},
+			"responseComparisonEnabled": {
+				"type": "boolean",
+				"description": "@internal Set to false to stop Claude Code from showing two answers to one message and asking which is better. When absent or true, it may do so on some turns. Hidden from public SDK types until external launch."
 			},
 			"showClearContextOnPlanAccept": {
 				"type": "boolean",
@@ -4240,7 +4300,7 @@
 				"description": "SSH connection configurations for remote environments. Typically set in managed settings by enterprise administrators to pre-configure SSH connections for team members."
 			},
 			"sshHostCommands": {
-				"description": "SSH connections in Claude Desktop on macOS and Linux whose host comes from a command. A list of entries, each with `id`, `name` and `command`, and optionally `sshIdentityFile` and `startDirectory`. When you ask Desktop to create or replace an entry's host, it runs `command` on this computer: a program name or absolute path, followed by plain arguments. There is no shell, so quotes, pipes, variables and a leading `~` do not work. The command must print only the host on standard output: `host` or `user@host` on one line, or a JSON object with `sshHost` and, optionally, `sshPort` and `startDirectory`. Desktop reads this key only from user settings and from this computer's managed settings. Claude Code itself does not use it."
+				"description": "SSH connections in Claude Desktop whose host comes from a command. A list of entries, each with `id`, `name` and `command`, and optionally `sshIdentityFile` and `startDirectory`. Desktop runs `command` on this computer when you create the connection or another host for it, not each time you connect. `command` is a program name or absolute path (single-quote a path with spaces), then plain arguments. Nothing else can be quoted. For pipes, variables or a leading `~`, use a script. On Windows, the program must be a full path from a drive letter, such as `C:/tools/acme.exe`, ending in `.exe`, `.cmd` or `.bat`. Quoted paths and Windows need Claude Desktop v4.16336.0 or later. The command must print only the host on standard output: `host` or `user@host` on one line, or a JSON object with `sshHost` and, optionally, `sshPort` and `startDirectory`. Desktop reads this key only from user settings and from this computer's managed settings. Claude Code itself does not use it."
 			},
 			"claudeMd": {
 				"type": "string",
@@ -4298,7 +4358,7 @@
 			},
 			"idleCompaction": {
 				"type": "boolean",
-				"description": "Set to false to stop Claude Code from compacting a long conversation while the session is idle. Setting it to true does not turn idle compaction on."
+				"description": "Set to false to stop Claude Code from compacting a long conversation while the session is idle. Defaults to true."
 			},
 			"switchModelsOnFlag": {
 				"type": "boolean",

@@ -1,6 +1,6 @@
 {
-	"version": "2.1.310",
-	"extractedAt": "2026-10-24T04:05:28.151Z",
+	"version": "2.1.322",
+	"extractedAt": "2026-11-12T14:55:51.361Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -134,6 +134,7 @@
 			"WorktreeRemove"
 		],
 		"agentColors": [
+			"aqua",
 			"blue",
 			"cyan",
 			"green",
@@ -204,6 +205,7 @@
 			"command",
 			"cwd",
 			"discoveryCache",
+			"displayName",
 			"env",
 			"headers",
 			"headersHelper",

@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.310 — extracted 2026-10-24T04:05:28.151Z
+// Claude Code v2.1.322 — extracted 2026-11-12T14:55:51.361Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -138,6 +138,7 @@ export const PROMPT_EVENTS = new Set<string>([
 ]);
 
 export const AGENT_COLORS = new Set<string>([
+	"aqua",
 	"blue",
 	"cyan",
 	"green",
@@ -213,6 +214,7 @@ export const MCP_SERVER_FIELDS = new Set<string>([
 	"command",
 	"cwd",
 	"discoveryCache",
+	"displayName",
 	"env",
 	"headers",
 	"headersHelper",
