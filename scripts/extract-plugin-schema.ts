@@ -1411,10 +1411,11 @@ function findValidatorCallSites(
 	const out: { name: string; offset: number }[] = [];
 	const seen = new Set<string>();
 	for (const needle of [`"${typeString}"`, `'${typeString}'`]) {
-		let from = 0;
-		let idx: number;
-		while ((idx = source.indexOf(needle, from)) !== -1) {
-			from = idx + 1;
+		for (
+			let idx = source.indexOf(needle);
+			idx !== -1;
+			idx = source.indexOf(needle, idx + 1)
+		) {
 			const site = callSiteAt(source, idx);
 			if (!site || seen.has(site.name)) continue;
 			seen.add(site.name);
