@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.322",
-	"extractedAt": "2026-11-12T14:56:01.186Z",
+	"extractedFromClaudeCodeVersion": "2.1.323",
+	"extractedAt": "2026-11-12T23:25:08.392Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -220,11 +220,15 @@
 					},
 					"blockReadsOutsideWorkingDirectories": {
 						"type": "boolean",
-						"description": "Refuse file-tool reads (Read, Grep, Glob, LSP) outside the working directories in every permission mode; true in any settings source wins. No allow rule lifts it. Also set when the user picks \"block\" on the one-time auto-mode prompt for a read outside the working directories."
+						"description": "Refuse file-tool reads (Read, Grep, Glob, LSP) outside the working directories in every permission mode; true in any settings source wins. No allow rule lifts it. Also binds shell commands: one that names a path outside them is asked about in every mode, and the sandbox, where it is on, denies such reads. Also set when the user picks \"block\" on the one-time auto-mode prompt for a read outside the working directories."
+					},
+					"blockFileToolReadsOutsideWorkingDirectories": {
+						"type": "boolean",
+						"description": "@internal For the program that starts Claude Code: read only from --settings at the launch; ignored in settings sent to a running session and in user, project, local and managed settings. Refuse reads outside the working directories, other than a shell command's, in every permission mode: reads by the file tools (Read, Grep, Glob, LSP) and by other built-in tools that send or publish a file, attachments, connectors' file inputs, Chrome uploads, memory recall, a project's CLAUDE.md includes and memory. No allow rule lifts it, and blockReadsExemptPaths applies to it. With it on, only the starting directory, --add-dir and the additionalDirectories of --settings or of settings sent later by that program (a full path, on Windows with its drive, or ~ or ~/…; a relative entry does not count) count as working directories, for it and for blockWritesOutsideWorkingDirectories: the user, project, local and managed settings and /add-dir add none. Claude Code's own files stay readable: this project's and this session's files in its configuration folder, this project's memory unless a user, project or local settings file, or managed settings, chose that folder, and the CLAUDE.md, rules, skills, plugins, agents and commands in its configuration folder. It is blockReadsOutsideWorkingDirectories without that setting's hold on the shell: it does not limit shell commands, sandboxed or not, nor what MCP servers and the programs that hooks run read by themselves. Like that setting, it does not stop Claude Code loading skills, commands, agents, output styles and workflows from .claude folders above the working directory (as far as the repository's root; outside a repository, the home folder or the disk's root), nor through links in a .claude folder, the working directory's own included. It does not limit writes, but Edit and Write need an existing file read first, and where Read is refused only a shell command (such as cat) can do that. Cloud sessions (Claude Code on the web), whose file tools run in a container that is itself the boundary, may not apply it."
 					},
 					"blockWritesOutsideWorkingDirectories": {
 						"type": "boolean",
-						"description": "Refuse file-tool writes (Write, Edit, NotebookEdit) outside the working directories in every permission mode; true in any settings source wins. No allow rule lifts it. Files that Claude Code keeps for the session are not refused: its plan files, scratchpad and background job folder, and the auto-memory of this project, unless a repository settings file points it elsewhere. Nothing runs them unless the model asks. Also refuses file-tool writes to Claude Code settings files, inside the working directories too, and takes EnterWorktree and ExitWorktree, which move the working directory, out of the tools on offer. Does not limit shell commands, MCP tools, the programs that hooks run, or the memory tools. Cloud sessions (Claude Code on the web), whose file tools run in a container that is itself the boundary, may not apply it."
+						"description": "Refuse file-tool writes (Write, Edit, NotebookEdit) outside the working directories in every permission mode; true in any settings source wins. No allow rule lifts it. Files that Claude Code keeps for the session are not refused: its plan files, scratchpad and background job folder, and the auto-memory of this project, unless a repository settings file points it elsewhere (a setting of the program that starts Claude Code can narrow this and the working directories). Nothing runs them unless the model asks. Also refuses file-tool writes to Claude Code settings files, inside the working directories too, and takes EnterWorktree and ExitWorktree, which move the working directory, out of the tools on offer (a setting of the program that starts Claude Code can keep them). Does not limit shell commands, MCP tools, the programs that hooks run, or the memory tools. Cloud sessions (Claude Code on the web), whose file tools run in a container that is itself the boundary, may not apply it."
 					},
 					"blockReadsExemptPaths": {
 						"type": "array",
@@ -909,7 +913,7 @@
 			},
 			"allowManagedPermissionRulesOnly": {
 				"type": "boolean",
-				"description": "When true (and set in managed settings), permission rules from user, project, local, and --settings files and allow rules from --allowedTools are ignored; only managed settings can add allow rules through settings. \"+\"The allowed-tools frontmatter of skills and custom commands from user, project, and --add-dir sources, and of plugins no managed setting vouches for, is ignored too. Plugins keep theirs only on an admin-backed channel: host-delivered --plugin-dir plugins (in Claude Desktop, only while this is not set by the organization's own managed settings), the official marketplace registered from its unpinned anthropics source, claude.ai-synced plugins Anthropic attests, the saved login organization's claude.ai-hosted marketplaces, marketplaces whose registered source managed extraKnownMarketplaces declares or an exact or owner-pinned (owner/*) strictKnownMarketplaces entry names at the path it pins (an npm marketplace source only when the registration and the declared entry pin the same registry, and a settings marketplace source only when every nested npm plugin entry pins one on a bare package name \\u2014 unpinned, the package resolves through the member's own npm config, and a non-bare spelling packs as an exotic spec the pin does not bind, so nothing an entry names is what was fetched), and npm-direct (package@npm) plugins whose recorded resolution a registry-pinned managed npm strictKnownMarketplaces entry names (host and path patterns and enabledPlugins ids do not vouch); managed and bundled skills keep theirs. \"+\"--disallowedTools, skill disallowed-tools, and other deny and ask rules from the command line or the current session still apply."
+				"description": "When true (and set in managed settings), permission rules from user, project, local, and --settings files and allow rules from --allowedTools are ignored; only managed settings can add allow rules through settings. \"+\"The allowed-tools frontmatter of skills and custom commands from user, project, and --add-dir sources, and of plugins no managed setting vouches for, is ignored too. Plugins keep theirs only on an admin-backed channel: host-delivered --plugin-dir plugins (in Claude Desktop, only while this is not set by the organization's own managed settings), the official marketplace registered from its unpinned anthropics source, claude.ai-synced plugins Anthropic attests, the saved login organization's claude.ai-hosted marketplaces, marketplaces whose registered source managed extraKnownMarketplaces declares or an exact or owner-pinned (owner/*) strictKnownMarketplaces entry names at the path it pins (an npm marketplace source only when the registration and the declared entry pin the same registry, and a settings marketplace source only when every nested npm plugin entry pins one on a bare package name \\u2014 unpinned, the package resolves through the member's own npm config, and a non-bare spelling packs as an exotic spec the pin does not bind, so nothing an entry names is what was fetched) (host and path patterns and enabledPlugins ids do not vouch); managed and bundled skills keep theirs. \"+\"--disallowedTools, skill disallowed-tools, and other deny and ask rules from the command line or the current session still apply."
 			},
 			"allowManagedMcpServersOnly": {
 				"type": "boolean",
@@ -1020,7 +1024,7 @@
 					"type",
 					"command"
 				],
-				"description": "Custom per-subagent status line shown in the agent panel; receives row context as JSON on stdin"
+				"description": "Deprecated: no longer has any effect. Subagent rows always use the default look."
 			},
 			"enabledPlugins": {
 				"type": "object",
@@ -1040,7 +1044,7 @@
 						}
 					]
 				},
-				"description": "Enabled plugins using plugin-id@marketplace-id format. Example: { \"formatter@anthropic-tools\": true }. Also supports extended format with version constraints. Settings precedence is user < project < local < flag < policy, so to disable a plugin that project settings enable, set it to false in .claude/settings.local.json \\u2014 setting false in ~/.claude/settings.json is overridden by the project."
+				"description": "Enabled plugins using plugin-id@marketplace-id format. Example: { \"formatter@anthropic-tools\": true }. Only true turns on a marketplace plugin: a list of versions is accepted but leaves it off. Settings precedence is user < project < local < flag < policy, so to disable a plugin that project settings enable, set it to false in .claude/settings.local.json \\u2014 setting false in ~/.claude/settings.json is overridden by the project."
 			},
 			"prependPlugins": {
 				"type": "array",
@@ -1169,7 +1173,7 @@
 										},
 										"package": {
 											"type": "string",
-											"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). In strictKnownMarketplaces / blockedMarketplaces an entry also governs plugins installed straight from the npm marketplace (`<package>@npm`): an exact package name matches that package, and \"@acme/*\" matches every package under the scope."
+											"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). A scope wildcard such as \"@acme/*\" still parses in a managed list, so a list that holds one stays valid, but it matches no marketplace package."
 										},
 										"version": {
 											"type": "string",
@@ -1178,7 +1182,7 @@
 										"registry": {
 											"type": "string",
 											"format": "uri",
-											"description": "`Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). In a policy entry: the origin and path prefix the package's RESOLVED tarball URL must fall under (e.g. \"https://npm.example.com/api/npm/internal/\"); under allowManagedPermissionRulesOnly, an npm marketplace keeps plugin allowed-tools only when both the entry and the registration pin this same registry.`"
+											"description": "Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). Under allowManagedPermissionRulesOnly, an npm marketplace keeps plugin allowed-tools only when both the entry and the registration pin this same registry."
 										}
 									},
 									"required": [
@@ -1479,6 +1483,9 @@
 													"strict": {
 														"type": "boolean"
 													},
+													"engines": {
+														"description": "Versions of its hosts this plugin runs on. \"claude-code\" is a semver range (e.g. \">=2.1.320\"): outside it, the plugin is not installed, updated or loaded. Other keys are ignored."
+													},
 													"headers": {
 														"type": "object",
 														"additionalProperties": {
@@ -1546,7 +1553,7 @@
 									"type": "string"
 								}
 							},
-							"description": "Managed settings only: the plugins of this marketplace that an organization delivers with its own tier, by plugin name, each with the digests of its releases. A plugin also enabled and listed in prependPlugins or appendPlugins by managed settings the session vouches for loads its hooks module only from a folder that proves one of them, and is then seated in that tier; any other copy does not load. A digest is sha256- and the base64 SHA-256 of, for every regular file in the folder in UTF-16 code unit order of its path, not normalized, \"f PATH\" NUL BYTE-LENGTH NUL BYTES, with / in paths; .git, .in_use, .orphaned_at, .claude-plugin-link and .links_materialized at the root are left out. The plugin keeps its manifest at .claude-plugin/plugin.json and names one module in hooks/hooks.json. A string of any other form, or a list that is empty or of any other shape, matches no folder. A symbolic link, or a surface module, proves nothing. A proved plugin ships bundled with no install step: the digest covers the whole folder, node_modules included. A checkout whose line endings were converted proves nothing."
+							"description": "Managed settings only: the plugins of this marketplace that an organization delivers with its own tier, by plugin name, each with the digests of its releases. A plugin also enabled and listed in prependPlugins or appendPlugins by managed settings the session vouches for loads its hooks module only from a folder that proves one of them, and is then seated in that tier; any other copy does not load. A digest is sha256- and the base64 SHA-256 of, for every regular file in the folder in UTF-16 code unit order of its path, not normalized, \"f PATH\" NUL BYTE-LENGTH NUL BYTES, with / in paths; .git, .in_use, .orphaned_at, .claude-plugin-link, .claude-directory-proof.json and .links_materialized at the root are left out. The plugin keeps its manifest at .claude-plugin/plugin.json and names one module in hooks/hooks.json. A string of any other form, or a list that is empty or of any other shape, matches no folder. A symbolic link, or a surface module, proves nothing. A proved plugin ships bundled with no install step: the digest covers the whole folder, node_modules included. A checkout whose line endings were converted proves nothing."
 						}
 					},
 					"required": [
@@ -1668,7 +1675,7 @@
 										},
 										"package": {
 											"type": "string",
-											"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). In strictKnownMarketplaces / blockedMarketplaces an entry also governs plugins installed straight from the npm marketplace (`<package>@npm`): an exact package name matches that package, and \"@acme/*\" matches every package under the scope."
+											"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). A scope wildcard such as \"@acme/*\" still parses in a managed list, so a list that holds one stays valid, but it matches no marketplace package."
 										},
 										"version": {
 											"type": "string",
@@ -1677,7 +1684,7 @@
 										"registry": {
 											"type": "string",
 											"format": "uri",
-											"description": "`Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). In a policy entry: the origin and path prefix the package's RESOLVED tarball URL must fall under (e.g. \"https://npm.example.com/api/npm/internal/\"); under allowManagedPermissionRulesOnly, an npm marketplace keeps plugin allowed-tools only when both the entry and the registration pin this same registry.`"
+											"description": "Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). Under allowManagedPermissionRulesOnly, an npm marketplace keeps plugin allowed-tools only when both the entry and the registration pin this same registry."
 										}
 									},
 									"required": [
@@ -1978,6 +1985,9 @@
 													"strict": {
 														"type": "boolean"
 													},
+													"engines": {
+														"description": "Versions of its hosts this plugin runs on. \"claude-code\" is a semver range (e.g. \">=2.1.320\"): outside it, the plugin is not installed, updated or loaded. Other keys are ignored."
+													},
 													"headers": {
 														"type": "object",
 														"additionalProperties": {
@@ -2045,7 +2055,7 @@
 									"type": "string"
 								}
 							},
-							"description": "Managed settings only: the plugins of this marketplace that an organization delivers with its own tier, by plugin name, each with the digests of its releases. A plugin also enabled and listed in prependPlugins or appendPlugins by managed settings the session vouches for loads its hooks module only from a folder that proves one of them, and is then seated in that tier; any other copy does not load. A digest is sha256- and the base64 SHA-256 of, for every regular file in the folder in UTF-16 code unit order of its path, not normalized, \"f PATH\" NUL BYTE-LENGTH NUL BYTES, with / in paths; .git, .in_use, .orphaned_at, .claude-plugin-link and .links_materialized at the root are left out. The plugin keeps its manifest at .claude-plugin/plugin.json and names one module in hooks/hooks.json. A string of any other form, or a list that is empty or of any other shape, matches no folder. A symbolic link, or a surface module, proves nothing. A proved plugin ships bundled with no install step: the digest covers the whole folder, node_modules included. A checkout whose line endings were converted proves nothing."
+							"description": "Managed settings only: the plugins of this marketplace that an organization delivers with its own tier, by plugin name, each with the digests of its releases. A plugin also enabled and listed in prependPlugins or appendPlugins by managed settings the session vouches for loads its hooks module only from a folder that proves one of them, and is then seated in that tier; any other copy does not load. A digest is sha256- and the base64 SHA-256 of, for every regular file in the folder in UTF-16 code unit order of its path, not normalized, \"f PATH\" NUL BYTE-LENGTH NUL BYTES, with / in paths; .git, .in_use, .orphaned_at, .claude-plugin-link, .claude-directory-proof.json and .links_materialized at the root are left out. The plugin keeps its manifest at .claude-plugin/plugin.json and names one module in hooks/hooks.json. A string of any other form, or a list that is empty or of any other shape, matches no folder. A symbolic link, or a surface module, proves nothing. A proved plugin ships bundled with no install step: the digest covers the whole folder, node_modules included. A checkout whose line endings were converted proves nothing."
 						}
 					},
 					"required": [
@@ -2164,7 +2174,7 @@
 								},
 								"package": {
 									"type": "string",
-									"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). In strictKnownMarketplaces / blockedMarketplaces an entry also governs plugins installed straight from the npm marketplace (`<package>@npm`): an exact package name matches that package, and \"@acme/*\" matches every package under the scope."
+									"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). A scope wildcard such as \"@acme/*\" still parses in a managed list, so a list that holds one stays valid, but it matches no marketplace package."
 								},
 								"version": {
 									"type": "string",
@@ -2173,7 +2183,7 @@
 								"registry": {
 									"type": "string",
 									"format": "uri",
-									"description": "`Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). In a policy entry: the origin and path prefix the package's RESOLVED tarball URL must fall under (e.g. \"https://npm.example.com/api/npm/internal/\"); under allowManagedPermissionRulesOnly, an npm marketplace keeps plugin allowed-tools only when both the entry and the registration pin this same registry.`"
+									"description": "Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). Under allowManagedPermissionRulesOnly, an npm marketplace keeps plugin allowed-tools only when both the entry and the registration pin this same registry."
 								}
 							},
 							"required": [
@@ -2473,6 +2483,9 @@
 											},
 											"strict": {
 												"type": "boolean"
+											},
+											"engines": {
+												"description": "Versions of its hosts this plugin runs on. \"claude-code\" is a semver range (e.g. \">=2.1.320\"): outside it, the plugin is not installed, updated or loaded. Other keys are ignored."
 											},
 											"headers": {
 												"type": "object",
@@ -2636,7 +2649,7 @@
 								},
 								"package": {
 									"type": "string",
-									"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). In strictKnownMarketplaces / blockedMarketplaces an entry also governs plugins installed straight from the npm marketplace (`<package>@npm`): an exact package name matches that package, and \"@acme/*\" matches every package under the scope."
+									"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). A scope wildcard such as \"@acme/*\" still parses in a managed list, so a list that holds one stays valid, but it matches no marketplace package."
 								},
 								"version": {
 									"type": "string",
@@ -2645,7 +2658,7 @@
 								"registry": {
 									"type": "string",
 									"format": "uri",
-									"description": "`Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). In a policy entry: the origin and path prefix the package's RESOLVED tarball URL must fall under (e.g. \"https://npm.example.com/api/npm/internal/\"); under allowManagedPermissionRulesOnly, an npm marketplace keeps plugin allowed-tools only when both the entry and the registration pin this same registry.`"
+									"description": "Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). Under allowManagedPermissionRulesOnly, an npm marketplace keeps plugin allowed-tools only when both the entry and the registration pin this same registry."
 								}
 							},
 							"required": [
@@ -2945,6 +2958,9 @@
 											},
 											"strict": {
 												"type": "boolean"
+											},
+											"engines": {
+												"description": "Versions of its hosts this plugin runs on. \"claude-code\" is a semver range (e.g. \">=2.1.320\"): outside it, the plugin is not installed, updated or loaded. Other keys are ignored."
 											},
 											"headers": {
 												"type": "object",
@@ -3120,7 +3136,7 @@
 								},
 								"package": {
 									"type": "string",
-									"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). In strictKnownMarketplaces / blockedMarketplaces an entry also governs plugins installed straight from the npm marketplace (`<package>@npm`): an exact package name matches that package, and \"@acme/*\" matches every package under the scope."
+									"description": "npm package containing marketplace.json (e.g. \"@acme/claude-marketplace\"). A scope wildcard such as \"@acme/*\" still parses in a managed list, so a list that holds one stays valid, but it matches no marketplace package."
 								},
 								"version": {
 									"type": "string",
@@ -3129,7 +3145,7 @@
 								"registry": {
 									"type": "string",
 									"format": "uri",
-									"description": "`Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). In a policy entry: the origin and path prefix the package's RESOLVED tarball URL must fall under (e.g. \"https://npm.example.com/api/npm/internal/\"); under allowManagedPermissionRulesOnly, an npm marketplace keeps plugin allowed-tools only when both the entry and the registration pin this same registry.`"
+									"description": "Registry URL. When adding a marketplace: a one-off registry override (otherwise your npm configuration decides). Under allowManagedPermissionRulesOnly, an npm marketplace keeps plugin allowed-tools only when both the entry and the registration pin this same registry."
 								}
 							},
 							"required": [
@@ -3430,6 +3446,9 @@
 											"strict": {
 												"type": "boolean"
 											},
+											"engines": {
+												"description": "Versions of its hosts this plugin runs on. \"claude-code\" is a semver range (e.g. \">=2.1.320\"): outside it, the plugin is not installed, updated or loaded. Other keys are ignored."
+											},
 											"headers": {
 												"type": "object",
 												"additionalProperties": {
@@ -3581,18 +3600,18 @@
 				"properties": {
 					"enabled": {
 						"type": "boolean",
-						"description": "\"Run Bash commands inside the sandbox. Default: false. \"+wl"
+						"description": "\"Run Bash commands inside the sandbox. Default: false. \"+Da"
 					},
 					"failIfUnavailable": {
 						"type": "boolean",
-						"description": "\"Exit with an error at startup if sandbox.enabled is true but the sandbox cannot start (missing dependencies or unsupported platform). When false (default), a warning is shown and commands run unsandboxed. Intended for managed-settings deployments that require sandboxing as a hard gate. \"+wl"
+						"description": "\"Exit with an error at startup if sandbox.enabled is true but the sandbox cannot start (missing dependencies or unsupported platform). When false (default), a warning is shown and commands run unsandboxed. Intended for managed-settings deployments that require sandboxing as a hard gate. \"+Da"
 					},
 					"autoAllowBashIfSandboxed": {
 						"type": "boolean"
 					},
 					"allowUnsandboxedCommands": {
 						"type": "boolean",
-						"description": "`Allow commands to run outside the sandbox via the dangerouslyDisableSandbox parameter. When false, the dangerouslyDisableSandbox parameter is completely ignored and all commands must run sandboxed. Default: true. A false in managed, --settings or user settings holds whatever ${at} say (false there still applies).`"
+						"description": "`Allow commands to run outside the sandbox via the dangerouslyDisableSandbox parameter. When false, the dangerouslyDisableSandbox parameter is completely ignored and all commands must run sandboxed. Default: true. A false in managed, --settings or user settings holds whatever ${ot} say (false there still applies).`"
 					},
 					"network": {
 						"type": "object",
@@ -3602,7 +3621,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "Domains sandboxed commands may reach without a prompt (wildcards such as *.example.com supported). \"+\"Merged with WebFetch(domain:\\u2026) allow rules and across settings sources. \"+Ut+\" With network.allowManagedDomainsOnly, only managed settings supply it."
+								"description": "Domains sandboxed commands may reach without a prompt (wildcards such as *.example.com supported). \"+\"Merged with WebFetch(domain:\\u2026) allow rules and across settings sources. \"+Tt+\" With network.allowManagedDomainsOnly, only managed settings supply it."
 							},
 							"deniedDomains": {
 								"type": "array",
@@ -3613,7 +3632,7 @@
 							},
 							"strictAllowlist": {
 								"type": "boolean",
-								"description": "When true, the sandbox runtime deterministically denies hosts not in allowedDomains instead of prompting. \"+\"Enforced for sandboxed commands only \\u2014 in-process tools such as WebFetch are not gated by this setting. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`${at} are ignored, and while it is on their allowedDomains `+\"and WebFetch(domain:\\u2026) allow rules are left out of the allowlist."
+								"description": "When true, the sandbox runtime deterministically denies hosts not in allowedDomains instead of prompting. \"+\"Enforced for sandboxed commands only \\u2014 in-process tools such as WebFetch are not gated by this setting. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`${ot} are ignored, and while it is on their allowedDomains `+\"and WebFetch(domain:\\u2026) allow rules are left out of the allowlist."
 							},
 							"allowManagedDomainsOnly": {
 								"type": "boolean",
@@ -3624,30 +3643,30 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"macOS only: Unix socket paths to allow. Ignored on Linux (seccomp cannot filter by path). Merged across settings sources. \"+Ut"
+								"description": "\"macOS only: Unix socket paths to allow. Ignored on Linux (seccomp cannot filter by path). Merged across settings sources. \"+Tt"
 							},
 							"allowAllUnixSockets": {
 								"type": "boolean",
-								"description": "\"If true, allow all Unix sockets (disables blocking on both platforms). \"+Gn"
+								"description": "\"If true, allow all Unix sockets (disables blocking on both platforms). \"+Wn"
 							},
 							"allowLocalBinding": {
 								"type": "boolean",
-								"description": "\"macOS only: If true, sandboxed commands can bind to localhost ports. \"+Gn"
+								"description": "\"macOS only: If true, sandboxed commands can bind to localhost ports. \"+Wn"
 							},
 							"allowMachLookup": {
 								"type": "array",
 								"items": {
 									"type": "string"
 								},
-								"description": "'macOS only: Additional XPC/Mach service names to allow looking up. Supports trailing-wildcard prefix matching (e.g., \"com.apple.CoreSimulator.*\"). Needed for tools that communicate via XPC such as the iOS Simulator or Playwright. Each entry lets sandboxed commands reach services outside the sandbox, and the sandbox does not confine what those services do for them. Merged across settings sources. '+Ut"
+								"description": "'macOS only: Additional XPC/Mach service names to allow looking up. Supports trailing-wildcard prefix matching (e.g., \"com.apple.CoreSimulator.*\"). Needed for tools that communicate via XPC such as the iOS Simulator or Playwright. Each entry lets sandboxed commands reach services outside the sandbox, and the sandbox does not confine what those services do for them. Merged across settings sources. '+Tt"
 							},
 							"httpProxyPort": {
 								"type": "number",
-								"description": "\"Local TCP port of your own HTTP proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+Al"
+								"description": "\"Local TCP port of your own HTTP proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+Na"
 							},
 							"socksProxyPort": {
 								"type": "number",
-								"description": "\"Local TCP port of your own SOCKS5 proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+Al"
+								"description": "\"Local TCP port of your own SOCKS5 proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+Na"
 							},
 							"tlsTerminate": {
 								"type": "object",
@@ -3673,7 +3692,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"Additional paths to allow writing within the sandbox. Merged with paths from Edit(...) allow permission rules. \"+Sh"
+								"description": "\"Additional paths to allow writing within the sandbox. Merged with paths from Edit(...) allow permission rules. \"+$f"
 							},
 							"denyWrite": {
 								"type": "array",
@@ -3694,7 +3713,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"Paths to re-allow reading within denyRead regions. Takes precedence over denyRead for matching paths. \"+_h"
+								"description": "\"Paths to re-allow reading within denyRead regions. Takes precedence over denyRead for matching paths. \"+jf"
 							},
 							"allowManagedReadPathsOnly": {
 								"type": "boolean",
@@ -3781,19 +3800,19 @@
 								"type": "string"
 							}
 						},
-						"description": "'Sandbox violations to leave unreported: a map of command patterns (\"*\" for every command) to the filesystem paths whose violations are ignored. Merged across settings sources. '+Ut"
+						"description": "'Sandbox violations to leave unreported: a map of command patterns (\"*\" for every command) to the filesystem paths whose violations are ignored. Merged across settings sources. '+Tt"
 					},
 					"enableWeakerNestedSandbox": {
 						"type": "boolean",
-						"description": "\"Linux only: Run without the fresh /proc mount, for hosts such as unprivileged Docker containers that cannot create one. \"+\"**Reduces security** \\u2014 the host /proc stays readable by sandboxed commands. Default: false. \"+Gn"
+						"description": "\"Linux only: Run without the fresh /proc mount, for hosts such as unprivileged Docker containers that cannot create one. \"+\"**Reduces security** \\u2014 the host /proc stays readable by sandboxed commands. Default: false. \"+Wn"
 					},
 					"allowNestedUserNamespaces": {
 						"type": "boolean",
-						"description": "\"Linux/WSL only: Let sandboxed commands create user namespaces of their own, which the sandbox refuses by default. Needed by tools that sandbox themselves that way, such as Chromium's and Electron's sandbox, a nested bubblewrap, and `unshare`. \"+\"**Removes code-execution isolation** \\u2014 in any folder a hostile command may write, it can then bypass filesystem.denyWrite, filesystem.denyRead, credentials.files entries and the paths the sandbox always write-protects (such as .claude/settings.json, git hooks and git config), \"+\"and so plant code that later runs outside the sandbox; while autoAllowBashIfSandboxed is on, the command that plants it needs no approval. Default: false. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`true from ${at} is ignored (false there still applies).`"
+						"description": "\"Linux/WSL only: Let sandboxed commands create user namespaces of their own, which the sandbox refuses by default. Needed by tools that sandbox themselves that way, such as Chromium's and Electron's sandbox, a nested bubblewrap, and `unshare`. \"+\"**Removes code-execution isolation** \\u2014 in any folder a hostile command may write, it can then bypass filesystem.denyWrite, filesystem.denyRead, credentials.files entries and the paths the sandbox always write-protects (such as .claude/settings.json, git hooks and git config), \"+\"and so plant code that later runs outside the sandbox; while autoAllowBashIfSandboxed is on, the command that plants it needs no approval. Default: false. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`true from ${ot} is ignored (false there still applies).`"
 					},
 					"enableWeakerNetworkIsolation": {
 						"type": "boolean",
-						"description": "\"macOS only: Allow access to com.apple.trustd.agent in the sandbox. Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates when using httpProxyPort with a MITM proxy and custom CA. \"+\"**Reduces security** \\u2014 opens a potential data exfiltration vector through the trustd service. Default: false. \"+Gn"
+						"description": "\"macOS only: Allow access to com.apple.trustd.agent in the sandbox. Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates when using httpProxyPort with a MITM proxy and custom CA. \"+\"**Reduces security** \\u2014 opens a potential data exfiltration vector through the trustd service. Default: false. \"+Wn"
 					},
 					"allowAppleEvents": {
 						"type": "boolean",
@@ -3804,7 +3823,7 @@
 						"items": {
 							"type": "string"
 						},
-						"description": "\"Command patterns (Bash permission-rule syntax) for commands to run outside the sandbox. An entry takes a call out of the sandbox only when every command in the call matches an entry: in a Bash pipe or a chain such as `a && b`, each part needs its own match. Some calls stay sandboxed whatever the entries, such as one with a `cd`, a command substitution, or a redirect other than a file-descriptor duplication like `2>&1`, a heredoc included. A convenience, not a security boundary: excluded commands still go through the permission flow. Merged across settings sources. \"+Ut"
+						"description": "\"Command patterns (Bash permission-rule syntax) for commands to run outside the sandbox. An entry takes a call out of the sandbox only when every command in the call matches an entry: in a Bash pipe or a chain such as `a && b`, each part needs its own match. Some calls stay sandboxed whatever the entries, such as one with a `cd`, a command substitution, or a redirect other than a file-descriptor duplication like `2>&1`, a heredoc included. A convenience, not a security boundary: excluded commands still go through the permission flow. Merged across settings sources. \"+Tt"
 					},
 					"ripgrep": {
 						"type": "object",
@@ -3850,6 +3869,10 @@
 			"spinnerTipsEnabled": {
 				"type": "boolean",
 				"description": "Whether to show tips in the spinner"
+			},
+			"clawdFileProgressEnabled": {
+				"type": "boolean",
+				"description": "@internal Whether to show Clawd, Claude Code's mascot, carrying the file on the progress line when a file goes to or from a connector"
 			},
 			"spinnerVerbs": {
 				"type": "object",
@@ -3910,7 +3933,7 @@
 					},
 					"checker": {
 						"type": "string",
-						"description": "`Which spell checker to run: ${ert.map((l)=>`\"${l}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
+						"description": "`Which spell checker to run: ${yit.map((l)=>`\"${l}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
 					},
 					"language": {
 						"type": "string",
@@ -3922,7 +3945,7 @@
 					}
 				},
 				"additionalProperties": true,
-				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${ert.slice(0,-1).join(\", \")} or ${ert.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
+				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${yit.slice(0,-1).join(\", \")} or ${yit.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
 			},
 			"terminalTitleFromRename": {
 				"type": "boolean",
@@ -4015,7 +4038,7 @@
 					"10m",
 					"never"
 				],
-				"description": "Idle time before Claude's questions auto-continue with any answers \"+\"selected so far. Defaults to never \\u2014 auto-continue only runs \"+\"when explicitly set to 60s/5m/10m."
+				"description": "`Idle time before Claude's questions in the terminal auto-continue with any answers selected so far. When unset, the terminal does not auto-continue. The Claude desktop and web apps show Claude's questions in their own interface and may move on from some unanswered ones after a wait the app sets. Claude is then told that nobody answered and uses its best judgment. In sessions that read this setting, only \"never\" stops the apps from moving on. Leaving it unset does not. Cloud sessions and Cowork tasks do not read your user settings file (~/.claude/settings.json), and managed settings do not reach all of them. This setting is ignored in a project's settings files.`"
 			},
 			"dialogExpiry": {
 				"enum": [
@@ -4355,6 +4378,10 @@
 			"precomputeCompactionEnabled": {
 				"type": "boolean",
 				"description": "Precompute the compaction summary in the background before it is needed. Only applies when auto-compact is on."
+			},
+			"precomputeArmTokens": {
+				"type": "number",
+				"description": "@internal Read from the flag settings only, for a host that sends /compact below the automatic threshold: the main conversation starts its background compaction summary at this many tokens, when that is sooner than it would by itself, so that /compact finds it ready. A window set below the billing boundary compacts without a background summary, and this does not change that."
 			},
 			"idleCompaction": {
 				"type": "boolean",

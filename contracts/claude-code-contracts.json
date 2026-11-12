@@ -1,6 +1,6 @@
 {
-	"version": "2.1.322",
-	"extractedAt": "2026-11-12T14:55:51.361Z",
+	"version": "2.1.323",
+	"extractedAt": "2026-11-12T23:24:58.429Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -162,6 +162,7 @@
 			"dependencies",
 			"description",
 			"displayName",
+			"engines",
 			"homepage",
 			"keywords",
 			"license",

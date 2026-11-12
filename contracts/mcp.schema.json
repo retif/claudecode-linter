@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.322",
-	"extractedAt": "2026-11-12T14:56:01.200Z",
+	"extractedFromClaudeCodeVersion": "2.1.323",
+	"extractedAt": "2026-11-12T23:25:08.405Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code .mcp.json",
@@ -400,6 +400,73 @@
 									"items": {
 										"type": "string"
 									}
+								},
+								"dataFlowServer": {
+									"anyOf": [
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "anthropic"
+												},
+												"id": {
+													"type": "string",
+													"minLength": 1
+												}
+											},
+											"required": [
+												"type",
+												"id"
+											]
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "claude_ai_connector"
+												},
+												"id": {
+													"type": "string",
+													"minLength": 1
+												},
+												"directory_id": {
+													"type": [
+														"string",
+														"null"
+													],
+													"minLength": 1
+												}
+											},
+											"required": [
+												"type",
+												"id",
+												"directory_id"
+											]
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": {
+													"const": "client_configured"
+												},
+												"transport": {
+													"enum": [
+														"stdio",
+														"http",
+														"in_process"
+													]
+												},
+												"plugin_id_hash": {
+													"type": "string",
+													"minLength": 1
+												}
+											},
+											"required": [
+												"type",
+												"transport"
+											]
+										}
+									]
 								}
 							},
 							"required": [

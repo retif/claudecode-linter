@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.322",
-	"extractedAt": "2026-11-12T14:56:01.195Z",
+	"extractedFromClaudeCodeVersion": "2.1.323",
+	"extractedAt": "2026-11-12T23:25:08.400Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code agent .md frontmatter",
@@ -194,7 +194,7 @@
 						"type": "null"
 					}
 				],
-				"description": "`Auto-compact window for this agent, in tokens from ${cO} to ${iW}. Overrides the window it would inherit.`"
+				"description": "`Auto-compact window for this agent, in tokens from ${pM} to ${S2}. Overrides the window it would inherit.`"
 			},
 			"skills": {
 				"anyOf": [
@@ -323,7 +323,7 @@
 						"type": "null"
 					}
 				],
-				"description": "Agent type auto-spawned as a background observer whenever this agent runs."
+				"description": "Agent type auto-spawned as a background observer whenever this agent runs, or a comma-separated list of up to four, none of whose names has a comma."
 			},
 			"observerMessage": {
 				"anyOf": [
@@ -357,7 +357,7 @@
 						"type": "null"
 					}
 				],
-				"description": "If false, subagents this agent spawns do not inherit its observer. Defaults to true."
+				"description": "If false, subagents this agent spawns do not inherit its observers. On an observer's own definition, false keeps that observer on the agents that declare it. Defaults to true."
 			},
 			"experimental": {
 				"type": [
