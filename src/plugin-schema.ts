@@ -151,9 +151,9 @@ export function loadMonitorsSchema(): CompiledSchema | null {
 }
 
 export function loadSettingsSchema(): CompiledSchema | null {
-	// gitea#6: prefer the Zod-extracted schema (runtime truth, e.g.
-	// `disableAutoMode` is `boolean` in 2.1.150) over schemastore (which
-	// still lists it as a string literal — out of date). Schemastore is
+	// gitea#6: prefer the Zod-extracted schema (runtime truth — e.g.
+	// `disableAutoMode` was `boolean` in 2.1.150 and is the `"disable"`
+	// literal again by 2.1.322) over schemastore, which lags. Schemastore is
 	// only used for artifacts with no Zod source (marketplace, keybindings).
 	return loadCompiledSchema("settings.schema.json");
 }

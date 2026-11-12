@@ -454,11 +454,14 @@ export const settingsJsonLinter: Linter = {
             "\"permissions.additionalDirectories\" should be an array of strings", ap?.line, ap?.column));
         }
 
-        // disableAutoMode — boolean
-        if ("disableAutoMode" in p && typeof p.disableAutoMode !== "boolean") {
+        // disableAutoMode — the only accepted value is "disable". It was a
+        // boolean around 2.1.150; by 2.1.322 Claude Code declares
+        // `z.enum(["disable"])` and only ever tests `=== "disable"`, so `true`
+        // is both rejected and inert.
+        if ("disableAutoMode" in p && p.disableAutoMode !== "disable") {
           const ap = findKeyPosition(content, "disableAutoMode");
           push(diag(config, filePath, "settings-json/permissions-field-type", "warning",
-            "\"permissions.disableAutoMode\" should be a boolean", ap?.line, ap?.column));
+            "\"permissions.disableAutoMode\" only accepts the string \"disable\"", ap?.line, ap?.column));
         }
       }
     }

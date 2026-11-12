@@ -44,7 +44,7 @@ describe("settings-json permissions — valid input", () => {
         ask: ["Write"],
         defaultMode: "acceptEdits",
         disableBypassPermissionsMode: "disable",
-        disableAutoMode: true,
+        disableAutoMode: "disable",
         additionalDirectories: ["../shared"],
       },
     })).toEqual([]);
@@ -85,7 +85,7 @@ describe("settings-json permissions — structural errors", () => {
     for (const key of PERMISSIONS_FIELDS) {
       const value = key === "defaultMode" ? "default"
         : key === "disableBypassPermissionsMode" ? "disable"
-        : key === "disableAutoMode" ? true
+        : key === "disableAutoMode" ? "disable"
         : [];
       expect(rules({ permissions: { [key]: value } }))
         .not.toContain("settings-json/permissions-unknown-field");
@@ -456,10 +456,12 @@ describe("settings-json permissions — additionalDirectories & disableAutoMode"
     expect(d?.message).toContain("additionalDirectories");
   });
 
-  it("accepts a boolean disableAutoMode and flags a non-boolean", () => {
-    expect(rules({ permissions: { disableAutoMode: true } })).toEqual([]);
-    expect(find({ permissions: { disableAutoMode: "yes" } }, "settings-json/permissions-field-type")?.severity)
-      .toBe("warning");
+  it("accepts disableAutoMode \"disable\" and flags anything else", () => {
+    expect(rules({ permissions: { disableAutoMode: "disable" } })).toEqual([]);
+    for (const bad of ["yes", true]) {
+      expect(find({ permissions: { disableAutoMode: bad } }, "settings-json/permissions-field-type")?.severity)
+        .toBe("warning");
+    }
   });
 });
 
