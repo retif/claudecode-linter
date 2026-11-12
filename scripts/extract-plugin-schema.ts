@@ -1396,6 +1396,207 @@ function findValidatorCallSite(
 	return null;
 }
 
+/**
+ * Every call site naming `typeString` as an argument, deduplicated by callee
+ * name (first site per name kept), in source order. `findValidatorCallSite` stops at the first — which is
+ * right only while one function is dispatched with the type string. 2.1.322
+ * added a thin wrapper (`Iu(w,"plugin-json",s)` → `dTe(…)`) that appears
+ * before the real validator in the corpus, so a locator that needs the
+ * validator has to be able to look past it.
+ */
+function findValidatorCallSites(
+	source: string,
+	typeString: string,
+): { name: string; offset: number }[] {
+	const out: { name: string; offset: number }[] = [];
+	const seen = new Set<string>();
+	for (const needle of [`"${typeString}"`, `'${typeString}'`]) {
+		let from = 0;
+		let idx: number;
+		while ((idx = source.indexOf(needle, from)) !== -1) {
+			from = idx + 1;
+			const site = callSiteAt(source, idx);
+			if (!site || seen.has(site.name)) continue;
+			seen.add(site.name);
+			out.push(site);
+		}
+	}
+	return out;
+}
+
+/** The callee of the call whose argument list contains offset `idx`. */
+function callSiteAt(
+	source: string,
+	idx: number,
+): { name: string; offset: number } | null {
+	let depth = 0;
+	let i = idx - 1;
+	for (; i >= 0; i--) {
+		const c = source[i];
+		if (c === ")" || c === "]" || c === "}") depth++;
+		else if (c === "[" || c === "{") {
+			if (depth === 0) return null;
+			depth--;
+		} else if (c === "(") {
+			if (depth === 0) break;
+			depth--;
+		}
+	}
+	if (i < 0) return null;
+	const nameEnd = i;
+	let nameStart = nameEnd;
+	while (nameStart > 0 && /[\w$]/.test(source[nameStart - 1])) nameStart--;
+	if (nameStart === nameEnd) return null;
+	return { name: source.slice(nameStart, nameEnd), offset: nameStart };
+}
+
+/**
+ * The text of the declaration at `defIdx`: the balanced `{…}` body for a
+ * `function` statement or a block-bodied arrow, else a window clamped to the
+ * declaring module. A balanced body is what keeps a short wrapper from
+ * "containing" whatever code follows it.
+ */
+function declarationText(
+	source: string,
+	moduleRanges: ModuleRange[],
+	defIdx: number,
+): string {
+	const declModule = moduleOfOffset(moduleRanges, defIdx);
+	const limit =
+		declModule === -1
+			? source.length
+			: Math.min(source.length, moduleRanges[declModule].end);
+	const head = source.slice(defIdx, Math.min(defIdx + 400, limit));
+	const m = /^[^{]*?\)\s*(?:=>\s*)?\{/.exec(head);
+	if (m) {
+		const brace = defIdx + m[0].length - 1;
+		const body = extractBalanced(source, brace, "{", "}");
+		if (body && brace + body.length <= limit) {
+			return source.slice(defIdx, brace + body.length);
+		}
+	}
+	return source.slice(defIdx, Math.min(defIdx + 4000, limit));
+}
+
+/** Declarations of `name`, the ones in `preferModule` first. */
+function rankedDeclarations(
+	source: string,
+	moduleRanges: ModuleRange[],
+	name: string,
+	preferModule: number,
+): number[] {
+	return findValidatorDeclarations(source, name).sort((a, b) => {
+		const am = moduleOfOffset(moduleRanges, a) === preferModule ? 0 : 1;
+		const bm = moduleOfOffset(moduleRanges, b) === preferModule ? 0 : 1;
+		return am - bm || a - b;
+	});
+}
+
+/** One field of the plugin.json field registry. */
+export interface RegistryField {
+	/** The plugin.json key. */
+	key: string;
+	/** The sub-schema symbol the thunk reads the field from, or null when the
+	 *  thunk is not the `<sub>()[.partial()].shape.<field>` form. */
+	sub: string | null;
+	partial: boolean;
+	/** The field name read off the sub-schema's shape. */
+	shapeKey: string;
+}
+
+/**
+ * Strategy 3 (2.1.322+): the plugin.json schema is no longer one Zod object.
+ * The validator body calls `<fn>(h).safeParse(h)`; `<fn>` is
+ * `function <fn>(e){return <reg>().forDocument(e,"strip")}`; and `<reg>` is a
+ * lazily built field registry —
+ *
+ *   `<reg>=<lazy>(()=>new <Cls>({$schema:()=>Ie().shape.$schema,…,
+ *      hooks:()=>za().partial().shape.hooks,…},new Set(["name"])))`
+ *
+ * — one thunk per top-level key, each reading a single field off the same
+ * sub-schemas the pre-2.1.322 master object spread in. Returning those fields
+ * lets `buildPluginSchema` evaluate them exactly as it evaluated the spread.
+ *
+ * Every hop is verified by shape, not by name: minified names collide across
+ * modules (`Iu` is bound in a dozen, one of which also has a `.safeParse(`),
+ * so each candidate must produce the next hop's expected form or is skipped.
+ */
+export function findPluginFieldRegistry(
+	index: DefinitionIndex,
+): { fields: RegistryField[]; module: number } | null {
+	const { source, moduleRanges, lazyWrapper } = index;
+	for (const call of findValidatorCallSites(source, "plugin-json")) {
+		const callModule = moduleOfOffset(moduleRanges, call.offset);
+		for (const vIdx of rankedDeclarations(
+			source,
+			moduleRanges,
+			call.name,
+			callModule,
+		)) {
+			const vBody = declarationText(source, moduleRanges, vIdx);
+			const vModule = moduleOfOffset(moduleRanges, vIdx);
+			for (const sp of vBody.matchAll(/([\w$]+)\([\w$]+\)\.safeParse\(/g)) {
+				for (const fIdx of rankedDeclarations(
+					source,
+					moduleRanges,
+					sp[1],
+					vModule,
+				)) {
+					const fBody = declarationText(source, moduleRanges, fIdx);
+					const fm = /return\s*([\w$]+)\(\)\.forDocument\(/.exec(fBody);
+					if (!fm) continue;
+					const fModule = moduleOfOffset(moduleRanges, fIdx);
+					const reg = resolveDefSite(index, fm[1], fModule);
+					if (!reg) continue;
+					const fields = parseFieldRegistry(reg.value, lazyWrapper);
+					if (fields) return { fields, module: reg.module };
+				}
+			}
+		}
+	}
+	return null;
+}
+
+/**
+ * Parse `<lazy>(()=>new <Cls>({key:()=>…,…},…))` into its fields. Null unless
+ * the first argument is an object made mostly of thunks and declares `name` —
+ * the one key every plugin.json registry must have, which is what keeps an
+ * unrelated `new X({…})` (the settings registry has the same class shape) from
+ * being taken for the plugin schema.
+ */
+export function parseFieldRegistry(
+	value: string,
+	lazyWrapper: string,
+): RegistryField[] | null {
+	let body = value.trim();
+	const wrap = `${lazyWrapper}(()=>`;
+	if (body.startsWith(wrap)) body = body.slice(wrap.length);
+	const nm = /^new\s+[\w$]+\(/.exec(body);
+	if (!nm) return null;
+	const brace = nm[0].length;
+	if (body[brace] !== "{") return null;
+	const obj = extractBalanced(body, brace, "{", "}");
+	if (!obj) return null;
+	const entries = splitObjectEntries(obj.slice(1, -1));
+	const fields: RegistryField[] = [];
+	for (const entry of entries) {
+		const m = /^([\w$]+|"[^"]*"|'[^']*'):\(\)=>([\s\S]+)$/.exec(entry.trim());
+		if (!m) continue;
+		const key = m[1].replace(/^["']|["']$/g, "");
+		const ref = /^([\w$]+)\(\)(\.partial\(\))?\.shape\.([\w$]+)$/.exec(
+			m[2].trim(),
+		);
+		fields.push(
+			ref
+				? { key, sub: ref[1], partial: !!ref[2], shapeKey: ref[3] }
+				: { key, sub: null, partial: true, shapeKey: key },
+		);
+	}
+	if (fields.length === 0 || fields.length < entries.length / 2) return null;
+	if (!fields.some((f) => f.key === "name")) return null;
+	return fields;
+}
+
 // ---------------------------------------------------------------------------
 // 5. Master schema spread parser
 // ---------------------------------------------------------------------------
@@ -3060,6 +3261,18 @@ function stripAdditionalPropertiesFalse(node: unknown): void {
  * exit.
  */
 export function buildPluginSchema(index: DefinitionIndex): JSONSchema | null {
+	// The registry is tried whenever the master-object path yields nothing, not
+	// only when no master is named: a same-named decoy can satisfy strategy 2's
+	// `<sym>().safeParse(` test and name a "master" that does not resolve to a
+	// spread — which must not mask a registry that is really there.
+	return (
+		buildPluginSchemaFromMaster(index) ?? buildPluginSchemaFromRegistry(index)
+	);
+}
+
+function buildPluginSchemaFromMaster(
+	index: DefinitionIndex,
+): JSONSchema | null {
 	const master = findMasterSchemaSite(index);
 	if (!master) return null;
 	const masterSite = resolveDefSite(index, master.name, master.module);
@@ -3098,6 +3311,66 @@ export function buildPluginSchema(index: DefinitionIndex): JSONSchema | null {
 			for (const r of subRequired) required.push(r);
 		}
 	}
+
+	const out: JSONSchema = {
+		$schema: "https://json-schema.org/draft/2020-12/schema",
+		title: "Claude Code plugin.json",
+		type: "object",
+		properties,
+	};
+	if (required.length > 0) out.required = [...new Set(required)];
+	return out;
+}
+
+/**
+ * The 2.1.322+ path: evaluate each registry field from its sub-schema, the
+ * same sub-schemas the master spread used to pull in whole. A field whose
+ * thunk is not the plain `<sub>().shape.<field>` form, or whose sub-schema does
+ * not resolve, degrades to `{}` — under-validating rather than dropping the key.
+ * Required-ness follows the sub-schema, and only for non-partial reads, exactly
+ * as the spread path treats `.partial()`.
+ */
+function buildPluginSchemaFromRegistry(
+	index: DefinitionIndex,
+): JSONSchema | null {
+	const registry = findPluginFieldRegistry(index);
+	if (!registry) return null;
+	const ctx: EvalContext = {
+		index,
+		resolving: new Set(),
+		module: registry.module,
+	};
+	const evaluated = new Map<string, JSONSchema | null>();
+	const evalSub = (name: string): JSONSchema | null => {
+		if (evaluated.has(name)) return evaluated.get(name) ?? null;
+		const site = resolveDefSite(index, name, ctx.module);
+		const sub = site
+			? evalZod(
+					site.value,
+					site.module === ctx.module ? ctx : { ...ctx, module: site.module },
+				)
+			: null;
+		evaluated.set(name, sub);
+		return sub;
+	};
+
+	const properties: Record<string, JSONSchema> = {};
+	const required: string[] = [];
+	let resolved = 0;
+	for (const f of registry.fields) {
+		const sub = f.sub ? evalSub(f.sub) : null;
+		const prop = (sub?.properties as Record<string, JSONSchema> | undefined)?.[
+			f.shapeKey
+		];
+		properties[f.key] = prop ?? {};
+		if (prop) resolved++;
+		if (prop && !f.partial && ((sub?.required as string[]) ?? []).includes(f.shapeKey)) {
+			required.push(f.key);
+		}
+	}
+	// A registry none of whose fields resolved is an extraction failure, not a
+	// schema of `{}`s — report it as lost so the drift gate fires.
+	if (resolved === 0) return null;
 
 	const out: JSONSchema = {
 		$schema: "https://json-schema.org/draft/2020-12/schema",
@@ -3378,7 +3651,14 @@ export function schemaTargets(): SchemaTarget[] {
 			file: "plugin.schema.json",
 			build: (i) => {
 				console.log(
-					pc.cyan(`▸ Master schema: ${findMasterSchemaName(i) ?? "<not found>"}`),
+					pc.cyan(
+						`▸ Master schema: ${
+							findMasterSchemaName(i) ??
+							(findPluginFieldRegistry(i)
+								? "<field registry (2.1.322+)>"
+								: "<not found>")
+						}`,
+					),
 				);
 				const schema = buildPluginSchema(i);
 				if (schema) {
