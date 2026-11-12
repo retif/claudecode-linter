@@ -66,11 +66,21 @@ jobs:
           LATEST=$(npm view @anthropic-ai/claude-code version)
           echo "Extracting contracts from Claude Code $LATEST"
           npx tsx scripts/extract-contracts.ts --version "$LATEST"
+          # The schema extractor is what release.yml runs next, and the step
+          # that broke it on 2.1.322 (Plugin schema gate) — without it here a
+          # moved anchor stayed invisible to every PR while Release failed on
+          # each scheduled run.
+          npx tsx scripts/extract-plugin-schema.ts --version "$LATEST"
 
       - name: Generate contracts
         run: npm run generate-contracts
 
       - name: Check for contract value changes
+        # Advisory, not fatal. Value drift means Claude Code shipped since the
+        # last release commit; release.yml picks it up on its next run, and no
+        # PR can fix it. Failing here failed every PR in that window (all of
+        # Dependabot's, indefinitely while Release was broken). A broken
+        # extractor still fails the steps above.
         run: |
           # Compare contract values only (ignore timestamps, formatting, whitespace)
           # Extract just the contracts object from both old and new JSON, sort keys
@@ -80,13 +90,12 @@ jobs:
             const current = JSON.parse(fs.readFileSync("contracts/claude-code-contracts.json", "utf8"));
             const norm = (obj) => JSON.stringify(obj.contracts, Object.keys(obj.contracts).sort());
             if (norm(committed) !== norm(current)) {
-              console.log("Contract values changed — update needed:");
-              for (const [k,v] of Object.entries(current.contracts)) {
-                const old = JSON.stringify(committed.contracts[k]);
-                const cur = JSON.stringify(v);
-                if (old !== cur) console.log("  " + k + ": changed");
-              }
-              process.exit(1);
+              const changed = Object.keys(current.contracts).filter(
+                (k) => JSON.stringify(committed.contracts[k]) !== JSON.stringify(current.contracts[k]));
+              console.log("Contract values changed — the next release run will pick these up:");
+              for (const k of changed) console.log("  " + k + ": changed");
+              console.log("::warning title=Contract drift::Claude Code contracts changed since the last release (" + changed.join(", ") + "); release.yml will refresh them.");
+              process.exit(0);
             }
             console.log("Contract values unchanged (only timestamp/formatting differs).");
           '
