@@ -82,7 +82,7 @@ The contract-sync pipeline also fetches the four schemastore.org-curated Claude 
 
 | Schemastore file | Used by |
 |---|---|
-| `settings.schema.json` | reference / future cross-check (Zod extraction is primary — schemastore lags, e.g. it still types `disableAutoMode` as a string literal long after the runtime switched to boolean) |
+| `settings.schema.json` | reference / future cross-check (Zod extraction is primary — schemastore lags; the runtime itself also flips, e.g. `disableAutoMode` was boolean around 2.1.150 and is the `"disable"` literal again by 2.1.322) |
 | `plugin-manifest.schema.json` | reference (Zod extraction is primary) |
 | `marketplace.schema.json` | sole source for the `marketplace-json` linter — no Zod source in the bundle |
 | `keybindings.schema.json` | sole source for the `keybindings-json` linter — no Zod source in the bundle |

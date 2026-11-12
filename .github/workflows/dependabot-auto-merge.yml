@@ -5,11 +5,18 @@ on: pull_request
 permissions:
   contents: write
   pull-requests: write
+  checks: read
+
+# A new push to the PR supersedes the wait for the old head.
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   auto-merge:
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - name: Fetch Dependabot metadata
         id: metadata
@@ -17,8 +24,59 @@ jobs:
         with:
           github-token: ${{ github.token }}
 
-      - name: Auto-merge minor and patch updates
+      # main has no required status checks (oleks/claudecode-linter#53), and it
+      # cannot have them without blocking release.yml's own push to main. So
+      # `gh pr merge --auto` had nothing to wait for: it merged a still-pending
+      # PR on the spot (#135, #137 landed before their CI finished, and CI then
+      # failed), and refused outright once CI had gone red (#138). This job
+      # does the waiting itself and fails closed: it merges only when every
+      # gating check has PASSED on this exact head commit; a failed, cancelled
+      # or missing check, an API error, or the deadline all leave the PR open.
+      - name: Wait for CI to pass
         if: steps.metadata.outputs.update-type != 'version-update:semver-major'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh pr merge "${{ github.event.pull_request.number }}" --auto --squash --repo "${{ github.repository }}"
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          GATES: "build-and-test,Release dry run"
+        run: |
+          set -uo pipefail
+          deadline=$(( $(date +%s) + 40 * 60 ))
+          IFS=',' read -ra gates <<< "$GATES"
+          while :; do
+            # `gh pr checks` exits non-zero while anything is pending; the JSON
+            # is still printed. An empty or unparsable answer counts as
+            # "not passed yet", never as "passed".
+            checks=$(gh pr checks "$PR" --repo "$REPO" --json name,bucket 2>/dev/null || true)
+            all_pass=1
+            for gate in "${gates[@]}"; do
+              bucket=$(jq -r --arg n "$gate" '[.[] | select(.name == $n) | .bucket] | first // "missing"' <<< "${checks:-[]}" 2>/dev/null || echo missing)
+              echo "  $gate: $bucket"
+              case "$bucket" in
+                pass) ;;
+                fail|cancel)
+                  echo "::error::$gate is '$bucket' — not merging."
+                  exit 1 ;;
+                *) all_pass=0 ;;
+              esac
+            done
+            if [ "$all_pass" = 1 ]; then
+              echo "All gating checks passed."
+              break
+            fi
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::Gating checks did not all pass within 40 minutes — not merging."
+              exit 1
+            fi
+            sleep 20
+          done
+
+      - name: Merge minor and patch updates
+        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # --match-head-commit: merge only the commit the checks above passed on.
+        run: >-
+          gh pr merge "${{ github.event.pull_request.number }}" --squash
+          --repo "${{ github.repository }}"
+          --match-head-commit "${{ github.event.pull_request.head.sha }}"
