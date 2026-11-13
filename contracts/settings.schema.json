@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.323",
-	"extractedAt": "2026-11-12T23:25:08.392Z",
+	"extractedFromClaudeCodeVersion": "2.1.325",
+	"extractedAt": "2026-11-13T23:26:02.342Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code settings.json",
@@ -412,7 +412,7 @@
 			},
 			"disableClaudeAiConnectors": {
 				"type": "boolean",
-				"description": "When true in any settings source, claude.ai MCP cloud connectors are not auto-fetched or connected, and a claudeai-proxy server passed explicitly (e.g. via --mcp-config or the SDK mcpServers option) does not connect either. Any-source-true wins: a project can opt out, but a project-level false cannot override a user-level true."
+				"description": "When true in any settings source, claude.ai MCP cloud connectors are not auto-fetched or connected, and a claudeai-proxy server passed explicitly (e.g. via --mcp-config or the SDK mcpServers option) does not connect either. Where a managed or served source sets it, the connectors that the desktop app's Code tab hands to a session do not connect either, from the app version that shows them as turned off. Any-source-true wins: a project can opt out, but a project-level false cannot override a user-level true."
 			},
 			"skillOverrides": {
 				"type": "object",
@@ -1051,7 +1051,7 @@
 				"items": {
 					"type": "string"
 				},
-				"description": "Managed plugins (plugin@marketplace ids that managed enabledPlugins sets true) whose hooks run first, outermost, in the listed order: the first id listed sees every event before any other plugin and every result after it. Managed plugins not listed here or in appendPlugins follow the listed ones; user, project and marketplace plugins come after those; then appendPlugins; then the built-in plugins. The bundled cc-plugin-sec-default@builtin seats itself outermost (on a machine with managed settings and for Team and Enterprise organizations) unless this list is set, in which case list it where it should sit or leave it out. Name it there as sec-default@builtin, the id every release reads, for as long as any machine in the organization may run a release from before its rename; a release that knows the new id reads either. Any other id that is not an enabled managed plugin is skipped; an id listed in both keys is prepended. Only honored from managed settings (or, on a machine with none, from user settings for your own plugins); ignored in project, local and --settings sources."
+				"description": "Managed plugins (plugin@marketplace ids that managed enabledPlugins sets true) whose hooks run first, outermost, in the listed order: the first id listed sees every event before any other plugin and every result after it. Managed plugins read in place from a local folder managed settings name, and not listed here or in appendPlugins, follow the listed ones; user, project and marketplace plugins come after those, with a managed plugin from a remote marketplace that neither key lists; then appendPlugins; then the built-in plugins. The bundled cc-plugin-sec-default@builtin seats itself outermost (on a machine with managed settings and for Team and Enterprise organizations) unless this list is set, in which case list it where it should sit or leave it out. Name it there as sec-default@builtin, the id every release reads, for as long as any machine in the organization may run a release from before its rename; a release that knows the new id reads either. Any other id that is not an enabled managed plugin is skipped; an id listed in both keys is prepended. Only honored from managed settings (or, on a machine with none, from user settings for your own plugins); ignored in project, local and --settings sources."
 			},
 			"appendPlugins": {
 				"type": "array",
@@ -1107,7 +1107,7 @@
 										},
 										"ref": {
 											"type": "string",
-											"description": "Git branch or tag to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch."
+											"description": "Git branch, tag or full commit id to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch. A full commit id (40 or 64 lowercase hex digits) holds the marketplace at that commit: refreshes and auto-updates do not move it. A branch or tag of the repository must hold the commit. Plugins listed with a remote source follow that source unless they name a `sha`. Reserved Anthropic marketplace names do not accept a commit id."
 										},
 										"path": {
 											"type": "string",
@@ -1142,7 +1142,7 @@
 										},
 										"ref": {
 											"type": "string",
-											"description": "Git branch or tag to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch."
+											"description": "Git branch, tag or full commit id to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch. A full commit id (40 or 64 lowercase hex digits) holds the marketplace at that commit: refreshes and auto-updates do not move it. A branch or tag of the repository must hold the commit. Plugins listed with a remote source follow that source unless they name a `sha`. Reserved Anthropic marketplace names do not accept a commit id."
 										},
 										"path": {
 											"type": "string",
@@ -1553,7 +1553,7 @@
 									"type": "string"
 								}
 							},
-							"description": "Managed settings only: the plugins of this marketplace that an organization delivers with its own tier, by plugin name, each with the digests of its releases. A plugin also enabled and listed in prependPlugins or appendPlugins by managed settings the session vouches for loads its hooks module only from a folder that proves one of them, and is then seated in that tier; any other copy does not load. A digest is sha256- and the base64 SHA-256 of, for every regular file in the folder in UTF-16 code unit order of its path, not normalized, \"f PATH\" NUL BYTE-LENGTH NUL BYTES, with / in paths; .git, .in_use, .orphaned_at, .claude-plugin-link, .claude-directory-proof.json and .links_materialized at the root are left out. The plugin keeps its manifest at .claude-plugin/plugin.json and names one module in hooks/hooks.json. A string of any other form, or a list that is empty or of any other shape, matches no folder. A symbolic link, or a surface module, proves nothing. A proved plugin ships bundled with no install step: the digest covers the whole folder, node_modules included. A checkout whose line endings were converted proves nothing."
+							"description": "Deprecated and ignored: settings that hold it still load. A plugin takes the organization tier when managed settings enable it, declare its marketplace with a remote source and list it in prependPlugins or appendPlugins."
 						}
 					},
 					"required": [
@@ -1609,7 +1609,7 @@
 										},
 										"ref": {
 											"type": "string",
-											"description": "Git branch or tag to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch."
+											"description": "Git branch, tag or full commit id to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch. A full commit id (40 or 64 lowercase hex digits) holds the marketplace at that commit: refreshes and auto-updates do not move it. A branch or tag of the repository must hold the commit. Plugins listed with a remote source follow that source unless they name a `sha`. Reserved Anthropic marketplace names do not accept a commit id."
 										},
 										"path": {
 											"type": "string",
@@ -1644,7 +1644,7 @@
 										},
 										"ref": {
 											"type": "string",
-											"description": "Git branch or tag to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch."
+											"description": "Git branch, tag or full commit id to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch. A full commit id (40 or 64 lowercase hex digits) holds the marketplace at that commit: refreshes and auto-updates do not move it. A branch or tag of the repository must hold the commit. Plugins listed with a remote source follow that source unless they name a `sha`. Reserved Anthropic marketplace names do not accept a commit id."
 										},
 										"path": {
 											"type": "string",
@@ -2055,7 +2055,7 @@
 									"type": "string"
 								}
 							},
-							"description": "Managed settings only: the plugins of this marketplace that an organization delivers with its own tier, by plugin name, each with the digests of its releases. A plugin also enabled and listed in prependPlugins or appendPlugins by managed settings the session vouches for loads its hooks module only from a folder that proves one of them, and is then seated in that tier; any other copy does not load. A digest is sha256- and the base64 SHA-256 of, for every regular file in the folder in UTF-16 code unit order of its path, not normalized, \"f PATH\" NUL BYTE-LENGTH NUL BYTES, with / in paths; .git, .in_use, .orphaned_at, .claude-plugin-link, .claude-directory-proof.json and .links_materialized at the root are left out. The plugin keeps its manifest at .claude-plugin/plugin.json and names one module in hooks/hooks.json. A string of any other form, or a list that is empty or of any other shape, matches no folder. A symbolic link, or a surface module, proves nothing. A proved plugin ships bundled with no install step: the digest covers the whole folder, node_modules included. A checkout whose line endings were converted proves nothing."
+							"description": "Deprecated and ignored: settings that hold it still load. A plugin takes the organization tier when managed settings enable it, declare its marketplace with a remote source and list it in prependPlugins or appendPlugins."
 						}
 					},
 					"required": [
@@ -2108,7 +2108,7 @@
 								},
 								"ref": {
 									"type": "string",
-									"description": "Git branch or tag to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch."
+									"description": "Git branch, tag or full commit id to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch. A full commit id (40 or 64 lowercase hex digits) holds the marketplace at that commit: refreshes and auto-updates do not move it. A branch or tag of the repository must hold the commit. Plugins listed with a remote source follow that source unless they name a `sha`. Reserved Anthropic marketplace names do not accept a commit id."
 								},
 								"path": {
 									"type": "string",
@@ -2143,7 +2143,7 @@
 								},
 								"ref": {
 									"type": "string",
-									"description": "Git branch or tag to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch."
+									"description": "Git branch, tag or full commit id to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch. A full commit id (40 or 64 lowercase hex digits) holds the marketplace at that commit: refreshes and auto-updates do not move it. A branch or tag of the repository must hold the commit. Plugins listed with a remote source follow that source unless they name a `sha`. Reserved Anthropic marketplace names do not accept a commit id."
 								},
 								"path": {
 									"type": "string",
@@ -2583,7 +2583,7 @@
 								},
 								"ref": {
 									"type": "string",
-									"description": "Git branch or tag to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch."
+									"description": "Git branch, tag or full commit id to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch. A full commit id (40 or 64 lowercase hex digits) holds the marketplace at that commit: refreshes and auto-updates do not move it. A branch or tag of the repository must hold the commit. Plugins listed with a remote source follow that source unless they name a `sha`. Reserved Anthropic marketplace names do not accept a commit id."
 								},
 								"path": {
 									"type": "string",
@@ -2618,7 +2618,7 @@
 								},
 								"ref": {
 									"type": "string",
-									"description": "Git branch or tag to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch."
+									"description": "Git branch, tag or full commit id to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch. A full commit id (40 or 64 lowercase hex digits) holds the marketplace at that commit: refreshes and auto-updates do not move it. A branch or tag of the repository must hold the commit. Plugins listed with a remote source follow that source unless they name a `sha`. Reserved Anthropic marketplace names do not accept a commit id."
 								},
 								"path": {
 									"type": "string",
@@ -3070,7 +3070,7 @@
 								},
 								"ref": {
 									"type": "string",
-									"description": "Git branch or tag to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch."
+									"description": "Git branch, tag or full commit id to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch. A full commit id (40 or 64 lowercase hex digits) holds the marketplace at that commit: refreshes and auto-updates do not move it. A branch or tag of the repository must hold the commit. Plugins listed with a remote source follow that source unless they name a `sha`. Reserved Anthropic marketplace names do not accept a commit id."
 								},
 								"path": {
 									"type": "string",
@@ -3105,7 +3105,7 @@
 								},
 								"ref": {
 									"type": "string",
-									"description": "Git branch or tag to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch."
+									"description": "Git branch, tag or full commit id to use (e.g., \"main\", \"v1.0.0\"). Defaults to repository default branch. A full commit id (40 or 64 lowercase hex digits) holds the marketplace at that commit: refreshes and auto-updates do not move it. A branch or tag of the repository must hold the commit. Plugins listed with a remote source follow that source unless they name a `sha`. Reserved Anthropic marketplace names do not accept a commit id."
 								},
 								"path": {
 									"type": "string",
@@ -3499,7 +3499,7 @@
 						}
 					]
 				},
-				"description": "Enterprise blocklist of marketplace sources. When set in managed settings, these sources are blocked from being added as marketplaces. Entries match exactly, except that a github entry may use the owner-wildcard form {\"source\":\"github\",\"repo\":\"owner/*\"} to block every repository under that owner. The check happens BEFORE downloading, so blocked sources never touch the filesystem."
+				"description": "Enterprise blocklist of marketplace sources. When set in managed settings, these sources are blocked from being added as marketplaces. Entries match exactly, except that a github entry may use the owner-wildcard form {\"source\":\"github\",\"repo\":\"owner/*\"} to block every repository under that owner, and an entry naming a branch or tag in `ref` also blocks every full commit id in that repository. The check happens BEFORE downloading, so blocked sources never touch the filesystem."
 			},
 			"disableCommandPluginSources": {
 				"type": "boolean",
@@ -3600,18 +3600,19 @@
 				"properties": {
 					"enabled": {
 						"type": "boolean",
-						"description": "\"Run Bash commands inside the sandbox. Default: false. \"+Da"
+						"description": "\"Run Bash commands inside the sandbox. Default: false. \"+La"
 					},
 					"failIfUnavailable": {
 						"type": "boolean",
-						"description": "\"Exit with an error at startup if sandbox.enabled is true but the sandbox cannot start (missing dependencies or unsupported platform). When false (default), a warning is shown and commands run unsandboxed. Intended for managed-settings deployments that require sandboxing as a hard gate. \"+Da"
+						"description": "\"Exit with an error at startup if sandbox.enabled is true but the sandbox cannot start (missing dependencies or unsupported platform). When false (default), a warning is shown and commands run unsandboxed. Intended for managed-settings deployments that require sandboxing as a hard gate. A Claude Code on the web, scheduled-task or Cowork cloud session (Anthropic's cloud container, which has no command sandbox) starts anyway with a warning: the container isolates it, and the sandbox.filesystem and sandbox.network rules in settings are not enforced there. \"+La"
 					},
 					"autoAllowBashIfSandboxed": {
-						"type": "boolean"
+						"type": "boolean",
+						"description": "macOS and Linux/WSL only: approve a Bash command that will run inside the sandbox without a permission prompt, unless a deny rule, a command-specific ask rule or a safety check stops it. Default: false, so sandboxed commands go through the same permission flow as any other command. Has no effect on native Windows."
 					},
 					"allowUnsandboxedCommands": {
 						"type": "boolean",
-						"description": "`Allow commands to run outside the sandbox via the dangerouslyDisableSandbox parameter. When false, the dangerouslyDisableSandbox parameter is completely ignored and all commands must run sandboxed. Default: true. A false in managed, --settings or user settings holds whatever ${ot} say (false there still applies).`"
+						"description": "`Allow commands to run outside the sandbox via the dangerouslyDisableSandbox parameter. When false, the dangerouslyDisableSandbox parameter is completely ignored and all commands must run sandboxed. Default: true. A false in managed, --settings or user settings holds whatever ${tt} say (false there still applies).`"
 					},
 					"network": {
 						"type": "object",
@@ -3621,7 +3622,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "Domains sandboxed commands may reach without a prompt (wildcards such as *.example.com supported). \"+\"Merged with WebFetch(domain:\\u2026) allow rules and across settings sources. \"+Tt+\" With network.allowManagedDomainsOnly, only managed settings supply it."
+								"description": "Domains sandboxed commands may reach without a prompt (wildcards such as *.example.com supported). \"+\"Merged with WebFetch(domain:\\u2026) allow rules and across settings sources. \"+Dt+\" With network.allowManagedDomainsOnly, only managed settings supply it."
 							},
 							"deniedDomains": {
 								"type": "array",
@@ -3632,7 +3633,7 @@
 							},
 							"strictAllowlist": {
 								"type": "boolean",
-								"description": "When true, the sandbox runtime deterministically denies hosts not in allowedDomains instead of prompting. \"+\"Enforced for sandboxed commands only \\u2014 in-process tools such as WebFetch are not gated by this setting. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`${ot} are ignored, and while it is on their allowedDomains `+\"and WebFetch(domain:\\u2026) allow rules are left out of the allowlist."
+								"description": "When true, the sandbox runtime deterministically denies hosts not in allowedDomains instead of prompting. \"+\"Enforced for sandboxed commands only \\u2014 in-process tools such as WebFetch are not gated by this setting. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`${tt} are ignored, and while it is on their allowedDomains `+\"and WebFetch(domain:\\u2026) allow rules are left out of the allowlist."
 							},
 							"allowManagedDomainsOnly": {
 								"type": "boolean",
@@ -3643,30 +3644,30 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"macOS only: Unix socket paths to allow. Ignored on Linux (seccomp cannot filter by path). Merged across settings sources. \"+Tt"
+								"description": "\"macOS only: Unix socket paths to allow. Ignored on Linux (seccomp cannot filter by path). Merged across settings sources. \"+Dt"
 							},
 							"allowAllUnixSockets": {
 								"type": "boolean",
-								"description": "\"If true, allow all Unix sockets (disables blocking on both platforms). \"+Wn"
+								"description": "\"If true, allow all Unix sockets (disables blocking on both platforms). \"+Gn"
 							},
 							"allowLocalBinding": {
 								"type": "boolean",
-								"description": "\"macOS only: If true, sandboxed commands can bind to localhost ports. \"+Wn"
+								"description": "\"macOS only: If true, sandboxed commands can bind to localhost ports. \"+Gn"
 							},
 							"allowMachLookup": {
 								"type": "array",
 								"items": {
 									"type": "string"
 								},
-								"description": "'macOS only: Additional XPC/Mach service names to allow looking up. Supports trailing-wildcard prefix matching (e.g., \"com.apple.CoreSimulator.*\"). Needed for tools that communicate via XPC such as the iOS Simulator or Playwright. Each entry lets sandboxed commands reach services outside the sandbox, and the sandbox does not confine what those services do for them. Merged across settings sources. '+Tt"
+								"description": "'macOS only: Additional XPC/Mach service names to allow looking up. Supports trailing-wildcard prefix matching (e.g., \"com.apple.CoreSimulator.*\"). Needed for tools that communicate via XPC such as the iOS Simulator or Playwright. Each entry lets sandboxed commands reach services outside the sandbox, and the sandbox does not confine what those services do for them. Merged across settings sources. '+Dt"
 							},
 							"httpProxyPort": {
 								"type": "number",
-								"description": "\"Local TCP port of your own HTTP proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+Na"
+								"description": "\"Local TCP port of your own HTTP proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+za"
 							},
 							"socksProxyPort": {
 								"type": "number",
-								"description": "\"Local TCP port of your own SOCKS5 proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+Na"
+								"description": "\"Local TCP port of your own SOCKS5 proxy for sandboxed traffic, used instead of the proxy Claude Code runs. \"+za"
 							},
 							"tlsTerminate": {
 								"type": "object",
@@ -3692,7 +3693,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"Additional paths to allow writing within the sandbox. Merged with paths from Edit(...) allow permission rules. \"+$f"
+								"description": "\"Additional paths to allow writing within the sandbox. Merged with paths from Edit(...) allow permission rules. \"+Gf"
 							},
 							"denyWrite": {
 								"type": "array",
@@ -3713,7 +3714,7 @@
 								"items": {
 									"type": "string"
 								},
-								"description": "\"Paths to re-allow reading within denyRead regions. Takes precedence over denyRead for matching paths. \"+jf"
+								"description": "\"Paths to re-allow reading within denyRead regions. Takes precedence over denyRead for matching paths. \"+Bf"
 							},
 							"allowManagedReadPathsOnly": {
 								"type": "boolean",
@@ -3721,7 +3722,7 @@
 							},
 							"disabled": {
 								"type": "boolean",
-								"description": "macOS and Linux/WSL only: skip filesystem isolation entirely while keeping network and seccomp isolation. Ignored on native Windows, where the sandboxed process runs as a separate user with no inherent rights, so skipping the filesystem rules would \"+\"withhold every access grant rather than loosen them \\u2014 filesystem isolation stays on there. \"+\"Sandboxed commands get unrestricted read/write access to the host filesystem; network egress is still confined to network.allowedDomains. Intended for deployments whose goal is egress control rather than filesystem containment. Does not change Bash prompting: sandbox.autoAllowBashIfSandboxed is independent and still defaults to true, so set it to false to keep prompting for sandboxed commands. Drops the read protection from filesystem.denyRead and credentials.files deny entries for sandboxed commands, since both are enforced by the filesystem layer this turns off; credentials.files mask entries (sentinel binds) and credentials.envVars deny/mask are unaffected. \"+\"Only honored from user, managed/policy, or CLI (`--settings`) settings \\u2014 \"+\"project settings (.claude/settings.json and .claude/settings.local.json) are ignored. If managed settings configure sandbox.filesystem at all, or list any sandbox.credentials.files deny entry, only managed settings can set this: an admin who deployed filesystem restrictions must not have them switched off by a user-writable file. (sandbox.credentials.envVars and credentials.files mask entries \"+\"do not pin it \\u2014 env scrubbing and sentinel binds are independent of the filesystem \"+\"layer and survive this setting.) When unset, filesystem isolation stays on."
+								"description": "macOS and Linux/WSL only: skip filesystem isolation entirely while keeping network and seccomp isolation. Ignored on native Windows, where the sandboxed process runs as a separate user with no inherent rights, so skipping the filesystem rules would \"+\"withhold every access grant rather than loosen them \\u2014 filesystem isolation stays on there. \"+\"Sandboxed commands get unrestricted read/write access to the host filesystem; network egress is still confined to network.allowedDomains. Intended for deployments whose goal is egress control rather than filesystem containment. Does not change Bash prompting: sandbox.autoAllowBashIfSandboxed is independent and still defaults to false, so sandboxed commands keep going through the permission flow unless it is set to true. Drops the read protection from filesystem.denyRead and credentials.files deny entries for sandboxed commands, since both are enforced by the filesystem layer this turns off; credentials.files mask entries (sentinel binds) and credentials.envVars deny/mask are unaffected. \"+\"Only honored from user, managed/policy, or CLI (`--settings`) settings \\u2014 \"+\"project settings (.claude/settings.json and .claude/settings.local.json) are ignored. If managed settings configure sandbox.filesystem at all, or list any sandbox.credentials.files deny entry, only managed settings can set this: an admin who deployed filesystem restrictions must not have them switched off by a user-writable file. (sandbox.credentials.envVars and credentials.files mask entries \"+\"do not pin it \\u2014 env scrubbing and sentinel binds are independent of the filesystem \"+\"layer and survive this setting.) When unset, filesystem isolation stays on."
 							}
 						}
 					},
@@ -3800,19 +3801,19 @@
 								"type": "string"
 							}
 						},
-						"description": "'Sandbox violations to leave unreported: a map of command patterns (\"*\" for every command) to the filesystem paths whose violations are ignored. Merged across settings sources. '+Tt"
+						"description": "'Sandbox violations to leave unreported: a map of command patterns (\"*\" for every command) to the filesystem paths whose violations are ignored. Merged across settings sources. '+Dt"
 					},
 					"enableWeakerNestedSandbox": {
 						"type": "boolean",
-						"description": "\"Linux only: Run without the fresh /proc mount, for hosts such as unprivileged Docker containers that cannot create one. \"+\"**Reduces security** \\u2014 the host /proc stays readable by sandboxed commands. Default: false. \"+Wn"
+						"description": "\"Linux only: Run without the fresh /proc mount, for hosts such as unprivileged Docker containers that cannot create one. \"+\"**Reduces security** \\u2014 the host /proc stays readable by sandboxed commands. Default: false. \"+Gn"
 					},
 					"allowNestedUserNamespaces": {
 						"type": "boolean",
-						"description": "\"Linux/WSL only: Let sandboxed commands create user namespaces of their own, which the sandbox refuses by default. Needed by tools that sandbox themselves that way, such as Chromium's and Electron's sandbox, a nested bubblewrap, and `unshare`. \"+\"**Removes code-execution isolation** \\u2014 in any folder a hostile command may write, it can then bypass filesystem.denyWrite, filesystem.denyRead, credentials.files entries and the paths the sandbox always write-protects (such as .claude/settings.json, git hooks and git config), \"+\"and so plant code that later runs outside the sandbox; while autoAllowBashIfSandboxed is on, the command that plants it needs no approval. Default: false. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`true from ${ot} is ignored (false there still applies).`"
+						"description": "\"Linux/WSL only: Let sandboxed commands create user namespaces of their own, which the sandbox refuses by default. Needed by tools that sandbox themselves that way, such as Chromium's and Electron's sandbox, a nested bubblewrap, and `unshare`. \"+\"**Removes code-execution isolation** \\u2014 in any folder a hostile command may write, it can then bypass filesystem.denyWrite, filesystem.denyRead, credentials.files entries and the paths the sandbox always write-protects (such as .claude/settings.json, git hooks and git config), \"+\"and so plant code that later runs outside the sandbox; while autoAllowBashIfSandboxed is on, the command that plants it needs no approval. Default: false. \"+\"Only honored from user, managed/policy, or CLI (--settings) settings \\u2014 \"+`true from ${tt} is ignored (false there still applies).`"
 					},
 					"enableWeakerNetworkIsolation": {
 						"type": "boolean",
-						"description": "\"macOS only: Allow access to com.apple.trustd.agent in the sandbox. Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates when using httpProxyPort with a MITM proxy and custom CA. \"+\"**Reduces security** \\u2014 opens a potential data exfiltration vector through the trustd service. Default: false. \"+Wn"
+						"description": "\"macOS only: Allow access to com.apple.trustd.agent in the sandbox. Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates when using httpProxyPort with a MITM proxy and custom CA. \"+\"**Reduces security** \\u2014 opens a potential data exfiltration vector through the trustd service. Default: false. \"+Gn"
 					},
 					"allowAppleEvents": {
 						"type": "boolean",
@@ -3823,7 +3824,7 @@
 						"items": {
 							"type": "string"
 						},
-						"description": "\"Command patterns (Bash permission-rule syntax) for commands to run outside the sandbox. An entry takes a call out of the sandbox only when every command in the call matches an entry: in a Bash pipe or a chain such as `a && b`, each part needs its own match. Some calls stay sandboxed whatever the entries, such as one with a `cd`, a command substitution, or a redirect other than a file-descriptor duplication like `2>&1`, a heredoc included. A convenience, not a security boundary: excluded commands still go through the permission flow. Merged across settings sources. \"+Tt"
+						"description": "\"Command patterns (Bash permission-rule syntax) for commands to run outside the sandbox. An entry takes a call out of the sandbox only when every command in the call matches an entry: in a Bash pipe or a chain such as `a && b`, each part needs its own match. Some calls stay sandboxed whatever the entries, such as one with a `cd`, a command substitution, or a redirect other than a file-descriptor duplication like `2>&1`, a heredoc included. A convenience, not a security boundary: excluded commands still go through the permission flow. Merged across settings sources. \"+Dt"
 					},
 					"ripgrep": {
 						"type": "object",
@@ -3933,7 +3934,7 @@
 					},
 					"checker": {
 						"type": "string",
-						"description": "`Which spell checker to run: ${yit.map((l)=>`\"${l}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
+						"description": "`Which spell checker to run: ${edt.map((l)=>`\"${l}\"`).join(\", \")}, or \"auto\" (default) for the first of those found on PATH`"
 					},
 					"language": {
 						"type": "string",
@@ -3945,7 +3946,7 @@
 					}
 				},
 				"additionalProperties": true,
-				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${yit.slice(0,-1).join(\", \")} or ${yit.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
+				"description": "`Underline misspelled words in the prompt input as you type, using an installed ${edt.slice(0,-1).join(\", \")} or ${edt.at(-1)} (off unless \"enabled\" is true; does nothing if none is installed). Read from user, flag and managed settings only (the whole block from the highest-precedence of those applies); ignored in project .claude/settings.json and .claude/settings.local.json.`"
 			},
 			"terminalTitleFromRename": {
 				"type": "boolean",
