@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.325",
-	"extractedAt": "2026-11-13T23:26:02.268Z",
+	"extractedFromClaudeCodeVersion": "2.1.326",
+	"extractedAt": "2026-11-17T01:46:33.504Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code plugin.json",
@@ -318,7 +318,7 @@
 															"additionalProperties": {
 																"type": "string"
 															},
-															"description": "Additional headers to include in the request. Values may reference environment variables using $VAR_NAME or ${VAR_NAME} syntax (e.g., \"Authorization\": \"Bearer $MY_TOKEN\"). Only variables listed in allowedEnvVars will be interpolated."
+															"description": "Additional headers to include in the request. Values may reference environment variables using $VAR_NAME or ${VAR_NAME} syntax (e.g., \"Authorization\": \"Bearer $MY_TOKEN\"). Only variables listed in allowedEnvVars will be interpolated. Content-Length and Transfer-Encoding given here are ignored: Claude Code works out the request\\'s length from its body."
 														},
 														"allowedEnvVars": {
 															"type": "array",
@@ -615,7 +615,7 @@
 																		"additionalProperties": {
 																			"type": "string"
 																		},
-																		"description": "Additional headers to include in the request. Values may reference environment variables using $VAR_NAME or ${VAR_NAME} syntax (e.g., \"Authorization\": \"Bearer $MY_TOKEN\"). Only variables listed in allowedEnvVars will be interpolated."
+																		"description": "Additional headers to include in the request. Values may reference environment variables using $VAR_NAME or ${VAR_NAME} syntax (e.g., \"Authorization\": \"Bearer $MY_TOKEN\"). Only variables listed in allowedEnvVars will be interpolated. Content-Length and Transfer-Encoding given here are ignored: Claude Code works out the request\\'s length from its body."
 																	},
 																	"allowedEnvVars": {
 																		"type": "array",
@@ -1458,6 +1458,20 @@
 													]
 												}
 											]
+										},
+										"onPersonsMachine": {
+											"type": "object",
+											"properties": {
+												"exceptTools": {
+													"type": "array",
+													"items": {
+														"type": "string"
+													}
+												}
+											},
+											"required": [
+												"exceptTools"
+											]
 										}
 									},
 									"required": [
@@ -2025,6 +2039,20 @@
 																	"transport"
 																]
 															}
+														]
+													},
+													"onPersonsMachine": {
+														"type": "object",
+														"properties": {
+															"exceptTools": {
+																"type": "array",
+																"items": {
+																	"type": "string"
+																}
+															}
+														},
+														"required": [
+															"exceptTools"
 														]
 													}
 												},
