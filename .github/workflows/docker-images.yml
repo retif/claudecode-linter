@@ -43,7 +43,7 @@ jobs:
             image: ghcr.io/retif/bun-claudecode-linter
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # The caller pushes a version-bump commit before this runs; build the
           # current main, not the pre-bump SHA the caller started from.
