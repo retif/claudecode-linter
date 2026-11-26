@@ -222,9 +222,114 @@ export function mapZodFactories(source: string): Map<string, string> {
 /** How many `X=Y("ZodFoo"` declarations mark a module as a Zod runtime chunk. */
 const ZOD_CHUNK_CLASS_FLOOR = 10;
 
+/**
+ * How many `get type(){return"…"}` classes mark a module as a class-based
+ * schema runtime (2.1.331+, see `mapClassFactories`).
+ */
+const CLASS_RUNTIME_FLOOR = 10;
+
+/** `class X extends Y{` declarations, in source order. */
+const CLASS_DECL_RE = /class ([A-Za-z_$][\w$]*)(?: extends ([A-Za-z_$][\w$]*))?\{/g;
+
+/**
+ * Map the factories of a class-based schema runtime to Zod method names.
+ *
+ * 2.1.331 stopped building Claude Code's own schemas with the Zod library. The
+ * replacement keeps Zod's call surface — `c({…}).strict()`, `r().min(1)`,
+ * `Te(r(), x)` — but every factory is a one-line constructor over a class
+ * that names its kind through a getter, not a def literal:
+ *
+ *   class Fye extends w{…get type(){return"object"}…}
+ *   function c(e,t){return new Fye(e,void 0,t)}
+ *   function xe(e,t){return new Fye(e,new P7n,t)}    // P7n: type "never"
+ *
+ * Neither signal `mapZodFactories` reads exists there — no `type:"object"`
+ * tag, no `"ZodObject"` class string — so every consumer module failed to
+ * normalise and the definition index collapsed (oleks/claudecode-linter#57).
+ *
+ * Kinds are resolved through `extends`, because subclasses inherit the getter
+ * (`class N1o extends k` is a string). Variants Zod spells as separate methods
+ * are read from the constructor call:
+ *
+ *  - object: a `never` catchall is `strictObject`, an `unknown` one is
+ *    `looseObject`, `void 0` is plain `object`;
+ *  - record: a truthy third argument (the `isPartial` flag) is `partialRecord`;
+ *  - union: a class that declares a `discriminator` is `discriminatedUnion`.
+ */
+export function mapClassFactories(source: string): Map<string, string> {
+	const decls = [...source.matchAll(CLASS_DECL_RE)];
+	const parent = new Map<string, string | undefined>();
+	const ownType = new Map<string, string>();
+	const ownBody = new Map<string, string>();
+	for (let i = 0; i < decls.length; i++) {
+		const m = decls[i];
+		const start = m.index + m[0].length;
+		const end = i + 1 < decls.length ? decls[i + 1].index : source.length;
+		const body = source.slice(start, end);
+		parent.set(m[1], m[2]);
+		ownBody.set(m[1], body);
+		const t = body.match(/get type\(\)\{return"([a-z_]+)"\}/);
+		if (t) ownType.set(m[1], t[1]);
+	}
+	const lineage = (cls: string): string[] => {
+		const out: string[] = [];
+		let cur: string | undefined = cls;
+		while (cur && parent.has(cur) && !out.includes(cur)) {
+			out.push(cur);
+			cur = parent.get(cur);
+		}
+		return out;
+	};
+	const kindOf = (cls: string): string | undefined => {
+		for (const c of lineage(cls)) {
+			const t = ownType.get(c);
+			if (t) return t;
+		}
+		return undefined;
+	};
+
+	const factories = new Map<string, string>();
+	for (const m of source.matchAll(/function ([A-Za-z_$][\w$]*)\([^)]*\)\{/g)) {
+		const body = readBraceBody(source, m.index + m[0].length - 1);
+		// `function de(){return new A}` constructs without parentheses.
+		const ret = body.match(/return new ([A-Za-z_$][\w$]*)(\()?/);
+		if (!ret) continue;
+		const cls = ret[1];
+		let method = kindOf(cls);
+		if (!method) continue;
+		const open = (ret.index ?? 0) + ret[0].length - 1;
+		const args = ret[2]
+			? splitTopLevelArgs(extractBalanced(body, open, "(", ")").slice(1, -1))
+			: [];
+		if (method === "object") {
+			const other = args[1]?.match(/^new ([A-Za-z_$][\w$]*)/);
+			const otherKind = other ? kindOf(other[1]) : undefined;
+			if (otherKind === "never") method = "strictObject";
+			else if (otherKind === "unknown") method = "looseObject";
+		} else if (method === "record") {
+			if (args[2] === "!0" || args[2] === "true") method = "partialRecord";
+		} else if (method === "union") {
+			if (lineage(cls).some((c) => /\bdiscriminator\b/.test(ownBody.get(c) ?? "")))
+				method = "discriminatedUnion";
+		}
+		factories.set(m[1], method);
+	}
+	return factories;
+}
+
 /** Harvest the factory map from every module that looks like a Zod chunk. */
 export function collectZodFactories(modules: string[]): Map<string, string> {
 	const factories = new Map<string, string>();
+	// The class-based runtime goes first: on 2.1.331+ it is what Claude Code's
+	// own schemas import, while the Zod chunk that is still bundled serves
+	// dependencies. Its names win any collision.
+	for (const mod of modules) {
+		const kinds = mod.match(/get type\(\)\{return"[a-z_]+"\}/g);
+		if (!kinds || kinds.length < CLASS_RUNTIME_FLOOR) continue;
+		for (const [name, method] of mapClassFactories(mod)) {
+			if (!factories.has(name)) factories.set(name, method);
+		}
+	}
 	for (const mod of modules) {
 		const declarations = mod.match(/\("Zod[A-Za-z0-9]+"/g);
 		if (!declarations || declarations.length < ZOD_CHUNK_CLASS_FLOOR) continue;
@@ -1664,6 +1769,14 @@ interface EvalContext {
 	 */
 	bindings?: Map<string, string>;
 	/**
+	 * Locally-scoped names bound to an already-EVALUATED schema rather than to
+	 * an expression: the members of an array destructure over a union's
+	 * `.options` (`let[e,...n]=X().options`). A single member is a schema; a
+	 * `...rest` element is the list of remaining members, which a union array
+	 * expands in place where it is spread. Consulted before `bindings`.
+	 */
+	evaluated?: Map<string, JSONSchema | JSONSchema[]>;
+	/**
 	 * Which module the expression being evaluated was declared in, or undefined
 	 * / -1 when unknown. Every symbol looked up while evaluating it resolves
 	 * against this module first — that is what makes a reference mean its own
@@ -1718,7 +1831,14 @@ export function evalZod(expr: string, ctx: EvalContext): JSONSchema {
 	}
 
 	// Resolve a method chain by reading the head term and then folding modifiers.
-	const chain = splitChain(expr);
+	// `splitChain` only cuts after `)`/`]`, so a chain on a bare name —
+	// `e.extend({…})`, where `e` is an evaluated destructure member — would
+	// stay one opaque head. Peel such a name off first.
+	const bareHead = /^([\w$]+)\.(?=[\w$]+\()/.exec(expr);
+	const chain =
+		bareHead && ctx.evaluated?.has(bareHead[1])
+			? [bareHead[1], ...splitChain(expr.slice(bareHead[0].length))]
+			: splitChain(expr);
 	if (chain.length === 0) return {};
 
 	let schema: JSONSchema = evalHead(chain[0], ctx);
@@ -1790,8 +1910,32 @@ function evalBlockBody(block: string, ctx: EvalContext): JSONSchema | null {
 	// its `commit`/`pr` sub-fields, dropped out of the settings schema.
 	collectLocalBindings(prelude, bindings);
 
-	if (bindings.size === 0) return null;
-	return evalZod(retExpr, { ...ctx, bindings });
+	// Array destructure over a union's members — `let[e,...n]=X().options`.
+	// 2.1.328's plugin manifest declares its inline MCP server union this way,
+	// to add one field to the first (stdio) branch and keep the rest as-is:
+	// `{let[e,...n]=wwe().options;return y.union([e.extend({network:…}),...n])}`.
+	// Unread, the body bound nothing and the plugin's `mcpServers` record lost
+	// every server field (oleks/claudecode-linter#57).
+	const evaluated = new Map<string, JSONSchema | JSONSchema[]>(
+		ctx.evaluated ?? [],
+	);
+	const arrDestructRe =
+		/(?:let|var|const)\s*\[([^[\]]*)\]\s*=\s*([\s\S]+?)\.options\s*(?=;|$)/g;
+	for (const am of prelude.matchAll(arrDestructRe)) {
+		const union = evalZod(am[2], { ...ctx, bindings });
+		const members = union.oneOf ?? union.anyOf;
+		if (!Array.isArray(members)) continue;
+		const names = splitTopLevelArgs(am[1]).map((n) => n.trim());
+		names.forEach((name, i) => {
+			const rest = /^\.\.\.([\w$]+)$/.exec(name);
+			if (rest) evaluated.set(rest[1], members.slice(i) as JSONSchema[]);
+			else if (/^[\w$]+$/.test(name) && i < members.length)
+				evaluated.set(name, members[i] as JSONSchema);
+		});
+	}
+
+	if (bindings.size === 0 && evaluated.size === 0) return null;
+	return evalZod(retExpr, { ...ctx, bindings, evaluated });
 }
 
 /**
@@ -2031,6 +2175,13 @@ function evalHead(head: string, ctx: EvalContext): JSONSchema {
 	const { zodAlias } = ctx.index;
 	head = head.trim();
 
+	// A name bound to an already-evaluated schema (see `EvalContext.evaluated`).
+	const evalId = /^([\w$]+)$/.exec(head);
+	if (evalId && ctx.evaluated?.has(evalId[1])) {
+		const v = ctx.evaluated.get(evalId[1]);
+		if (v && !Array.isArray(v)) return structuredClone(v);
+	}
+
 	// Resolve a locally-bound identifier (block-body `let{…}=Fn()` destructure).
 	// These appear bare — `[H,$,q,K,_]` inside a discriminatedUnion array — not
 	// as `H()` calls, so the bare-identifier case is checked first.
@@ -2166,6 +2317,13 @@ function evalHead(head: string, ctx: EvalContext): JSONSchema {
 function evalUnionBranches(arrayBody: string, ctx: EvalContext): JSONSchema[] {
 	const out: JSONSchema[] = [];
 	for (const branch of splitUnionBranches(arrayBody)) {
+		// `...n` where `n` is the rest of an array destructure over `.options`.
+		const restSpread = /^\.\.\.([\w$]+)$/.exec(branch.trim());
+		const rest = restSpread ? ctx.evaluated?.get(restSpread[1]) : undefined;
+		if (Array.isArray(rest)) {
+			out.push(...rest.map((m) => structuredClone(m)));
+			continue;
+		}
 		const spread = /^\.\.\.([\s\S]+)\.options$/.exec(branch.trim());
 		if (spread) {
 			const inner = evalZod(spread[1], ctx);
