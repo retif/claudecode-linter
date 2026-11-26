@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.326",
-	"extractedAt": "2026-11-17T01:46:33.644Z",
+	"extractedFromClaudeCodeVersion": "2.1.332",
+	"extractedAt": "2026-11-26T19:49:21.793Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code hooks.json",
@@ -76,6 +76,10 @@
 												"asyncRewake": {
 													"type": "boolean",
 													"description": "If true, hook runs in background and wakes the model on exit code 2 (blocking error). Implies async."
+												},
+												"holdsTools": {
+													"type": "boolean",
+													"description": "@internal UserPromptSubmit and PostToolUse hooks of the official security-guidance plugin only. On UserPromptSubmit: if true, the prompt goes to the model without waiting for this hook, the hook's output is ignored, and tools wait until it exits or times out. On PostToolUse: the hook must also state a `timeout` of at most 30 seconds, or this key is ignored. If true, the next request goes without waiting for this hook, and nothing of the reply is shown and no tool runs until the hook exits or times out. If the hook adds context or blocks, the reply is dropped and the request is sent again with it. Such a hook can't rewrite the tool's output: the output may have left by then, so a rewrite is dropped."
 												},
 												"rewakeMessage": {
 													"type": "string",
@@ -267,6 +271,9 @@
 												"timeout": {
 													"type": "number",
 													"description": "Timeout in seconds for this specific tool call"
+												},
+												"onFailure": {
+													"description": "What happens when this hook's call fails: its MCP server is not connected or not signed in, the call times out or returns an error, or the tool answers with JSON that fails validation. 'continue' (default): the failure is reported and the action goes ahead. 'block': the action the event guards (a tool call, a permission request, a prompt) is blocked each time, for as long as the call fails. With 'block', the tool must answer with a hook's JSON output, with {} or with nothing: plain text, an image, or JSON that holds none of a hook output's fields, or only 'reason', also counts as a failure. That does not hold on PreCompact and WorktreeCreate, where plain text is the hook's answer, or on events whose block stops nothing. Any other value reads as 'block'. Ignored on Setup, SessionStart, Stop, SubagentStop, TaskCompleted and TeammateIdle."
 												},
 												"statusMessage": {
 													"type": "string",

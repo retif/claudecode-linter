@@ -1,6 +1,6 @@
 {
-	"extractedFromClaudeCodeVersion": "2.1.326",
-	"extractedAt": "2026-11-17T01:46:33.610Z",
+	"extractedFromClaudeCodeVersion": "2.1.332",
+	"extractedAt": "2026-11-26T19:49:21.772Z",
 	"schema": {
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
 		"title": "Claude Code agent .md frontmatter",
@@ -194,7 +194,7 @@
 						"type": "null"
 					}
 				],
-				"description": "`Auto-compact window for this agent, in tokens from ${_D} to ${EV}. Overrides the window it would inherit.`"
+				"description": "`Auto-compact window for this agent, in tokens, at least ${iF}. Overrides the window it would inherit.`"
 			},
 			"skills": {
 				"anyOf": [
@@ -341,6 +341,23 @@
 					}
 				],
 				"description": "Supplemental postamble appended (after the harness-owned default) to each activity digest sent to the observer."
+			},
+			"observeToolResults": {
+				"anyOf": [
+					{
+						"type": "string"
+					},
+					{
+						"type": "number"
+					},
+					{
+						"type": "boolean"
+					},
+					{
+						"type": "null"
+					}
+				],
+				"description": "On an observer's own definition: if false, its activity digests leave out tool results, auto-loaded CLAUDE.md content and discovered skills. Default true."
 			},
 			"observeSubagents": {
 				"anyOf": [

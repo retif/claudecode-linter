@@ -1,5 +1,5 @@
 // Auto-generated from contracts/claude-code-contracts.json
-// Claude Code v2.1.326 — extracted 2026-11-17T01:46:24.907Z
+// Claude Code v2.1.332 — extracted 2026-11-26T19:49:13.207Z
 // Do not edit manually. Run: npm run generate-contracts
 
 export const TOOLS = new Set<string>([
@@ -89,6 +89,7 @@ export const HOOK_EVENTS = new Set<string>([
 	"PostToolUseFailure",
 	"PreCompact",
 	"PreModelSwitch",
+	"PreSkillShellCommand",
 	"PreToolUse",
 	"SessionEnd",
 	"SessionStart",
@@ -139,6 +140,7 @@ export const PROMPT_EVENTS = new Set<string>([
 
 export const AGENT_COLORS = new Set<string>([
 	"aqua",
+	"black",
 	"blue",
 	"cyan",
 	"green",
@@ -150,6 +152,7 @@ export const AGENT_COLORS = new Set<string>([
 	"red",
 	"teal",
 	"violet",
+	"white",
 	"yellow",
 ]);
 
@@ -174,6 +177,8 @@ export const PLUGIN_JSON_FIELDS = new Set<string>([
 	"license",
 	"metadata",
 	"name",
+	"network",
+	"optionalDependencies",
 	"repository",
 	"version",
 ]);

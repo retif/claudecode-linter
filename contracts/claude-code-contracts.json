@@ -1,6 +1,6 @@
 {
-	"version": "2.1.326",
-	"extractedAt": "2026-11-17T01:46:24.907Z",
+	"version": "2.1.332",
+	"extractedAt": "2026-11-26T19:49:13.207Z",
 	"contracts": {
 		"tools": [
 			"Agent",
@@ -88,6 +88,7 @@
 			"PostToolUseFailure",
 			"PreCompact",
 			"PreModelSwitch",
+			"PreSkillShellCommand",
 			"PreToolUse",
 			"SessionEnd",
 			"SessionStart",
@@ -135,6 +136,7 @@
 		],
 		"agentColors": [
 			"aqua",
+			"black",
 			"blue",
 			"cyan",
 			"green",
@@ -146,6 +148,7 @@
 			"red",
 			"teal",
 			"violet",
+			"white",
 			"yellow"
 		],
 		"agentModels": [
@@ -168,6 +171,8 @@
 			"license",
 			"metadata",
 			"name",
+			"network",
+			"optionalDependencies",
 			"repository",
 			"version"
 		],
